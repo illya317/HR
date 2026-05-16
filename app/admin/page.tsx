@@ -1234,7 +1234,7 @@ export default function AdminPage() {
         )}
 
         {activeTab === "permission-table" && (
-          <PermissionTablePanel users={users} allPermissions={allPermissions} />
+          <PermissionTablePanel users={users} allPermissions={allPermissions} isAdmin={user?.isWorkListAdmin ?? false} />
         )}
       </main>
 
@@ -1281,11 +1281,13 @@ export default function AdminPage() {
 function PermissionTablePanel({
   users,
   allPermissions,
+  isAdmin,
 }: {
   users: User[];
   allPermissions: { key: string; label: string; desc: string }[];
+  isAdmin: boolean;
 }) {
-  const [permView, setPermView] = useState<"by-user" | "by-permission">("by-user");
+  const [permView, setPermView] = useState<"by-user" | "by-permission">(isAdmin ? "by-user" : "by-permission");
   const [permSearchQuery, setPermSearchQuery] = useState("");
   const [permSearchResults, setPermSearchResults] = useState<User[]>([]);
   const [selectedPermission, setSelectedPermission] = useState("");
@@ -1363,31 +1365,32 @@ function PermissionTablePanel({
 
   return (
     <div className="space-y-4">
-      {/* 视图切换 */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => {
-            setPermView("by-user");
-            setSelectedPermission("");
-            setSelectedUserPerm(null);
-          }}
-          className={`rounded-md px-4 py-2 text-sm ${
-            permView === "by-user"
-              ? "bg-emerald-600 text-white"
-              : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          按员工
-        </button>
-        <button
-          onClick={() => {
-            setPermView("by-permission");
-            setSelectedUserPerm(null);
-            setPermSearchQuery("");
-            setPermSearchResults([]);
-          }}
-          className={`rounded-md px-4 py-2 text-sm ${
-            permView === "by-permission"
+      {/* 视图切换（仅管理员可见） */}
+      {isAdmin && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setPermView("by-user");
+              setSelectedPermission("");
+              setSelectedUserPerm(null);
+            }}
+            className={`rounded-md px-4 py-2 text-sm ${
+              permView === "by-user"
+                ? "bg-emerald-600 text-white"
+                : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            按员工
+          </button>
+          <button
+            onClick={() => {
+              setPermView("by-permission");
+              setSelectedUserPerm(null);
+              setPermSearchQuery("");
+              setPermSearchResults([]);
+            }}
+            className={`rounded-md px-4 py-2 text-sm ${
+              permView === "by-permission"
               ? "bg-emerald-600 text-white"
               : "border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
           }`}
@@ -1395,6 +1398,7 @@ function PermissionTablePanel({
           按权限
         </button>
       </div>
+      )}
 
       {/* 按权限视图：权限卡片 */}
       {permView === "by-permission" && (
