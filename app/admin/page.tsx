@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
-import { getInitials } from "@/lib/search";
 
 interface User {
   id: number;
@@ -1325,19 +1324,23 @@ function PermissionTablePanel({
     }
   }
 
-  function searchUsers(query: string) {
+  async function searchUsers(query: string) {
     if (!query.trim()) {
       setPermSearchResults([]);
       return;
     }
-    const q = query.toLowerCase();
-    const results = localUsers.filter(
-      (u) =>
-        u.name.toLowerCase().includes(q) ||
-        (u.username?.toLowerCase() || "").includes(q) ||
-        (u.employeeId?.toLowerCase() || "").includes(q) ||
-        getInitials(u.name).includes(q)
+    const res = await fetch(`/api/employees/search?q=${encodeURIComponent(query)}`);
+    if (!res.ok) {
+      setPermSearchResults([]);
+      return;
+    }
+    const data = await res.json();
+    const matchedUserIds = new Set(
+      (data.items || [])
+        .map((item: { userId: number | null }) => item.userId)
+        .filter(Boolean)
     );
+    const results = localUsers.filter((u) => matchedUserIds.has(u.id));
     setPermSearchResults(results.slice(0, 10));
   }
 
@@ -1439,7 +1442,7 @@ function PermissionTablePanel({
               onChange={(e) => {
                 const val = e.target.value;
                 setPermSearchQuery(val);
-                searchUsers(val);
+                void searchUsers(val);
               }}
               placeholder="输入姓名、用户名或工号搜索..."
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
