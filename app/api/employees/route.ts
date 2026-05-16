@@ -63,6 +63,7 @@ export async function GET(request: Request) {
   const dept = searchParams.get("dept") || "";
   const keyword = searchParams.get("keyword") || "";
   const exportExcel = searchParams.get("export") === "1";
+  console.log("[employees API] params:", { company, dept, keyword, exportExcel, userCompany: user?.company, isAdmin: user?.isWorkListAdmin });
 
   // 丰华生物/天力通/悦通/加拿大 共享数据
   const SHARED_COMPANIES = ["丰华生物", "丰华天力通", "丰华悦通", "加拿大"];
@@ -177,6 +178,7 @@ export async function GET(request: Request) {
 
   // 保持 employeeId 排序，同员工多岗位保持连续
   rows.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+  console.log("[employees API] rows count:", rows.length, "baseEmployees:", baseEmployees.length, "eps:", eps.length);
 
   const visibleFields = await getVisibleFields(payload.userId, !!user?.isWorkListAdmin);
 
@@ -205,13 +207,12 @@ export async function GET(request: Request) {
   }
 
   // 所有公司和部门（不随筛选变化，用于下拉框）
-  // TODO: 后续改从 Department 表获取
-  const companyWhere: any = {};
+  const deptWhere: any = {};
   if (!user?.isWorkListAdmin && user?.company) {
-    companyWhere.company = resolveCompanyFilter(user.company);
+    deptWhere.company = resolveCompanyFilter(user.company);
   }
-  const allCompanies = [...new Set((await prisma.employee.findMany({ where: companyWhere, select: { company: true } })).map((e: any) => e.company).filter(Boolean))];
-  const allDepts = [...new Set((await prisma.employee.findMany({ where: companyWhere, select: { dept1: true } })).map((e: any) => e.dept1).filter(Boolean))];
+  const allCompanies = [...new Set((await prisma.department.findMany({ where: deptWhere, select: { company: true } })).map((d: any) => d.company).filter(Boolean))];
+  const allDepts = [...new Set((await prisma.department.findMany({ where: deptWhere, select: { name: true } })).map((d: any) => d.name).filter(Boolean))];
 
   return NextResponse.json({ employees: rows, fields: FIELDS, visibleFields, allCompanies, allDepts });
 }

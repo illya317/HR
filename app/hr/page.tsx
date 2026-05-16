@@ -641,7 +641,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
 
   useEffect(() => {
     loadRoster();
-  }, [selectedCompany, filterDept, rosterFilter]);
+  }, [selectedCompany, filterDept, rosterFilter, keyword]);
 
   useEffect(() => {
     if (editingCell && inputRef.current) {
@@ -773,7 +773,9 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
     if (keyword) params.set("keyword", keyword);
     params.set("status", rosterFilter);
     params.set("export", "1");
-    window.open(`/api/employees?${params.toString()}`, "_blank");
+    const url = `/api/employees?${params.toString()}`;
+    console.log("[downloadExcel] URL:", url, { selectedCompany, filterDept, keyword, rosterFilter });
+    window.open(url, "_blank");
   }
 
   const displayFields = fields.filter((f) => visibleFields.includes(f.key));

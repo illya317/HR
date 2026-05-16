@@ -21,13 +21,30 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") || "dept";
   const q = searchParams.get("q") || "";
 
+  const SHARED_COMPANIES = ["丰华生物", "丰华天力通", "丰华悦通", "加拿大"];
+  function resolveCompanyFilter(companyName: string): any {
+    if (SHARED_COMPANIES.includes(companyName)) {
+      return { in: SHARED_COMPANIES };
+    }
+    return companyName;
+  }
+
+  const caller = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { isWorkListAdmin: true, company: true },
+  });
+
   if (type === "dept") {
-    const depts = await prisma.employee.findMany({
-      where: q ? { dept1: { contains: q }, deleted: false } : { deleted: false },
-      select: { dept1: true },
-      distinct: ["dept1"],
+    const where: any = q ? { name: { contains: q } } : {};
+    if (!caller?.isWorkListAdmin && caller?.company) {
+      where.company = resolveCompanyFilter(caller.company);
+    }
+    const depts = await prisma.department.findMany({
+      where,
+      select: { name: true },
+      distinct: ["name"],
     });
-    const list = depts.map((d) => d.dept1).filter(Boolean) as string[];
+    const list = depts.map((d) => d.name).filter(Boolean) as string[];
     return NextResponse.json({ items: list });
   }
 
