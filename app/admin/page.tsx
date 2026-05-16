@@ -680,14 +680,13 @@ export default function AdminPage() {
                           />
                           {adminSearchResults.length > 0 && (
                             <div className="absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg">
-                              {adminSearchResults.map((emp) => (
+                              {adminSearchResults.filter((emp) => emp.userId).map((emp) => (
                                 <div
                                   key={emp.rowId}
                                   onClick={() => addAdmin(emp)}
                                   className="cursor-pointer px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
                                 >
                                   {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
-                                  {!emp.userId && <span className="text-gray-400"> (未关联用户)</span>}
                                 </div>
                               ))}
                             </div>
@@ -766,14 +765,13 @@ export default function AdminPage() {
                         />
                         {memberSearchResults.length > 0 && (
                           <div className="absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg">
-                            {memberSearchResults.map((emp) => (
+                            {memberSearchResults.filter((emp) => emp.userId).map((emp) => (
                               <div
                                 key={emp.rowId}
                                 onClick={() => addMember(emp)}
                                 className="cursor-pointer px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
                               >
                                 {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
-                                {!emp.userId && <span className="text-gray-400"> (未关联用户)</span>}
                               </div>
                             ))}
                           </div>
@@ -1073,20 +1071,13 @@ export default function AdminPage() {
                   />
                   {sysAdminSearchResults.length > 0 && (
                     <div className="absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg">
-                      {sysAdminSearchResults.map((emp) => (
+                      {sysAdminSearchResults.filter((emp) => emp.userId).map((emp) => (
                         <div
                           key={emp.rowId}
-                          onClick={() => {
-                            if (!emp.userId) {
-                              showToast("该员工尚未关联系统用户，无法添加");
-                              return;
-                            }
-                            addSysAdmin(emp.userId);
-                          }}
+                          onClick={() => addSysAdmin(emp.userId)}
                           className="cursor-pointer px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
                         >
                           {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
-                          {!emp.userId && <span className="text-gray-400"> (未关联用户)</span>}
                         </div>
                       ))}
                     </div>
@@ -1187,20 +1178,13 @@ export default function AdminPage() {
                               />
                               {deptAdminSearchResults.length > 0 && (
                                 <div className="absolute right-0 z-10 mt-1 w-56 rounded-md border bg-white shadow-lg">
-                                  {deptAdminSearchResults.map((emp) => (
+                                  {deptAdminSearchResults.filter((emp) => emp.userId).map((emp) => (
                                     <div
                                       key={emp.rowId}
-                                      onClick={() => {
-                                        if (!emp.userId) {
-                                          showToast("该员工尚未关联系统用户，无法添加");
-                                          return;
-                                        }
-                                        addDeptAdmin(dept.dept1, dept.company, emp.userId);
-                                      }}
+                                      onClick={() => addDeptAdmin(dept.dept1, dept.company, emp.userId)}
                                       className="cursor-pointer px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
                                     >
                                       {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
-                                      {!emp.userId && <span className="text-gray-400"> (未关联用户)</span>}
                                     </div>
                                   ))}
                                 </div>
