@@ -127,7 +127,7 @@ export async function GET(request: Request) {
       employeeId: emp.employeeId,
       name: emp.name,
       alias: emp.alias,
-      company: ep?.department?.company ?? emp.company ?? "",
+      company: emp.company ?? ep?.department?.company ?? "",
       center: ep?.center ?? emp.center ?? "",
       dept1: ep?.department?.name ?? emp.dept1 ?? "",
       dept2: emp.dept2 ?? "",
