@@ -837,11 +837,11 @@ export default function AdminPage() {
             )}
 
             {/* 筛选 */}
-            <div className="flex flex-wrap gap-3 rounded-lg bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
               <select
                 value={filterCompany}
                 onChange={(e) => { setFilterCompany(e.target.value); setFilterDept(""); }}
-                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:w-auto"
               >
                 <option value="">所有公司</option>
                 {[...new Set(empPerms.flatMap(e => e.roles.map(r => r.company)).filter(Boolean))].map(c => (
@@ -851,7 +851,7 @@ export default function AdminPage() {
               <select
                 value={filterDept}
                 onChange={(e) => setFilterDept(e.target.value)}
-                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:w-auto"
               >
                 <option value="">所有部门</option>
                 {[...new Set(empPerms.filter(e => !filterCompany || e.roles.some(r => r.company === filterCompany)).flatMap(e => e.roles.map(r => r.dept1)).filter(Boolean))].map(d => (
@@ -863,12 +863,12 @@ export default function AdminPage() {
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 placeholder="搜索姓名、工号或账号"
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
+                className="w-full flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:min-w-[200px]"
               />
               <select
                 value={selectedPerm}
                 onChange={(e) => setSelectedPerm(e.target.value)}
-                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:w-auto"
               >
                 {allPermissions.map(p => (
                   <option key={p.key} value={p.key}>{p.label}</option>
@@ -876,7 +876,7 @@ export default function AdminPage() {
               </select>
               <button
                 onClick={() => { setFilterCompany(""); setFilterDept(""); setSearchKeyword(""); setSelectedPerm("canLogin"); }}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 sm:w-auto"
               >
                 重置
               </button>
@@ -910,6 +910,7 @@ export default function AdminPage() {
                         }
                         return true;
                       })
+                      .sort((a, b) => (a.employeeId || "").localeCompare(b.employeeId || ""))
                       .map((e) => {
                         const permValue = (e as any)[selectedPerm] === true;
                         return (
@@ -922,7 +923,7 @@ export default function AdminPage() {
                               {e.roles.map((r, idx) => (
                                 <div key={idx} className={idx > 0 ? "mt-1" : ""}>
                                   <span className="text-gray-500">
-                                    {r.company} · {r.dept2 ? `${r.dept1}/${r.dept2}` : r.dept1} · {r.position}
+                                    {[r.company, r.dept2 ? `${r.dept1}/${r.dept2}` : r.dept1, r.position].filter(Boolean).join(" · ")}
                                   </span>
                                 </div>
                               ))}
