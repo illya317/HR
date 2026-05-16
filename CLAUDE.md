@@ -68,7 +68,9 @@ pm2 restart weekly
 
 1. **Schema 变更后必须 `db push`**
    - 修改 `schema.prisma` 后，**先本地 `npx prisma db push`，再构建**
-   - 部署时如果服务器已有数据库，用 `./deploy.sh --push-db`（只同步 schema 结构，不覆盖数据）
+   - 部署时如果服务器已有数据库，必须加 `--push-db`：`./deploy.sh --push-db`
+   - **普通 `./deploy.sh` 不会同步 schema**，只同步构建产物。漏掉 `--push-db` 会导致服务器数据库字段缺失，所有查询报 `P2022: column does not exist`
+   - `--push-db` 只同步 schema 结构，不覆盖服务器数据
 
 2. **rsync 永远不要包含 `.env`**
    - 本地 `.env` 路径是 macOS 绝对路径，会覆盖服务器配置
