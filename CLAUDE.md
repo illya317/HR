@@ -112,3 +112,28 @@ pm2 restart weekly
 - 复杂任务、多文件修改优先拆 Sub Agent 并行执行
 - 节省主对话上下文，避免过长导致截断
 - 主 Agent 负责任务拆分和结果验收
+
+---
+
+# 通用工具模块
+
+## 拼音搜索 (`lib/search.ts`)
+
+所有涉及员工姓名搜索的地方统一使用 `lib/search.ts`，**不要重复写拼音逻辑**。
+
+```typescript
+import { getInitials, matchEmployee } from "@/lib/search";
+
+// 获取拼音首字母
+const initials = getInitials("张三"); // "zs"
+
+// 统一匹配：姓名/别名/ID 包含 或 拼音首字母包含
+const matched = employees.filter((e) => matchEmployee(e, keyword));
+```
+
+- `getInitials(name)` — 基于 `pinyin-pro`，返回全小写首字母串
+- `matchEmployee(employee, keyword)` — 匹配姓名、别名、employeeId、拼音首字母
+
+**已接入的位置**：
+- `/api/employees` — 花名册 keyword 搜索
+- `/api/employees/search` — 人员搜索接口

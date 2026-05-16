@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// 丰华生物(001)/天力通(002)/悦通(003) 共享一套编码
-const SHARED_GROUP = ["001", "002", "003"];
+// 丰华生物(01)/天力通(02)/悦通(03) 共享一套编码
+const SHARED_GROUP = ["01", "02", "03"];
 
 function normalizeCompanyCode(companyCode: string): string {
-  if (SHARED_GROUP.includes(companyCode)) return "001";
+  if (SHARED_GROUP.includes(companyCode)) return "01";
   return companyCode;
 }
 
@@ -47,11 +47,11 @@ export async function PUT(request: Request) {
   const normalizedCC = companyCode ? normalizeCompanyCode(companyCode) : undefined;
   let finalCode = code;
   let finalCompanyCode = normalizedCC;
-  if (code.length === 3 && normalizedCC) {
+  if (code.length === 2 && normalizedCC) {
     finalCode = normalizedCC + code;
     finalCompanyCode = normalizedCC;
-  } else if (code.length === 6 && !normalizedCC) {
-    finalCompanyCode = code.substring(0, 3);
+  } else if (code.length === 5 && !normalizedCC) {
+    finalCompanyCode = code.substring(0, 2);
   }
 
   await prisma.positionCode.upsert({

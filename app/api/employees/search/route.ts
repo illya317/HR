@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { pinyin } from "pinyin-pro";
-
-function getInitials(name: string): string {
-  const result = pinyin(name, { type: "all" }) as Array<{ first: string }>;
-  return result.map((r) => r.first).join("").toLowerCase();
-}
+import { getInitials } from "@/lib/search";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);

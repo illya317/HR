@@ -9,48 +9,47 @@ datasource db {
 }
 
 model User {
-  id              Int             @id @default(autoincrement())
-  wxUserId        String          @unique
-  username        String?         @unique
-  password        String?
-  name            String
-  company         String?
-  departmentId    Int
-  departmentName  String?
-  avatar          String?
-  routineItems    String?         // JSON: [{plan, nextGoal}, ...] 日常工作模板
-  isWorkListAdmin   Boolean         @default(false)
-  canSelectAnyWeek  Boolean         @default(false)
-  canAccessHR       Boolean         @default(false)
-  canAccessWorks    Boolean         @default(true)
-  employeeId        String?
-  canLogin          Boolean         @default(true)
-  apiKey            String?         @unique
-  createdAt         DateTime        @default(now())
-  reports         WeeklyReport[]
-  fieldPermissions FieldPermission[]
+  id                 Int               @id @default(autoincrement())
+  wxUserId           String            @unique
+  username           String?           @unique
+  password           String?
+  name               String
+  company            String?
+  departmentId       Int
+  departmentName     String?
+  avatar             String?
+  routineItems       String?
+  isWorkListAdmin    Boolean           @default(false)
+  canSelectAnyWeek   Boolean           @default(false)
+  canAccessHR        Boolean           @default(false)
+  canAccessWorks     Boolean           @default(true)
+  employeeId         String?
+  canLogin           Boolean           @default(true)
+  apiKey             String?           @unique
+  createdAt          DateTime          @default(now())
   managedDepartments DepartmentAdmin[]
-  positions         UserPosition[]
+  fieldPermissions   FieldPermission[]
+  positions          UserPosition[]
+  reports            WeeklyReport[]
 }
 
 model ReportGroup {
-  id          Int      @id @default(autoincrement())
+  id          Int                 @id @default(autoincrement())
   name        String
   description String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-
+  sortOrder   Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  admins      ReportGroupAdmin[]
   members     ReportGroupMember[]
   viewers     ReportGroupViewer[]
-  admins      ReportGroupAdmin[]
   reports     WeeklyReport[]
 }
 
 model ReportGroupAdmin {
   id            Int         @id @default(autoincrement())
   reportGroupId Int
-  reportGroup   ReportGroup @relation(fields: [reportGroupId], references: [id], onDelete: Cascade)
   userId        Int
+  reportGroup   ReportGroup @relation(fields: [reportGroupId], references: [id], onDelete: Cascade)
 
   @@unique([reportGroupId, userId])
 }
@@ -58,8 +57,8 @@ model ReportGroupAdmin {
 model ReportGroupMember {
   id            Int         @id @default(autoincrement())
   reportGroupId Int
-  reportGroup   ReportGroup @relation(fields: [reportGroupId], references: [id], onDelete: Cascade)
   userId        Int
+  reportGroup   ReportGroup @relation(fields: [reportGroupId], references: [id], onDelete: Cascade)
 
   @@unique([reportGroupId, userId])
 }
@@ -67,70 +66,70 @@ model ReportGroupMember {
 model ReportGroupViewer {
   id            Int         @id @default(autoincrement())
   reportGroupId Int
-  reportGroup   ReportGroup @relation(fields: [reportGroupId], references: [id], onDelete: Cascade)
   userId        Int
+  reportGroup   ReportGroup @relation(fields: [reportGroupId], references: [id], onDelete: Cascade)
 
   @@unique([reportGroupId, userId])
 }
 
 model WeeklyReport {
-  id            Int       @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   userId        Int?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   reportGroupId Int?
-  reportGroup   ReportGroup? @relation(fields: [reportGroupId], references: [id])
   weekNumber    Int
   year          Int
-  periodType    String    @default("weekly")
-  scopeType     String    @default("department")
+  periodType    String          @default("weekly")
+  scopeType     String          @default("department")
   scopeId       Int
   taskName      String
   notes         String?
-  version       Int       @default(1)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  items         ReportItem[]
+  version       Int             @default(1)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
   history       ReportHistory[]
+  items         ReportItem[]
+  reportGroup   ReportGroup?    @relation(fields: [reportGroupId], references: [id])
+  user          User?           @relation(fields: [userId], references: [id])
 
   @@unique([scopeType, scopeId, periodType, year, weekNumber])
 }
 
 model ReportItem {
-  id          Int       @id @default(autoincrement())
-  reportId    Int
-  report      WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  workItemId  Int?      // 关联工作清单ID，用于跨周追踪
-  category    String    // "routine" | "non-routine"
-  plan        String
-  completion  String?
-  nextGoal    String?
-  sortOrder   Int
+  id         Int          @id @default(autoincrement())
+  reportId   Int
+  category   String
+  plan       String
+  completion String?
+  nextGoal   String?
+  sortOrder  Int
+  workItemId Int?
+  report     WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 }
 
 model ReportHistory {
-  id        Int      @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   reportId  Int
-  report    WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
   version   Int
   taskName  String
   notes     String?
-  itemsJson String   // JSON: [{category, plan, completion, nextGoal, sortOrder}, ...]
-  createdAt DateTime @default(now())
+  itemsJson String
+  createdAt DateTime     @default(now())
+  report    WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@unique([reportId, version])
 }
 
 model WorkItem {
-  id           Int      @id @default(autoincrement())
+  id           Int               @id @default(autoincrement())
   departmentId Int
-  category     String   // "routine" | "non-routine"
+  category     String
   content      String
-  importance   Int      @default(3)
-  urgency      Int      @default(3)
-  isArchived   Boolean  @default(false)
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  importance   Int               @default(3)
+  urgency      Int               @default(3)
+  isArchived   Boolean           @default(false)
+  sortOrder    Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   participants WorkParticipant[]
 
   @@index([departmentId, category])
@@ -139,10 +138,10 @@ model WorkItem {
 model WorkParticipant {
   id         Int      @id @default(autoincrement())
   workItemId Int
-  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
   name       String
   wxUserId   String?
   createdAt  DateTime @default(now())
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
 
   @@index([workItemId])
 }
@@ -173,11 +172,11 @@ model Employee {
   attendance2   String?
   joinDate      String?
   nature        String?
-  status        String?  @default("在职")
-  leaveDate     String?
-  alias         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  leaveDate     String?
+  status        String?  @default("在职")
+  alias         String?
 }
 
 model FieldPermission {
@@ -202,33 +201,31 @@ model DepartmentAdmin {
 }
 
 model CompanyCode {
-  code    String  @id
-  name    String  @unique
+  code String @id
+  name String @unique
 }
 
 model DepartmentCode {
-  code        String  @id  // 格式: companyCode+deptCode 如 "001001" / "004001"
+  code        String  @id  // 格式: companyCode+deptCode 如 "01001" / "04001"
   name        String
   companyCode String?
 }
 
 model PositionCode {
-  code        String  @id  // 格式: companyCode+positionCode 如 "001001" / "004001"
+  code        String  @id  // 格式: companyCode+positionCode 如 "01001" / "04001"
   name        String
   companyCode String?
 }
 
 model UserPosition {
-  id           String  @id
-  userId       Int
-  companyCode  String
-  deptCode     String
-  positionCode String
-  isPrimary    Boolean @default(false)
-
+  id               String  @id
+  userId           Int
+  companyCode      String
+  deptCode         String
+  positionCode     String
+  isPrimary        Boolean @default(false)
   canSelectAnyWeek Boolean @default(false)
   canAccessWorks   Boolean @default(true)
   canAccessHR      Boolean @default(false)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

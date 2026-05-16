@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
+import { matchEmployee } from "@/lib/search";
 
 // 字段列表（顺序）
 const FIELDS = [
@@ -63,8 +64,8 @@ export async function GET(request: Request) {
   const keyword = searchParams.get("keyword") || "";
   const exportExcel = searchParams.get("export") === "1";
 
-  // 丰华生物/天力通/悦通 共享数据
-  const SHARED_COMPANIES = ["丰华生物", "丰华天力通", "丰华悦通"];
+  // 丰华生物/天力通/悦通/加拿大 共享数据
+  const SHARED_COMPANIES = ["丰华生物", "丰华天力通", "丰华悦通", "加拿大"];
   function resolveCompanyFilter(companyName: string): any {
     if (SHARED_COMPANIES.includes(companyName)) {
       return { in: SHARED_COMPANIES };
@@ -80,24 +81,24 @@ export async function GET(request: Request) {
     where.company = resolveCompanyFilter(company);
   }
   if (dept) where.dept1 = { contains: dept };
-  if (keyword) {
-    where.OR = [
-      { name: { contains: keyword } },
-      { alias: { contains: keyword } },
-      { employeeId: { contains: keyword } },
-    ];
-  }
 
   const employees = await prisma.employee.findMany({
     where,
     orderBy: [{ employeeId: "asc" }],
   });
 
+  // 关键词支持拼音首字母搜索
+  let filteredEmployees = employees;
+  if (keyword) {
+    const query = keyword.toLowerCase();
+    filteredEmployees = employees.filter((e) => matchEmployee(e, query));
+  }
+
   const visibleFields = await getVisibleFields(payload.userId, !!user?.isWorkListAdmin);
 
   if (exportExcel) {
     // 按权限过滤字段后导出 Excel
-    const exportData = employees.map((emp) => {
+    const exportData = filteredEmployees.map((emp) => {
       const row: Record<string, any> = {};
       for (const f of FIELDS) {
         if (visibleFields.includes(f.key)) {
@@ -128,5 +129,5 @@ export async function GET(request: Request) {
   const allCompanies = [...new Set((await prisma.employee.findMany({ where: companyWhere, select: { company: true } })).map(e => e.company).filter(Boolean))];
   const allDepts = [...new Set((await prisma.employee.findMany({ where: companyWhere, select: { dept1: true } })).map(e => e.dept1).filter(Boolean))];
 
-  return NextResponse.json({ employees, fields: FIELDS, visibleFields, allCompanies, allDepts });
+  return NextResponse.json({ employees: filteredEmployees, fields: FIELDS, visibleFields, allCompanies, allDepts });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
@@ -14,21 +14,22 @@ interface User {
 }
 
 const COMPANY_MAP: Record<string, string> = {
-  "丰华生物": "001",
-  "丰华天力通": "002",
-  "丰华悦通": "003",
-  "丰华制药": "004",
-  "加拿大": "005",
+  "丰华生物": "01",
+  "丰华天力通": "02",
+  "丰华悦通": "03",
+  "丰华制药": "04",
+  "加拿大": "05",
 };
 
 const HR_COMPANIES = ["丰华生物", "丰华制药"];
 
-// 001/002/003 共享一套编码
-const SHARED_GROUP = ["001", "002", "003"];
+// 01/02/03 共享存储，05 加拿大独立但查询时同属丰华集团
+const SHARED_GROUP = ["01", "02", "03"];
+const FENGHUA_ALL = ["01", "02", "03", "05"];
 
 function getCompanyCodes(companyCode: string): string {
-  if (SHARED_GROUP.includes(companyCode)) {
-    return SHARED_GROUP.join(",");
+  if (FENGHUA_ALL.includes(companyCode)) {
+    return FENGHUA_ALL.join(",");
   }
   return companyCode;
 }
@@ -87,7 +88,7 @@ interface CodeItem {
 function CodesTab({ user, selectedCompany }: { user: User; selectedCompany: string }) {
   const companyCode = COMPANY_MAP[selectedCompany] || "";
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="flex flex-wrap gap-6">
       <CodeTab user={user} type="department" apiPath="/api/admin/department-codes" title="部门编码" companyCode={companyCode} selectedCompany={selectedCompany} />
       <CodeTab user={user} type="position" apiPath="/api/admin/position-codes" title="岗位编码" companyCode={companyCode} selectedCompany={selectedCompany} />
     </div>
@@ -153,9 +154,9 @@ function CodeTab({
     const map: Record<string, number> = {};
     for (const c of codes) {
       if (type === "department") {
-        map[c.code] = employees.filter((e) => e.dept1 === c.name).length;
+        map[c.code] = employees.filter((e) => e.dept1 === c.name && e.status !== "离职").length;
       } else {
-        map[c.code] = employees.filter((e) => e.position && e.position.includes(c.name)).length;
+        map[c.code] = employees.filter((e) => e.position && e.position.includes(c.name) && e.status !== "离职").length;
       }
     }
     setStats(map);
@@ -186,14 +187,14 @@ function CodeTab({
 
   // 本地计算完整编码（用于状态更新）
   function buildFullCode(shortCode: string): string {
-    const normalized = companyCode ? (SHARED_GROUP.includes(companyCode) ? "001" : companyCode) : "";
+    const normalized = companyCode ? (SHARED_GROUP.includes(companyCode) ? "01" : companyCode) : "";
     return normalized ? normalized + shortCode : shortCode;
   }
 
   function startEditRow(item: CodeItem) {
     if (!user.isWorkListAdmin) return;
     setEditRow(item.code);
-    setEditCodeValue(item.code.length === 6 ? item.code.slice(3) : item.code);
+    setEditCodeValue(item.code.length === 5 ? item.code.slice(2) : item.code);
     setEditNameValue(item.name);
   }
 
@@ -307,22 +308,7 @@ function CodeTab({
 
   return (
     <div className="space-y-4">
-      {/* 标题栏 + 编辑开关 */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
-        {user.isWorkListAdmin && (
-          <button
-            onClick={() => { setEditMode((v) => !v); setEditRow(null); }}
-            className={`rounded-md px-3 py-1 text-xs ${
-              editMode
-                ? "bg-amber-100 text-amber-700 border border-amber-300"
-                : "border border-gray-300 text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            {editMode ? "退出编辑" : "编辑"}
-          </button>
-        )}
-      </div>
+      <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
 
       {saveTip && (
         <div
@@ -335,6 +321,20 @@ function CodeTab({
       )}
 
       <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+        {user.isWorkListAdmin && (
+          <div className="flex justify-end border-b bg-gray-50 px-2 py-1.5">
+            <button
+              onClick={() => { setEditMode((v) => !v); setEditRow(null); }}
+              className={`rounded-md px-3 py-1 text-xs ${
+                editMode
+                  ? "bg-amber-100 text-amber-700 border border-amber-300"
+                  : "border border-gray-300 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {editMode ? "退出编辑" : "编辑"}
+            </button>
+          </div>
+        )}
         {loading ? (
           <p className="p-8 text-center text-gray-500">加载中...</p>
         ) : (
@@ -343,39 +343,39 @@ function CodeTab({
               <tr>
                 <th
                   onClick={() => toggleSort("code")}
-                  className="cursor-pointer whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
+                  className="cursor-pointer whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
                 >
                   <span className="flex items-center gap-1">
                     编号
                     {sortField === "code" && (
-                      <span className="text-blue-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                      <span className="text-emerald-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
                     )}
                   </span>
                 </th>
                 <th
                   onClick={() => toggleSort("name")}
-                  className="cursor-pointer whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
+                  className="cursor-pointer whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
                 >
                   <span className="flex items-center gap-1">
                     名称
                     {sortField === "name" && (
-                      <span className="text-blue-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                      <span className="text-emerald-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
                     )}
                   </span>
                 </th>
                 <th
                   onClick={() => toggleSort("count")}
-                  className="cursor-pointer whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
+                  className="cursor-pointer whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
                 >
                   <span className="flex items-center gap-1">
                     人数
                     {sortField === "count" && (
-                      <span className="text-blue-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                      <span className="text-emerald-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
                     )}
                   </span>
                 </th>
                 {editMode && user.isWorkListAdmin && (
-                  <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600">操作</th>
+                  <th className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600">操作</th>
                 )}
               </tr>
             </thead>
@@ -385,16 +385,16 @@ function CodeTab({
                 const count = stats[item.code] || 0;
                 return (
                   <tr key={item.code} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-3 py-2 text-gray-700">
+                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
                       {isEditing ? (
                         <input
                           value={editCodeValue}
                           onChange={(e) => setEditCodeValue(e.target.value)}
-                          className="w-16 rounded border border-blue-400 px-1 py-0.5 text-xs focus:outline-none"
+                          className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
                         />
                       ) : editMode ? (
                         <span
-                          className="cursor-pointer hover:text-blue-600"
+                          className="cursor-pointer hover:text-emerald-600"
                           onClick={() => startEditRow(item)}
                         >
                           {item.code}
@@ -403,42 +403,30 @@ function CodeTab({
                         item.code
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-gray-700">
+                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
                       {isEditing ? (
                         <input
                           value={editNameValue}
                           onChange={(e) => setEditNameValue(e.target.value)}
-                          className="w-32 rounded border border-blue-400 px-1 py-0.5 text-xs focus:outline-none"
+                          className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
                         />
                       ) : editMode ? (
-                        <div className="flex items-center gap-1">
-                          <span
-                            className="cursor-pointer hover:text-blue-600"
-                            onClick={() => startEditRow(item)}
-                          >
-                            {item.name || "-"}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setConfirmModal({ open: true, code: item.code });
-                            }}
-                            className="text-red-500 hover:text-red-700"
-                            title="删除"
-                          >
-                            ×
-                          </button>
-                        </div>
+                        <span
+                          className="cursor-pointer hover:text-emerald-600"
+                          onClick={() => startEditRow(item)}
+                        >
+                          {item.name || "-"}
+                        </span>
                       ) : (
                         <span
-                          className="cursor-pointer hover:text-blue-600"
+                          className="cursor-pointer hover:text-emerald-600"
                           onClick={() => setDetailModal({ open: true, code: item.code, name: item.name })}
                         >
                           {item.name || "-"}
                         </span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-gray-700">
+                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
                       <span
                         className="cursor-pointer rounded-full bg-gray-100 px-2 py-0.5 text-xs hover:bg-gray-200"
                         onClick={() => setDetailModal({ open: true, code: item.code, name: item.name })}
@@ -447,7 +435,7 @@ function CodeTab({
                       </span>
                     </td>
                     {editMode && user.isWorkListAdmin && (
-                      <td className="whitespace-nowrap px-3 py-2 text-gray-700">
+                      <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
                         {isEditing ? (
                           <div className="flex gap-1">
                             <button
@@ -463,7 +451,15 @@ function CodeTab({
                               取消
                             </button>
                           </div>
-                        ) : null}
+                        ) : (
+                          <button
+                            onClick={() => setConfirmModal({ open: true, code: item.code })}
+                            className="text-red-500 hover:text-red-700"
+                            title="删除"
+                          >
+                            ×
+                          </button>
+                        )}
                       </td>
                     )}
                   </tr>
@@ -471,31 +467,31 @@ function CodeTab({
               })}
               {editMode && user.isWorkListAdmin && (
                 <tr className="border-b last:border-0 bg-gray-50">
-                  <td className="whitespace-nowrap px-3 py-2">
+                  <td className="whitespace-nowrap px-2 py-1.5">
                     <input
                       type="text"
                       value={newCode}
                       onChange={(e) => setNewCode(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                      placeholder="编号(如001)"
-                      className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-blue-400 focus:outline-none"
+                      placeholder="编号(如01)"
+                      className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
                     />
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2">
+                  <td className="whitespace-nowrap px-2 py-1.5">
                     <input
                       type="text"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
                       placeholder="名称"
-                      className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-blue-400 focus:outline-none"
+                      className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
                     />
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-gray-400">-</td>
-                  <td className="whitespace-nowrap px-3 py-2">
+                  <td className="whitespace-nowrap px-2 py-1.5 text-gray-400">-</td>
+                  <td className="whitespace-nowrap px-2 py-1.5">
                     <button
                       onClick={handleAdd}
-                      className="rounded-md bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
+                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-700"
                     >
                       添加
                     </button>
@@ -601,6 +597,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
   const [showDeptSuggestions, setShowDeptSuggestions] = useState(false);
   const deptBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [confirmResignModal, setConfirmResignModal] = useState<{ open: boolean; emp: Employee | null }>({ open: false, emp: null });
 
   async function loadRoster() {
     setLoading(true);
@@ -680,6 +677,31 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
     if (e.key === "Escape") setEditingCell(null);
   }
 
+  async function markResigned(emp: Employee) {
+    const today = new Date().toISOString().slice(0, 10);
+    const res = await fetch(`/api/employees/${emp.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field: "status", value: "离职" }),
+    });
+    if (res.ok) {
+      await fetch(`/api/employees/${emp.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ field: "leaveDate", value: today }),
+      });
+      setEmployees((prev) =>
+        prev.map((e) => (e.id === emp.id ? { ...e, status: "离职", leaveDate: today } : e))
+      );
+      setSaveTip("已标记离职");
+      setTimeout(() => setSaveTip(""), 1500);
+    } else {
+      setSaveTip("操作失败");
+      setTimeout(() => setSaveTip(""), 2000);
+    }
+    setConfirmResignModal({ open: false, emp: null });
+  }
+
   function downloadExcel() {
     const params = new URLSearchParams();
     if (selectedCompany) params.set("company", selectedCompany);
@@ -732,7 +754,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
               deptBlurTimer.current = setTimeout(() => setShowDeptSuggestions(false), 200);
             }}
             placeholder="输入部门筛选"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
           />
           {showDeptSuggestions && deptSuggestions.length > 0 && (
             <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 text-sm shadow-lg">
@@ -746,7 +768,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
                     setDeptQuery(s);
                     setShowDeptSuggestions(false);
                   }}
-                  className="cursor-pointer px-3 py-1.5 hover:bg-blue-50"
+                  className="cursor-pointer px-3 py-1.5 hover:bg-emerald-50"
                 >
                   {s}
                 </li>
@@ -760,11 +782,11 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") loadRoster(); }}
           placeholder="搜索姓名或ID"
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
         />
         <button
           onClick={loadRoster}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700"
         >
           搜索
         </button>
@@ -776,7 +798,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
         </button>
         <button
           onClick={downloadExcel}
-          className="rounded-md border border-blue-300 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50"
+          className="rounded-md border border-emerald-300 px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50"
         >
           下载Excel
         </button>
@@ -808,18 +830,22 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
             <thead className="border-b bg-gray-50">
               <tr>
                 {displayFields.map((f) => (
-                  <th
-                    key={f.key}
-                    onClick={() => toggleSort(f.key)}
-                    className="cursor-pointer whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
-                  >
-                    <span className="flex items-center gap-1">
-                      {f.label}
-                      {sortField === f.key && (
-                        <span className="text-blue-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                      )}
-                    </span>
-                  </th>
+                  <Fragment key={f.key}>
+                    <th
+                      onClick={() => toggleSort(f.key)}
+                      className="cursor-pointer whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
+                    >
+                      <span className="flex items-center gap-1">
+                        {f.label}
+                        {sortField === f.key && (
+                          <span className="text-emerald-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                        )}
+                      </span>
+                    </th>
+                    {f.key === "employeeId" && editMode && user?.isWorkListAdmin && (
+                      <th className="w-8 whitespace-nowrap px-1 py-2 text-center font-medium text-gray-600"></th>
+                    )}
+                  </Fragment>
                 ))}
               </tr>
             </thead>
@@ -830,26 +856,48 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
                     const isEditing = editingCell?.id === emp.id && editingCell?.field === f.key;
                     const val = (emp as any)[f.key] || "";
                     return (
-                      <td
-                        key={f.key}
-                        onClick={() => startEdit(emp, f.key)}
-                        className={`whitespace-nowrap px-3 py-2 text-gray-700 ${
-                          user.isWorkListAdmin && editMode ? "cursor-pointer hover:bg-blue-50" : ""
-                        }`}
-                      >
-                        {isEditing ? (
-                          <input
-                            ref={inputRef}
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={saveEdit}
-                            onKeyDown={handleKeyDown}
-                            className="w-full rounded border border-blue-400 px-1 py-0.5 text-xs focus:outline-none"
-                          />
-                        ) : (
-                          val || "-"
+                      <Fragment key={f.key}>
+                        <td
+                          onClick={() => startEdit(emp, f.key)}
+                          className={`whitespace-nowrap px-3 py-2 text-gray-700 ${
+                            user.isWorkListAdmin && editMode ? "cursor-pointer hover:bg-emerald-50" : ""
+                          }`}
+                        >
+                          {isEditing ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                ref={inputRef}
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={() => setEditingCell(null)}
+                                onKeyDown={handleKeyDown}
+                                className="w-full rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
+                              />
+                              <button
+                                onMouseDown={(e) => { e.preventDefault(); saveEdit(); }}
+                                className="shrink-0 rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-emerald-600"
+                              >
+                                保存
+                              </button>
+                            </div>
+                          ) : (
+                            val || "-"
+                          )}
+                        </td>
+                        {f.key === "employeeId" && editMode && user?.isWorkListAdmin && (
+                          <td className="w-8 whitespace-nowrap px-1 py-2 text-center">
+                            {emp.status !== "离职" && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setConfirmResignModal({ open: true, emp }); }}
+                                className="text-red-400 hover:text-red-600"
+                                title="标记离职"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </td>
                         )}
-                      </td>
+                      </Fragment>
                     );
                   })}
                 </tr>
@@ -858,6 +906,32 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
           </table>
         )}
       </div>
+
+      {/* 标记离职确认框 */}
+      {confirmResignModal.open && confirmResignModal.emp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-lg font-semibold text-gray-800">确认标记离职</h3>
+            <p className="mb-6 text-sm text-gray-600">
+              确定将 <strong>{confirmResignModal.emp.name}</strong> 标记为离职？
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmResignModal({ open: false, emp: null })}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => markResigned(confirmResignModal.emp!)}
+                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -930,7 +1004,7 @@ export default function HRPage() {
             <select
               value={selectedCompany}
               onChange={(e) => setSelectedCompany(e.target.value)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-blue-400 focus:outline-none"
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
             >
               {HR_COMPANIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -950,7 +1024,7 @@ export default function HRPage() {
               onClick={() => setActiveTab(t.key)}
               className={`whitespace-nowrap rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === t.key
-                  ? "border-b-2 border-blue-500 text-blue-600"
+                  ? "border-b-2 border-emerald-500 text-emerald-600"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
