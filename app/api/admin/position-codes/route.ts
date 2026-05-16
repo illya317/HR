@@ -38,13 +38,14 @@ export async function GET(request: Request) {
       ? [companyCode]
       : [];
 
-  const where: any = { code: { matches: /^\d{5}$/ } };
+  const where: any = {};
   if (codes.length > 0) {
     where.OR = codes.map((cc: string) => ({ code: { startsWith: cc } }));
   }
 
   const result = await prisma.position.findMany({ where, orderBy: { code: "asc" } });
-  return NextResponse.json({ codes: result.map((r) => ({ code: r.code, name: r.name })) });
+  const filtered = result.filter((r) => /^\d{5}$/.test(r.code));
+  return NextResponse.json({ codes: filtered.map((r) => ({ code: r.code, name: r.name })) });
 }
 
 export async function PUT(request: Request) {
