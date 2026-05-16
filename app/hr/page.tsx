@@ -612,9 +612,6 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
   const [loading, setLoading] = useState(true);
   const [filterDept, setFilterDept] = useState("");
   const [keyword, setKeyword] = useState("");
-  const [editingCell, setEditingCell] = useState<{ id: number; field: string } | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
   const [sortField, setSortField] = useState<string>("employeeId");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [saveTip, setSaveTip] = useState("");
@@ -622,8 +619,6 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
   const [deptSuggestions, setDeptSuggestions] = useState<string[]>([]);
   const [showDeptSuggestions, setShowDeptSuggestions] = useState(false);
   const deptBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [editMode, setEditMode] = useState(false);
-  const [confirmResignModal, setConfirmResignModal] = useState<{ open: boolean; emp: Employee | null; isLastPosition: boolean }>({ open: false, emp: null, isLastPosition: false });
   const [rosterFilter, setRosterFilter] = useState<"在职" | "离职">("在职");
 
   async function loadRoster(deptOverride?: string) {
@@ -650,13 +645,6 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
   }, [selectedCompany, filterDept, rosterFilter, keyword]);
 
   useEffect(() => {
-    if (editingCell && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [editingCell]);
-
-  useEffect(() => {
     if (filterDept && !deptQuery) {
       setDeptQuery(filterDept);
     }
@@ -672,104 +660,6 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
       const data = await res.json();
       setDeptSuggestions(data.items || []);
     }
-  }
-
-  function startEdit(emp: Employee, field: string) {
-    if (!user.isWorkListAdmin || !editMode) return;
-    setEditingCell({ id: emp.id, field });
-    setEditValue((emp as any)[field] || "");
-  }
-
-  async function saveEdit() {
-    if (!editingCell) return;
-    const { id, field } = editingCell;
-    const emp = employees.find((e) => e.id === id);
-    if (!emp) return;
-
-    const sameEmpRows = employees.filter((e) => e.employeeId === emp.employeeId);
-    const isMergeable = sameEmpRows.length > 1 && sameEmpRows.every((e) => (e as any)[field] === (emp as any)[field]);
-
-    const res = await fetch(`/api/employees/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ field, value: editValue || null }),
-    });
-    if (res.ok) {
-      if (isMergeable) {
-        setEmployees((prev) =>
-          prev.map((e) => (e.employeeId === emp.employeeId ? { ...e, [field]: editValue || null } : e))
-        );
-      } else {
-        setEmployees((prev) =>
-          prev.map((e) => (e.id === id ? { ...e, [field]: editValue || null } : e))
-        );
-      }
-      setSaveTip("保存成功");
-      setTimeout(() => setSaveTip(""), 1500);
-    } else {
-      setSaveTip("保存失败");
-      setTimeout(() => setSaveTip(""), 2000);
-    }
-    setEditingCell(null);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") saveEdit();
-    if (e.key === "Escape") setEditingCell(null);
-  }
-
-  async function markResigned(emp: Employee, isLastPosition: boolean) {
-    const today = new Date().toISOString().slice(0, 10);
-    const operator = user.name;
-
-    // 公共：软删除
-    const delRes = await fetch(`/api/employees/${emp.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ field: "deleted", value: true }),
-    });
-    if (delRes.ok) {
-      await fetch(`/api/employees/${emp.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field: "deletedTime", value: today }),
-      });
-      await fetch(`/api/employees/${emp.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field: "deletedBy", value: operator }),
-      });
-    }
-
-    if (isLastPosition) {
-      // 最后一个岗位：额外标记离职
-      const res = await fetch(`/api/employees/${emp.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field: "status", value: "离职" }),
-      });
-      if (res.ok) {
-        await fetch(`/api/employees/${emp.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ field: "leaveDate", value: today }),
-        });
-        setEmployees((prev) =>
-          prev.map((e) => (e.id === emp.id ? { ...e, status: "离职", leaveDate: today, deleted: true, deletedTime: today, deletedBy: operator } : e))
-        );
-        setSaveTip("已标记离职");
-        setTimeout(() => setSaveTip(""), 1500);
-      } else {
-        setSaveTip("操作失败");
-        setTimeout(() => setSaveTip(""), 2000);
-      }
-    } else {
-      // 还有其他岗位：仅软删除，前端移除该行
-      setEmployees((prev) => prev.filter((e) => !(e.employeeId === emp.employeeId && e.dept1 === emp.dept1 && e.position === emp.position)));
-      setSaveTip("已移除该岗位");
-      setTimeout(() => setSaveTip(""), 1500);
-    }
-    setConfirmResignModal({ open: false, emp: null, isLastPosition: false });
   }
 
   function downloadExcel() {
@@ -915,14 +805,6 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
         >
           下载Excel
         </button>
-        {user.isWorkListAdmin && (
-          <button
-            onClick={() => { setEditMode((v) => !v); setEditingCell(null); }}
-            className={`rounded-md px-3 py-2 text-sm ${editMode ? "bg-amber-100 text-amber-700 border border-amber-300" : "border border-gray-300 text-gray-600 hover:bg-gray-50"}`}
-          >
-            {editMode ? "退出修改" : "修改"}
-          </button>
-        )}
       </div>
 
       {/* 保存提示 */}
@@ -943,22 +825,18 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
             <thead className="border-b bg-gray-50">
               <tr>
                 {displayFields.map((f) => (
-                  <Fragment key={f.key}>
-                    <th
-                      onClick={() => toggleSort(f.key)}
-                      className="cursor-pointer whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
-                    >
-                      <span className="flex items-center gap-1">
-                        {f.label}
-                        {sortField === f.key && (
-                          <span className="text-emerald-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                        )}
-                      </span>
-                    </th>
-                    {f.key === "employeeId" && editMode && user?.isWorkListAdmin && (
-                      <th className="w-8 whitespace-nowrap px-1 py-2 text-center font-medium text-gray-600"></th>
-                    )}
-                  </Fragment>
+                  <th
+                    key={f.key}
+                    onClick={() => toggleSort(f.key)}
+                    className="cursor-pointer whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600 hover:bg-gray-100 select-none"
+                  >
+                    <span className="flex items-center gap-1">
+                      {f.label}
+                      {sortField === f.key && (
+                        <span className="text-emerald-500">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                      )}
+                    </span>
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -969,79 +847,17 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
                   <tr key={`${emp.employeeId}-${rowIndex}`} className={`border-b last:border-0 hover:bg-gray-50 ${emp.status === "离职" ? "bg-gray-100" : ""}`}>
                     {displayFields.map((f) => {
                       const merge = empMerge[f.key];
-                      if (merge?.skip) {
-                        // employeeId 合并时，× 按钮仍每行保留
-                        if (f.key === "employeeId" && editMode && user?.isWorkListAdmin) {
-                          return (
-                            <td key={`${f.key}-action`} className="w-8 whitespace-nowrap px-1 py-2 text-center">
-                              {emp.status !== "离职" && !emp.deleted && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const otherActive = employees.filter(
-                                      (e2) => e2.employeeId === emp.employeeId && (e2.dept1 !== emp.dept1 || e2.position !== emp.position) && e2.status !== "离职" && !e2.deleted
-                                    );
-                                    const isLastPosition = otherActive.length === 0;
-                                    setConfirmResignModal({ open: true, emp, isLastPosition });
-                                  }}
-                                  className="text-red-400 hover:text-red-600"
-                                  title="标记离职"
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </td>
-                          );
-                        }
-                        return null;
-                      }
-                      const isEditing = editingCell?.id === emp.id && editingCell?.field === f.key;
+                      if (merge?.skip) return null;
                       const val = (emp as any)[f.key] || "";
                       const rowSpan = merge?.rowspan && merge.rowspan > 1 ? merge.rowspan : undefined;
                       return (
-                        <Fragment key={f.key}>
-                          <td
-                            rowSpan={rowSpan}
-                            onClick={() => startEdit(emp, f.key)}
-                            className={`whitespace-nowrap px-3 py-2 text-gray-700 ${
-                              user.isWorkListAdmin && editMode ? "cursor-pointer hover:bg-emerald-50" : ""
-                            }`}
-                          >
-                            {isEditing ? (
-                              <input
-                                ref={inputRef}
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                onBlur={() => saveEdit()}
-                                onKeyDown={handleKeyDown}
-                                className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
-                                style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
-                              />
-                            ) : (
-                              val || "-"
-                            )}
-                          </td>
-                          {f.key === "employeeId" && editMode && user?.isWorkListAdmin && (
-                            <td className="w-8 whitespace-nowrap px-1 py-2 text-center">
-                              {emp.status !== "离职" && !emp.deleted && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const otherActive = employees.filter(
-                                      (e2) => e2.employeeId === emp.employeeId && (e2.dept1 !== emp.dept1 || e2.position !== emp.position) && e2.status !== "离职" && !e2.deleted
-                                    );
-                                    const isLastPosition = otherActive.length === 0;
-                                    setConfirmResignModal({ open: true, emp, isLastPosition });
-                                  }}
-                                  className="text-red-400 hover:text-red-600"
-                                  title="标记离职"
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </td>
-                          )}
-                        </Fragment>
+                        <td
+                          key={f.key}
+                          rowSpan={rowSpan}
+                          className="whitespace-nowrap px-3 py-2 text-gray-700"
+                        >
+                          {val || "-"}
+                        </td>
                       );
                     })}
                   </tr>
@@ -1051,38 +867,6 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
           </table>
         )}
       </div>
-
-      {/* 标记离职/移除岗位确认框 */}
-      {confirmResignModal.open && confirmResignModal.emp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-2 text-lg font-semibold text-gray-800">
-              {confirmResignModal.isLastPosition ? "确认标记离职" : "确认移除岗位"}
-            </h3>
-            <p className="mb-6 text-sm text-gray-600">
-              {confirmResignModal.isLastPosition ? (
-                <>确定将 <strong>{confirmResignModal.emp.name}</strong> 标记为离职？</>
-              ) : (
-                <><strong>{confirmResignModal.emp.name}</strong> 还有其他在职岗位，确定移除当前岗位？</>
-              )}
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setConfirmResignModal({ open: false, emp: null, isLastPosition: false })}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={() => markResigned(confirmResignModal.emp!, confirmResignModal.isLastPosition)}
-                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-              >
-                确定
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
