@@ -666,7 +666,7 @@ export default function AdminPage() {
 
                     {showAdminEdit && user?.isWorkListAdmin && (
                       <div className="mt-3 border-t pt-3">
-                        <label className="mb-1 block text-xs font-medium text-gray-700">选择负责人</label>
+                        <h3 className="mb-3 text-sm font-semibold text-gray-700">负责人</h3>
 
                         {/* 搜索 */}
                         <div className="relative mb-3">

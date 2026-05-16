@@ -11,9 +11,8 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get("q") || "").trim();
-  const query = q.toLowerCase();
 
-  // 获取所有在职员工（数据量小，内存匹配拼音）
+  // 获取所有在职员工，包含岗位信息
   const allEmployees = await prisma.employee.findMany({
     where: { status: "在职", deleted: false },
     select: {
@@ -21,9 +20,13 @@ export async function GET(request: Request) {
       employeeId: true,
       name: true,
       alias: true,
-      dept1: true,
-      position: true,
       user: { select: { id: true } },
+      positions: {
+        select: {
+          department: { select: { name: true } },
+          position: { select: { name: true } },
+        },
+      },
     },
   });
 
@@ -33,23 +36,52 @@ export async function GET(request: Request) {
     return matchEmployee(e, q);
   });
 
-  // 去重 + 限制20条
-  const seen = new Set<number>();
-  const deduped = matched.filter((e) => {
-    if (seen.has(e.id)) return false;
-    seen.add(e.id);
-    return true;
-  }).slice(0, 20);
+  // 一人多岗展开为多条记录，去重后限制20条
+  const items: Array<{
+    rowId: number;
+    employeeId: string;
+    name: string;
+    alias: string;
+    dept1: string;
+    position: string;
+    userId: number | null;
+  }> = [];
+  const seen = new Set<string>();
 
-  const items = deduped.map((e) => ({
-    rowId: e.id,
-    employeeId: e.employeeId,
-    name: e.name,
-    alias: e.alias || "",
-    dept1: e.dept1 || "",
-    position: e.position || "",
-    userId: e.user?.id ?? null,
-  }));
+  for (const e of matched) {
+    if (e.positions.length === 0) {
+      const key = `${e.id}||`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      items.push({
+        rowId: e.id,
+        employeeId: e.employeeId,
+        name: e.name,
+        alias: e.alias || "",
+        dept1: "",
+        position: "",
+        userId: e.user?.id ?? null,
+      });
+    } else {
+      for (const pos of e.positions) {
+        const deptName = pos.department?.name || "";
+        const posName = pos.position?.name || "";
+        const key = `${e.id}|${deptName}|${posName}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        items.push({
+          rowId: e.id,
+          employeeId: e.employeeId,
+          name: e.name,
+          alias: e.alias || "",
+          dept1: deptName,
+          position: posName,
+          userId: e.user?.id ?? null,
+        });
+      }
+    }
+    if (items.length >= 20) break;
+  }
 
   return NextResponse.json({ items });
 }
