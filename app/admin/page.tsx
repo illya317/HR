@@ -299,8 +299,8 @@ export default function AdminPage() {
       body: JSON.stringify({ name: editName, description: editDescription, sortOrder: editSortOrder }),
     });
     if (res.ok) {
-      setSelectedGroupId(null);
-      loadData();
+      await loadData();
+      await selectGroup(id);
     } else {
       showToast("更新失败");
     }
@@ -325,8 +325,16 @@ export default function AdminPage() {
       setGroupMembers([]);
       setGroupAdmins([]);
       setAdminUserIds([]);
+      setEditName("");
+      setEditDescription("");
+      setEditSortOrder(0);
       return;
     }
+
+    const group = reportGroups.find((g) => g.id === groupId);
+    setEditName(group?.name || "");
+    setEditDescription(group?.description || "");
+    setEditSortOrder(group?.sortOrder || 0);
 
     const [membersRes, adminsRes] = await Promise.all([
       fetch(`/api/report-groups/${groupId}/members`),
@@ -638,16 +646,44 @@ export default function AdminPage() {
                   {/* 基本信息 */}
                   <div className="rounded-lg bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-base font-semibold text-gray-800">{selectedGroup.name}</h3>
-                        <p className="text-xs text-gray-500">
-                          {selectedGroup.description || "无描述"}
-                        </p>
+                      <div className="flex-1">
+                        {isEditingGroup ? (
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              placeholder="名称"
+                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                            />
+                            <input
+                              type="text"
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              placeholder="描述"
+                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                            />
+                            <input
+                              type="number"
+                              value={editSortOrder}
+                              onChange={(e) => setEditSortOrder(parseInt(e.target.value) || 0)}
+                              placeholder="排序"
+                              className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <h3 className="text-base font-semibold text-gray-800">{selectedGroup.name}</h3>
+                            <p className="text-xs text-gray-500">
+                              {selectedGroup.description || "无描述"} · 排序 {selectedGroup.sortOrder}
+                            </p>
+                          </div>
+                        )}
                       </div>
                       {canEdit && (
                         <button
                           onClick={() => setIsEditingGroup(!isEditingGroup)}
-                          className="text-xs text-emerald-600 hover:text-emerald-800"
+                          className="ml-3 shrink-0 text-xs text-emerald-600 hover:text-emerald-800"
                         >
                           {isEditingGroup ? "取消" : "设置"}
                         </button>
@@ -780,6 +816,7 @@ export default function AdminPage() {
                           <button
                             onClick={async () => {
                               await Promise.all([
+                                updateGroup(selectedGroupId),
                                 saveAdmins(selectedGroupId),
                                 saveMembers(selectedGroupId),
                               ]);
