@@ -60,6 +60,7 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
+    isAdmin: user?.isWorkListAdmin === true,
     submitGroups: memberGroups,
     viewGroups: viewerGroups,
   });

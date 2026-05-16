@@ -22,12 +22,12 @@ export default function ReportGroupSwitcher({ value, onChange }: Props) {
     fetch("/api/report-groups/my")
       .then((r) => r.json())
       .then((data) => {
-        const list = (data.submitGroups || []) as ReportGroup[];
+        const list = (data.isAdmin ? data.viewGroups : data.submitGroups) as ReportGroup[];
         setGroups(list);
         setLoading(false);
 
-        // 如果只有一个，自动选中
-        if (list.length === 1 && !value) {
+        // 有可用分组且当前未选中时，自动选第一个
+        if (list.length > 0 && !value) {
           onChange(list[0]);
         }
       })
@@ -62,7 +62,6 @@ export default function ReportGroupSwitcher({ value, onChange }: Props) {
       }}
       className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 focus:border-emerald-400 focus:outline-none"
     >
-      <option value="">选择周报部门</option>
       {groups.map((g) => (
         <option key={g.id} value={g.id}>
           {g.name}
