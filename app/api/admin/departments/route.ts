@@ -29,21 +29,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
-  const depts = await prisma.user.groupBy({
-    by: ["departmentId", "departmentName", "company"],
-    _count: { id: true },
-    orderBy: { departmentId: "asc" },
+  const depts = await prisma.department.findMany({
+    where: { level: 1 },
+    orderBy: [{ company: "asc" }, { name: "asc" }],
   });
 
   return NextResponse.json({
-    departments: depts
-      .filter((d) => d.departmentName !== "管理员" && d.departmentName !== "其他")
-      .map((d) => ({
-        id: d.departmentId,
-        name: d.departmentName || "未命名部门",
-        company: d.company || "",
-        count: d._count.id,
-      })),
+    departments: depts.map((d) => ({
+      id: d.id,
+      name: d.name,
+      company: d.company || "",
+      count: 0,
+    })),
   });
 }
 
