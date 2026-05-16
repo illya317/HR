@@ -7,20 +7,11 @@ export async function GET(request: Request) {
   const payload = await authenticate(request);
   if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
 
-  // 从 Employee 表获取所有唯一的 dept1 + company
-  const employees = await prisma.employee.findMany({
-    where: { status: "在职" },
-    select: { dept1: true, company: true },
-  });
-  const deptMap = new Map<string, { dept1: string; company: string }>();
-  for (const e of employees) {
-    if (!e.dept1) continue;
-    const key = `${e.company || ""}|${e.dept1}`;
-    if (!deptMap.has(key)) deptMap.set(key, { dept1: e.dept1, company: e.company || "" });
-  }
-  const departments = Array.from(deptMap.values()).sort((a, b) => {
-    if (a.company !== b.company) return a.company.localeCompare(b.company);
-    return a.dept1.localeCompare(b.dept1);
+  // 从 Department 表获取一级部门
+  const departments = await prisma.department.findMany({
+    where: { level: 1 },
+    select: { id: true, name: true, company: true },
+    orderBy: [{ company: "asc" }, { name: "asc" }],
   });
 
   // 获取所有部门管理员

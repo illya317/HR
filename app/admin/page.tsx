@@ -50,7 +50,8 @@ interface DepartmentAdmin {
 }
 
 interface Department {
-  dept1: string;
+  id: number;
+  name: string;
   company: string;
 }
 
@@ -117,7 +118,7 @@ export default function AdminPage() {
   const [deptAdminSearchQuery, setDeptAdminSearchQuery] = useState("");
   const [deptAdminSearchResults, setDeptAdminSearchResults] = useState<Array<{ rowId: number; employeeId: string; name: string; dept1: string; position: string; userId: number | null }>>([]);
   const [deptAdminSearchTimer, setDeptAdminSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [addingDeptAdmin, setAddingDeptAdmin] = useState<{ dept1: string; company: string } | null>(null);
+  const [addingDeptAdmin, setAddingDeptAdmin] = useState<{ name: string; company: string } | null>(null);
 
   // 权限面板视图
   const [permView, setPermView] = useState<"by-user" | "by-permission">("by-permission");
@@ -280,13 +281,10 @@ export default function AdminPage() {
     const res = await fetch("/api/report-groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName, description: editDescription, sortOrder: editSortOrder, departmentId: editDeptId }),
+      body: JSON.stringify({ name: editName }),
     });
     if (res.ok) {
       setEditName("");
-      setEditDeptId(null);
-      setEditDescription("");
-      setEditSortOrder(0);
       loadData();
     } else {
       showToast("创建失败");
@@ -473,11 +471,11 @@ export default function AdminPage() {
     }
   }
 
-  async function addDeptAdmin(dept1: string, company: string, userId: number) {
+  async function addDeptAdmin(name: string, company: string, userId: number) {
     const res = await fetch("/api/admin/department-admins", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dept1, company, userId }),
+      body: JSON.stringify({ dept1: name, company, userId }),
     });
     if (res.ok) {
       await loadAdminData();
@@ -573,45 +571,14 @@ export default function AdminPage() {
             {/* 新建（仅超级管理员） */}
             {user?.isWorkListAdmin && (
               <div className="rounded-lg bg-white p-4 shadow-sm">
-                <h3 className="mb-3 text-sm font-semibold text-gray-700">新建周报部门</h3>
-                <div className="flex flex-wrap items-end gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-500">部门</label>
-                    <select
-                      value={editDeptId || ""}
-                      onChange={(e) => {
-                        const id = parseInt(e.target.value);
-                        const dept = allDepts.find((d) => d.id === id);
-                        setEditDeptId(id || null);
-                        setEditName(dept?.name || "");
-                      }}
-                      className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                    >
-                      <option value="">请选择部门</option>
-                      {allDepts.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name} ({d.company})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-500">描述</label>
-                    <input
-                      type="text"
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      placeholder="可选"
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-500">排序</label>
-                    <input
-                      type="number"
-                      value={editSortOrder}
-                      onChange={(e) => setEditSortOrder(parseInt(e.target.value) || 0)}
-                      className="w-20 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                    />
-                  </div>
+                <div className="flex items-end gap-3">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="新建周报部门"
+                    className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                  />
                   <button
                     onClick={createGroup}
                     className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700"
@@ -1254,87 +1221,6 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* 系统管理员板块 */}
-                <div className="rounded-lg bg-white p-4 shadow-sm">
-                  <h2 className="mb-4 text-base font-semibold text-gray-800">系统管理员</h2>
-                  <table className="mb-4 w-full text-sm">
-                    <thead className="border-b bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">姓名</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-600">账号</th>
-                        <th className="px-4 py-3 text-right font-medium text-gray-600">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sysAdmins.map((u) => (
-                        <tr key={u.id} className="border-b last:border-0">
-                          <td className="px-4 py-3 text-gray-700">{u.name}</td>
-                          <td className="px-4 py-3 text-xs text-gray-400">{u.username}</td>
-                          <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() =>
-                                setConfirmModal({
-                                  open: true,
-                                  title: "移除确认",
-                                  message: `确定移除 ${u.name} 的系统管理员权限？`,
-                                  onConfirm: () => {
-                                    removeSysAdmin(u.id);
-                                    setConfirmModal((prev) => ({ ...prev, open: false }));
-                                  },
-                                })
-                              }
-                              className="text-xs text-red-500 hover:text-red-700"
-                            >
-                              移除
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {sysAdmins.length === 0 && (
-                        <tr>
-                          <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-400">
-                            暂无系统管理员
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-
-                  {/* 添加系统管理员 */}
-                  <div className="border-t pt-4">
-                    <h3 className="mb-2 text-sm font-medium text-gray-700">添加系统管理员</h3>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={sysAdminSearchQuery}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSysAdminSearchQuery(val);
-                          if (sysAdminSearchTimer) clearTimeout(sysAdminSearchTimer);
-                          const timer = setTimeout(() => searchSysAdmins(val), 300);
-                          setSysAdminSearchTimer(timer);
-                        }}
-                        placeholder="输入姓名搜索花名册..."
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                      />
-                      {sysAdminSearchResults.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg">
-                          {sysAdminSearchResults.map((emp) => (
-                            <div
-                              key={emp.rowId}
-                              onClick={() => { if (emp.userId) addSysAdmin(emp.userId); }}
-                              className={`px-3 py-2 text-sm text-gray-800 ${emp.userId ? "cursor-pointer hover:bg-gray-50" : "pointer-events-none opacity-50"}`}
-                            >
-                              {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
-                              {!emp.userId && <span className="text-gray-400"> (未关联用户)</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
                 {/* 部门管理员板块 */}
                 <div className="rounded-lg bg-white p-4 shadow-sm">
                   <h2 className="mb-4 text-base font-semibold text-gray-800">部门管理员</h2>
@@ -1363,20 +1249,15 @@ export default function AdminPage() {
 
                   <div className="space-y-3">
                     {departments
-                      .filter((d) => {
-                        if (!deptAdminCompany) return true;
-                        const subs = ["丰华生物", "丰华天力通", "丰华悦通", "加拿大"];
-                        const isSub = subs.includes(deptAdminCompany);
-                        return isSub ? subs.includes(d.company) : d.company === deptAdminCompany;
-                      })
+                      .filter((d) => !deptAdminCompany || d.company === deptAdminCompany)
                       .map((dept) => {
                         const admins = deptAdmins.filter(
-                          (a) => a.dept1 === dept.dept1 && a.company === dept.company
+                          (a) => a.dept1 === dept.name && a.company === dept.company
                         );
                         return (
-                          <div key={`${dept.company}|${dept.dept1}`} className="flex items-start gap-3 rounded-md border border-gray-200 p-3">
+                          <div key={`${dept.company}|${dept.name}`} className="flex items-start gap-3 rounded-md border border-gray-200 p-3">
                             <div className="min-w-[120px] pt-0.5">
-                              <div className="text-sm font-medium text-gray-800">{dept.dept1}</div>
+                              <div className="text-sm font-medium text-gray-800">{dept.name}</div>
                               <div className="text-xs text-gray-400">{dept.company || "-"}</div>
                             </div>
                             <div className="flex flex-1 flex-wrap items-center gap-2">
@@ -1391,7 +1272,7 @@ export default function AdminPage() {
                                       setConfirmModal({
                                         open: true,
                                         title: "移除确认",
-                                        message: `确定移除 ${a.user.name} 在「${dept.dept1}」的管理员权限？`,
+                                        message: `确定移除 ${a.user.name} 在「${dept.name}」的管理员权限？`,
                                         onConfirm: () => {
                                           removeDeptAdmin(a.id);
                                           setConfirmModal((prev) => ({ ...prev, open: false }));
@@ -1409,7 +1290,7 @@ export default function AdminPage() {
                               )}
                             </div>
                             <div className="relative">
-                              {addingDeptAdmin?.dept1 === dept.dept1 && addingDeptAdmin?.company === dept.company ? (
+                              {addingDeptAdmin?.name === dept.name && addingDeptAdmin?.company === dept.company ? (
                                 <div className="relative w-48">
                                   <input
                                     type="text"
@@ -1430,7 +1311,7 @@ export default function AdminPage() {
                                       {deptAdminSearchResults.map((emp) => (
                                         <div
                                           key={emp.rowId}
-                                          onClick={() => { if (emp.userId) addDeptAdmin(dept.dept1, dept.company, emp.userId); }}
+                                          onClick={() => { if (emp.userId) addDeptAdmin(dept.name, dept.company, emp.userId); }}
                                           className={`px-3 py-2 text-sm text-gray-800 ${emp.userId ? "cursor-pointer hover:bg-gray-50" : "pointer-events-none opacity-50"}`}
                                         >
                                           {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
@@ -1452,7 +1333,7 @@ export default function AdminPage() {
                                 </div>
                               ) : (
                                 <button
-                                  onClick={() => setAddingDeptAdmin({ dept1: dept.dept1, company: dept.company })}
+                                  onClick={() => setAddingDeptAdmin({ name: dept.name, company: dept.company })}
                                   className="rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
                                 >
                                   添加管理员
