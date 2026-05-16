@@ -851,10 +851,19 @@ export default function AdminPage() {
               <select
                 value={filterDept}
                 onChange={(e) => setFilterDept(e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:w-auto"
+                disabled={!filterCompany}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400 sm:w-auto"
               >
-                <option value="">所有部门</option>
-                {[...new Set(empPerms.filter(e => !filterCompany || e.roles.some(r => r.company === filterCompany)).flatMap(e => e.roles.map(r => r.dept1)).filter(Boolean))].map(d => (
+                <option value="">{filterCompany ? "所有部门" : "请先选择公司"}</option>
+                {[...new Set(
+                  (() => {
+                    if (!filterCompany) return [];
+                    return empPerms
+                      .filter(e => e.roles.some(r => r.company === filterCompany))
+                      .flatMap(e => e.roles.map(r => r.dept1))
+                      .filter(Boolean);
+                  })()
+                )].map(d => (
                   <option key={d} value={d!}>{d}</option>
                 ))}
               </select>
