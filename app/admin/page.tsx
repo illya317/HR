@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
+import { getInitials } from "@/lib/search";
 
 interface User {
   id: number;
@@ -1339,20 +1340,25 @@ function PermissionTablePanel({
     ? localUsers.filter((u) => (u as any)[selectedPermission] !== true)
     : [];
 
-  const filteredUsersWithPerm = listSearchQuery.trim()
+  const query = listSearchQuery.trim().toLowerCase();
+  const filteredUsersWithPerm = query
     ? usersWithPerm.filter(
         (u) =>
-          u.name.includes(listSearchQuery) ||
-          (u.username?.includes(listSearchQuery) ?? false) ||
-          (u.departmentName?.includes(listSearchQuery) ?? false)
+          u.name.toLowerCase().includes(query) ||
+          (u.username?.toLowerCase().includes(query) ?? false) ||
+          (u.departmentName?.toLowerCase().includes(query) ?? false) ||
+          (u.employeeId?.toLowerCase().includes(query) ?? false) ||
+          getInitials(u.name).includes(query)
       )
     : usersWithPerm;
-  const filteredUsersWithoutPerm = listSearchQuery.trim()
+  const filteredUsersWithoutPerm = query
     ? usersWithoutPerm.filter(
         (u) =>
-          u.name.includes(listSearchQuery) ||
-          (u.username?.includes(listSearchQuery) ?? false) ||
-          (u.departmentName?.includes(listSearchQuery) ?? false)
+          u.name.toLowerCase().includes(query) ||
+          (u.username?.toLowerCase().includes(query) ?? false) ||
+          (u.departmentName?.toLowerCase().includes(query) ?? false) ||
+          (u.employeeId?.toLowerCase().includes(query) ?? false) ||
+          getInitials(u.name).includes(query)
       )
     : usersWithoutPerm;
 
