@@ -517,21 +517,19 @@ export default function AdminPage() {
             周报管理
           </button>
           {user?.isWorkListAdmin && (
-            <>
-              <button
-                onClick={() => setActiveTab("users")}
-                className={`pb-2 text-sm font-medium ${activeTab === "users" ? "border-b-2 border-emerald-500 text-emerald-600" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                人员权限
-              </button>
-              <button
-                onClick={() => setActiveTab("admins")}
-                className={`pb-2 text-sm font-medium ${activeTab === "admins" ? "border-b-2 border-emerald-500 text-emerald-600" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                管理员
-              </button>
-            </>
+            <button
+              onClick={() => setActiveTab("users")}
+              className={`pb-2 text-sm font-medium ${activeTab === "users" ? "border-b-2 border-emerald-500 text-emerald-600" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              人员权限
+            </button>
           )}
+          <button
+            onClick={() => setActiveTab("admins")}
+            className={`pb-2 text-sm font-medium ${activeTab === "admins" ? "border-b-2 border-emerald-500 text-emerald-600" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            管理员
+          </button>
           <button
             onClick={() => setActiveTab("permission-table")}
             className={`pb-2 text-sm font-medium ${activeTab === "permission-table" ? "border-b-2 border-emerald-500 text-emerald-600" : "text-gray-500 hover:text-gray-700"}`}
