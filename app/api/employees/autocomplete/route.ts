@@ -48,6 +48,20 @@ export async function GET(request: Request) {
     return NextResponse.json({ items: list });
   }
 
+  if (type === "position") {
+    const where: any = q ? { name: { contains: q } } : {};
+    if (!caller?.isWorkListAdmin && caller?.company) {
+      where.company = resolveCompanyFilter(caller.company);
+    }
+    const positions = await prisma.position.findMany({
+      where,
+      select: { name: true },
+      distinct: ["name"],
+    });
+    const list = positions.map((p) => p.name).filter(Boolean) as string[];
+    return NextResponse.json({ items: list });
+  }
+
   if (type === "name") {
     const employees = await prisma.employee.findMany({
       where: q ? { name: { contains: q }, deleted: { not: true } } : { deleted: { not: true } },

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
 import { matchEmployee } from "@/lib/search";
+import EmployeeTab from "./EmployeeTab";
+import PositionTab from "./PositionTab";
 
 interface User {
   id: number;
@@ -969,8 +971,10 @@ export default function HRPage() {
         </div>
 
         {activeTab === "roster" && user && <RosterTab user={user} selectedCompany={selectedCompany} />}
+        {activeTab === "employees" && user && <EmployeeTab user={user} selectedCompany={selectedCompany} />}
+        {activeTab === "positions" && user && <PositionTab user={user} selectedCompany={selectedCompany} />}
         {activeTab === "codes" && user && <CodesTab user={user} selectedCompany={selectedCompany} />}
-        {activeTab !== "roster" && activeTab !== "codes" && (
+        {activeTab !== "roster" && activeTab !== "employees" && activeTab !== "positions" && activeTab !== "codes" && (
           <div className="rounded-lg bg-white p-12 text-center shadow-sm">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-400">
               <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
