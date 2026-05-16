@@ -753,7 +753,7 @@ export default function AdminPage() {
                       ) : (
                         <div className="flex flex-wrap gap-2">
                           {selectedGroup.department ? (
-                            <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">
+                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
                               {selectedGroup.department.company}-{selectedGroup.department.name}
                             </span>
                           ) : (
