@@ -32,7 +32,7 @@ interface ReportGroup {
   description: string | null;
   sortOrder: number;
   departmentId: number | null;
-  department: { id: number; name: string } | null;
+  department: { id: number; name: string; company: string } | null;
   _count: { members: number; viewers: number; reports: number };
 }
 
@@ -93,6 +93,7 @@ export default function AdminPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editDeptId, setEditDeptId] = useState<number | null>(null);
+  const [editCompany, setEditCompany] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editSortOrder, setEditSortOrder] = useState(0);
   const [groupMembers, setGroupMembers] = useState<Array<{ userId: number; name: string; dept1: string; position: string }>>([]);
@@ -360,6 +361,7 @@ export default function AdminPage() {
     setEditDescription(group?.description || "");
     setEditSortOrder(group?.sortOrder || 0);
     setEditDeptId(group?.departmentId ?? null);
+    setEditCompany(group?.department?.company || "");
 
     const [membersRes, adminsRes] = await Promise.all([
       fetch(`/api/report-groups/${groupId}/members`),
@@ -715,18 +717,39 @@ export default function AdminPage() {
                     <div className="rounded-lg bg-white p-4 shadow-sm">
                       <h3 className="mb-3 text-sm font-semibold text-gray-700">相关部门</h3>
                       {isEditingGroup ? (
-                        <select
-                          value={editDeptId ?? ""}
-                          onChange={(e) => setEditDeptId(e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                        >
-                          <option value="">不关联部门</option>
-                          {allDepts.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.name} ({d.company})
-                            </option>
-                          ))}
-                        </select>
+                        <div className="space-y-2">
+                          <select
+                            value={editCompany}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setEditCompany(val);
+                              setEditDeptId(null);
+                            }}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                          >
+                            <option value="">选择公司</option>
+                            {Array.from(new Set(allDepts.map((d) => d.company).filter(Boolean))).map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            value={editDeptId ?? ""}
+                            onChange={(e) => setEditDeptId(e.target.value ? parseInt(e.target.value) : null)}
+                            disabled={!editCompany}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400"
+                          >
+                            <option value="">{editCompany ? "选择部门" : "请先选择公司"}</option>
+                            {allDepts
+                              .filter((d) => d.company === editCompany)
+                              .map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {d.name}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
                       ) : (
                         <div className="flex flex-wrap gap-2">
                           {selectedGroup.department ? (

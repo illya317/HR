@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     groups = await prisma.reportGroup.findMany({
       orderBy: { sortOrder: "asc" },
       include: {
-        department: { select: { id: true, name: true } },
+        department: { select: { id: true, name: true, company: true } },
         _count: {
           select: { members: true, viewers: true, reports: true },
         },
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
       where: { id: { in: groupIds } },
       orderBy: { sortOrder: "asc" },
       include: {
-        department: { select: { id: true, name: true } },
+        department: { select: { id: true, name: true, company: true } },
         _count: {
           select: { members: true, viewers: true, reports: true },
         },
