@@ -6,6 +6,17 @@ REMOTE_DIR="/home/ubuntu/weekly"
 PM2_NAME="weekly"
 KEY="/Users/koito/Desktop/.System/tencent/fenghua.pem"
 PUSH_DB=false
+LOCKFILE=".deploying"
+
+# 锁文件：防止多 Agent 同时部署
+if [ -f "$LOCKFILE" ]; then
+  echo "[错误] 检测到 $LOCKFILE，可能另一个部署正在进行。"
+  echo "如果确认没有正在进行的部署，可以手动删除：rm $LOCKFILE"
+  exit 1
+fi
+
+touch "$LOCKFILE"
+trap 'rm -f "$LOCKFILE"' EXIT
 
 # 解析参数
 for arg in "$@"; do
