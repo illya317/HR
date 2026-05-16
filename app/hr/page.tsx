@@ -74,10 +74,12 @@ interface FieldDef {
   label: string;
 }
 
-type HRTab = "roster" | "codes" | "attendance" | "works" | "performance";
+type HRTab = "roster" | "employees" | "positions" | "codes" | "attendance" | "works" | "performance";
 
 const tabs: { key: HRTab; label: string; desc: string }[] = [
-  { key: "roster", label: "花名册", desc: "员工花名册管理" },
+  { key: "roster", label: "花名册", desc: "员工花名册（只读）" },
+  { key: "employees", label: "员工信息", desc: "员工基础信息编辑" },
+  { key: "positions", label: "岗位信息", desc: "员工岗位关联编辑" },
   { key: "codes", label: "编码", desc: "部门与岗位编码管理" },
   { key: "attendance", label: "考勤", desc: "考勤记录与统计" },
   { key: "works", label: "工作查看", desc: "查看全员工作清单" },
@@ -244,34 +246,31 @@ function CodeTab({
       return;
     }
 
-    // 编号变化时：先删后建
-    if (newFullCode !== originalCode) {
-      const delRes = await fetch(`${apiPath}?code=${encodeURIComponent(originalCode)}`, { method: "DELETE" });
-      if (!delRes.ok) {
-        setSaveTip("保存失败");
-        setTimeout(() => setSaveTip(""), 2000);
-        return;
-      }
-    }
-
     const putRes = await fetch(apiPath, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: editCodeValue, name: editNameValue.trim(), companyCode }),
+      body: JSON.stringify({
+        code: editCodeValue,
+        name: editNameValue.trim(),
+        companyCode,
+        originalCode: newFullCode !== originalCode ? originalCode : undefined,
+      }),
     });
-    if (putRes.ok) {
-      setCodes((prev) =>
-        prev
-          .filter((c) => c.code !== originalCode)
-          .concat({ code: newFullCode, name: editNameValue.trim() })
-          .sort((a, b) => a.code.localeCompare(b.code))
-      );
-      setSaveTip("保存成功");
-      setTimeout(() => setSaveTip(""), 1500);
-    } else {
-      setSaveTip("保存失败");
+    if (!putRes.ok) {
+      const err = await putRes.json().catch(() => ({ error: "保存失败" }));
+      setSaveTip(err.error || "保存失败");
       setTimeout(() => setSaveTip(""), 2000);
+      setEditRow(null);
+      return;
     }
+    setCodes((prev) =>
+      prev
+        .filter((c) => c.code !== originalCode)
+        .concat({ code: newFullCode, name: editNameValue.trim() })
+        .sort((a, b) => a.code.localeCompare(b.code))
+    );
+    setSaveTip("保存成功");
+    setTimeout(() => setSaveTip(""), 1500);
     setEditRow(null);
   }
 
@@ -282,8 +281,9 @@ function CodeTab({
       setSaveTip("删除成功");
       setTimeout(() => setSaveTip(""), 1500);
     } else {
-      setSaveTip("删除失败");
-      setTimeout(() => setSaveTip(""), 2000);
+      const err = await res.json().catch(() => ({ error: "删除失败" }));
+      setSaveTip(err.error || "删除失败");
+      setTimeout(() => setSaveTip(""), 3000);
     }
   }
 
@@ -1008,22 +1008,15 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
                             }`}
                           >
                             {isEditing ? (
-                              <div className="flex items-center gap-1">
-                                <input
-                                  ref={inputRef}
-                                  value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  onBlur={() => setEditingCell(null)}
-                                  onKeyDown={handleKeyDown}
-                                  className="w-full rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-                                />
-                                <button
-                                  onMouseDown={(e) => { e.preventDefault(); saveEdit(); }}
-                                  className="shrink-0 rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-emerald-600"
-                                >
-                                  保存
-                                </button>
-                              </div>
+                              <input
+                                ref={inputRef}
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={() => saveEdit()}
+                                onKeyDown={handleKeyDown}
+                                className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
+                                style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
+                              />
                             ) : (
                               val || "-"
                             )}

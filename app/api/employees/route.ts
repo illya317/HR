@@ -128,11 +128,11 @@ export async function GET(request: Request) {
       employeeId: emp.employeeId,
       name: emp.name,
       alias: emp.alias,
-      company: emp.company ?? ep?.department?.company ?? "",
-      center: ep?.center ?? emp.center ?? "",
-      dept1: ep?.department?.name ?? emp.dept1 ?? "",
-      dept2: emp.dept2 ?? "",
-      position: ep?.position?.name ?? emp.position ?? "",
+      company: ep?.company ?? "",
+      center: ep?.center ?? "",
+      dept1: ep?.department?.name ?? "",
+      dept2: "",
+      position: ep?.position?.name ?? "",
       gender: emp.gender,
       ethnicity: emp.ethnicity,
       hometown: emp.hometown,
@@ -156,6 +156,7 @@ export async function GET(request: Request) {
       deletedTime: emp.deletedTime,
       deletedBy: emp.deletedBy,
       userId: emp.userId,
+      employeePositionId: ep?.id ?? null,
     };
   }
 

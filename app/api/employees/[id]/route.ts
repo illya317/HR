@@ -24,10 +24,9 @@ export async function PUT(
   const body = await request.json();
   const { field, value } = body as { field: string; value: string | null };
 
-  // 校验字段名合法性
+  // 校验字段名合法性（仅限 Employee 基础信息表字段）
   const allowedFields = [
-    "employeeId", "name", "alias", "company", "center", "dept1", "dept2",
-    "position", "gender", "ethnicity", "hometown", "politics",
+    "employeeId", "name", "alias", "gender", "ethnicity", "hometown", "politics",
     "education", "title", "school", "major", "majorRelevant",
     "phone", "office1", "office2", "office3",
     "attendance1", "attendance2", "joinDate", "nature",

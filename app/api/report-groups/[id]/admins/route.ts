@@ -33,10 +33,21 @@ export async function GET(
   if (employeeIds.length > 0) {
     const employees = await prisma.employee.findMany({
       where: { employeeId: { in: employeeIds } },
-      select: { employeeId: true, dept1: true, position: true },
+      include: {
+        positions: {
+          include: {
+            department: { select: { name: true } },
+            position: { select: { name: true } },
+          },
+        },
+      },
     });
     for (const e of employees) {
-      employeeMap.set(e.employeeId, { dept1: e.dept1, position: e.position });
+      const primary = e.positions.find((p) => p.isPrimary) || e.positions[0];
+      employeeMap.set(e.employeeId, {
+        dept1: primary?.department?.name || null,
+        position: primary?.position?.name || null,
+      });
     }
   }
 

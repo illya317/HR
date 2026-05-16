@@ -149,17 +149,12 @@ model WorkParticipant {
   @@index([workItemId])
 }
 
-// 保留旧 Employee 表完整结构（数据迁移前不删除字段）
+// 员工基础信息表（1对1）
 model Employee {
   id            Int      @id @default(autoincrement())
   employeeId    String   @unique
   name          String
   alias         String?
-  company       String?
-  center        String?
-  dept1         String?
-  dept2         String?
-  position      String?
   gender        String?
   ethnicity     String?
   hometown      String?
@@ -217,7 +212,7 @@ model Position {
   createdAt         DateTime           @default(now())
 }
 
-// 新增员工岗位关联表
+// 员工岗位关联表（1对多）
 model EmployeePosition {
   id           Int        @id @default(autoincrement())
   employeeId   Int
@@ -226,6 +221,7 @@ model EmployeePosition {
   department   Department @relation(fields: [departmentId], references: [id])
   positionId   Int
   position     Position   @relation(fields: [positionId], references: [id])
+  company      String?    // 员工在该岗位上的业务公司
   center       String?
   isPrimary    Boolean    @default(false)
   sortOrder    Int        @default(0)
@@ -267,18 +263,6 @@ model DepartmentAdmin {
 model CompanyCode {
   code String @id
   name String @unique
-}
-
-model DepartmentCode {
-  code        String  @id
-  name        String
-  companyCode String?
-}
-
-model PositionCode {
-  code        String  @id
-  name        String
-  companyCode String?
 }
 
 model UserPosition {

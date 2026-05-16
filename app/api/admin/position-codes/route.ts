@@ -2,12 +2,26 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// 丰华生物(01)/天力通(02)/悦通(03) 共享一套编码
 const SHARED_GROUP = ["01", "02", "03"];
 
 function normalizeCompanyCode(companyCode: string): string {
   if (SHARED_GROUP.includes(companyCode)) return "01";
   return companyCode;
+}
+
+function getCompanyFromCode(code: string): string {
+  const prefix = code.slice(0, 2);
+  if (prefix === "04") return "丰华制药";
+  if (prefix === "05") return "加拿大";
+  return "丰华生物";
+}
+
+function buildFullCode(code: string, companyCode: string): string {
+  const normalized = normalizeCompanyCode(companyCode);
+  if (code.length <= 3) {
+    return normalized + code.padStart(3, "0");
+  }
+  return code;
 }
 
 export async function GET(request: Request) {
@@ -24,16 +38,13 @@ export async function GET(request: Request) {
       ? [companyCode]
       : [];
 
-  const where: any = {};
+  const where: any = { code: { matches: /^\d{5}$/ } };
   if (codes.length > 0) {
-    where.OR = codes.flatMap((cc: string) => [
-      { companyCode: cc },
-      { code: { startsWith: cc } },
-    ]);
+    where.OR = codes.map((cc: string) => ({ code: { startsWith: cc } }));
   }
 
-  const result = await prisma.positionCode.findMany({ where, orderBy: { code: "asc" } });
-  return NextResponse.json({ codes: result });
+  const result = await prisma.position.findMany({ where, orderBy: { code: "asc" } });
+  return NextResponse.json({ codes: result.map((r) => ({ code: r.code, name: r.name })) });
 }
 
 export async function PUT(request: Request) {
@@ -41,24 +52,28 @@ export async function PUT(request: Request) {
   if (error) return NextResponse.json({ error }, { status });
 
   const body = await request.json();
-  const { code, name, companyCode } = body;
+  const { code, name, companyCode, originalCode } = body;
   if (!code || !name) return NextResponse.json({ error: "缺少参数" }, { status: 400 });
 
-  const normalizedCC = companyCode ? normalizeCompanyCode(companyCode) : undefined;
-  let finalCode = code;
-  let finalCompanyCode = normalizedCC;
-  if (code.length === 2 && normalizedCC) {
-    finalCode = normalizedCC + code;
-    finalCompanyCode = normalizedCC;
-  } else if (code.length === 5 && !normalizedCC) {
-    finalCompanyCode = code.substring(0, 2);
+  const finalCode = buildFullCode(code, companyCode || "");
+
+  if (originalCode && originalCode !== finalCode) {
+    const existing = await prisma.position.findUnique({ where: { code: finalCode } });
+    if (existing) {
+      return NextResponse.json({ error: "编号已存在" }, { status: 400 });
+    }
+    await prisma.position.update({
+      where: { code: originalCode },
+      data: { code: finalCode, name },
+    });
+  } else {
+    await prisma.position.upsert({
+      where: { code: finalCode },
+      update: { name },
+      create: { code: finalCode, name, company: getCompanyFromCode(finalCode) },
+    });
   }
 
-  await prisma.positionCode.upsert({
-    where: { code: finalCode },
-    update: { name, companyCode: finalCompanyCode },
-    create: { code: finalCode, name, companyCode: finalCompanyCode },
-  });
   return NextResponse.json({ success: true });
 }
 
@@ -70,6 +85,17 @@ export async function DELETE(request: Request) {
   const code = searchParams.get("code");
   if (!code) return NextResponse.json({ error: "缺少code" }, { status: 400 });
 
-  await prisma.positionCode.delete({ where: { code } });
+  const pos = await prisma.position.findUnique({ where: { code } });
+  if (!pos) return NextResponse.json({ error: "岗位不存在" }, { status: 404 });
+
+  const epCount = await prisma.employeePosition.count({ where: { positionId: pos.id } });
+  if (epCount > 0) {
+    return NextResponse.json(
+      { error: `该岗位下有 ${epCount} 名员工，无法删除` },
+      { status: 400 }
+    );
+  }
+
+  await prisma.position.delete({ where: { code } });
   return NextResponse.json({ success: true });
 }

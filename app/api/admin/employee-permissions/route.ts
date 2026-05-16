@@ -6,18 +6,26 @@ export async function GET(request: Request) {
   const { error, status } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
-  // 获取所有员工，按 name + employeeId 去重（合并多岗）
+  // 获取所有员工（含岗位信息）
   const employees = await prisma.employee.findMany({
     orderBy: [{ employeeId: "asc" }],
+    include: {
+      positions: {
+        include: {
+          department: { select: { name: true, company: true } },
+          position: { select: { name: true } },
+        },
+      },
+    },
   });
 
-  // 合并多岗人员，保留每个角色的 company/dept1/dept2/position
+  // 合并多岗人员，保留每个角色的 company/dept/position
   const mergedMap = new Map<
     string,
     {
       employeeId: string;
       name: string;
-      roles: { company: string | null; dept1: string | null; dept2: string | null; position: string | null }[];
+      roles: { company: string | null; dept1: string | null; position: string | null }[];
     }
   >();
 
@@ -31,12 +39,17 @@ export async function GET(request: Request) {
       });
     }
     const item = mergedMap.get(key)!;
-    item.roles.push({
-      company: emp.company,
-      dept1: emp.dept1,
-      dept2: emp.dept2,
-      position: emp.position,
-    });
+    if (emp.positions.length === 0) {
+      item.roles.push({ company: null, dept1: null, position: null });
+    } else {
+      for (const pos of emp.positions) {
+        item.roles.push({
+          company: pos.department?.company || null,
+          dept1: pos.department?.name || null,
+          position: pos.position?.name || null,
+        });
+      }
+    }
   }
 
   // 获取所有用户权限数据
