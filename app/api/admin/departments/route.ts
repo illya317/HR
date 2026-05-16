@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   }
 
   const depts = await prisma.department.findMany({
-    where: { level: 1 },
+    where: { level: 1, company: { not: "加拿大" } },
     orderBy: [{ company: "asc" }, { name: "asc" }],
   });
 
