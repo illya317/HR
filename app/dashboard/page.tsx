@@ -404,17 +404,11 @@ export default function DashboardPage() {
     }
   }
 
-  const canSelectAnyWeek = user?.canSelectAnyWeek ?? false;
+  const yearOptions = [currentInfo.year];
 
-  const yearOptions = canSelectAnyWeek
-    ? Array.from({ length: 5 }, (_, i) => 2024 + i)
-    : [currentInfo.year];
-
-  const weekOptions = canSelectAnyWeek
-    ? Array.from({ length: 53 }, (_, i) => i + 1)
-    : currentInfo.weekNumber > 1
-      ? [currentInfo.weekNumber, currentInfo.weekNumber - 1]
-      : [1];
+  const weekOptions = currentInfo.weekNumber > 1
+    ? [currentInfo.weekNumber, currentInfo.weekNumber - 1]
+    : [1];
 
   async function loadVersion(version: number) {
     if (!report) return;
@@ -580,7 +574,6 @@ export default function DashboardPage() {
             <select
               value={selectedYear}
               onChange={handleYearChange}
-              disabled={!canSelectAnyWeek}
               className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50 disabled:opacity-60"
             >
               {yearOptions.map((y) => (

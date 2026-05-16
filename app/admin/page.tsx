@@ -15,9 +15,7 @@ interface User {
   departmentName: string | null;
   departmentId: number;
   isWorkListAdmin: boolean;
-  canSelectAnyWeek: boolean;
   canAccessHR: boolean;
-  canAccessWorks: boolean;
   employeeId: string | null;
 }
 
@@ -71,16 +69,14 @@ export default function AdminPage() {
       roles: { company: string | null; dept1: string | null; dept2: string | null; position: string | null }[];
       canLogin: boolean;
       isWorkListAdmin: boolean;
-      canSelectAnyWeek: boolean;
       canAccessHR: boolean;
-      canAccessWorks: boolean;
       hasApiKey: boolean;
       userId: number | null;
       username: string | null;
     }>
   >([]);
   const [empPermLoading, setEmpPermLoading] = useState(false);
-  const [selectedPerm, setSelectedPerm] = useState("canLogin");
+  const [selectedPerm, setSelectedPerm] = useState("isWorkListAdmin");
   const [resetResult, setResetResult] = useState<{ name: string; password: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({ open: false, title: "", message: "", onConfirm: () => {} });
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "error" | "success" }>({ show: false, message: "", type: "error" });
@@ -121,11 +117,9 @@ export default function AdminPage() {
   const [addingDeptAdmin, setAddingDeptAdmin] = useState<{ dept1: string; company: string } | null>(null);
 
   const allPermissions = [
-    { key: "canLogin", label: "可登录", desc: "能否登录系统" },
     { key: "isWorkListAdmin", label: "超级管理员", desc: "管理后台全部权限" },
-    { key: "canSelectAnyWeek", label: "周数白名单", desc: "可选择任意周数填写" },
+    { key: "canLogin", label: "可登录", desc: "能否登录系统" },
     { key: "canAccessHR", label: "人事行政", desc: "访问人事行政管理" },
-    { key: "canAccessWorks", label: "工作清单", desc: "访问工作清单管理" },
   ];
 
   useEffect(() => {
@@ -202,11 +196,9 @@ export default function AdminPage() {
       userId: number | null;
       canLogin: boolean;
       isWorkListAdmin: boolean;
-      canSelectAnyWeek: boolean;
       canAccessHR: boolean;
-      canAccessWorks: boolean;
     },
-    field: "canLogin" | "isWorkListAdmin" | "canSelectAnyWeek" | "canAccessHR" | "canAccessWorks"
+    field: "canLogin" | "isWorkListAdmin" | "canAccessHR"
   ) {
     const res = await fetch("/api/admin/employee-permissions", {
       method: "PUT",
