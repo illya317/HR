@@ -106,6 +106,7 @@ export default function AdminPage() {
   const [adminSearchQuery, setAdminSearchQuery] = useState("");
   const [adminSearchResults, setAdminSearchResults] = useState<Array<{ rowId: number; employeeId: string; name: string; dept1: string; position: string; userId: number | null }>>([]);
   const [adminSearchTimer, setAdminSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [draggedGroupId, setDraggedGroupId] = useState<number | null>(null);
 
   // 管理员（系统+部门）
   const [sysAdmins, setSysAdmins] = useState<User[]>([]);
@@ -296,13 +297,36 @@ export default function AdminPage() {
     const res = await fetch(`/api/report-groups/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName, description: editDescription, sortOrder: editSortOrder }),
+      body: JSON.stringify({ name: editName }),
     });
     if (res.ok) {
       await loadData();
       await selectGroup(id);
     } else {
       showToast("更新失败");
+    }
+  }
+
+  async function reorderGroups(dragId: number, dropId: number) {
+    if (dragId === dropId) return;
+    const dragIndex = reportGroups.findIndex((g) => g.id === dragId);
+    const dropIndex = reportGroups.findIndex((g) => g.id === dropId);
+    if (dragIndex === -1 || dropIndex === -1) return;
+
+    const newGroups = [...reportGroups];
+    const [removed] = newGroups.splice(dragIndex, 1);
+    newGroups.splice(dropIndex, 0, removed);
+
+    const orders = newGroups.map((g, i) => ({ id: g.id, sortOrder: i }));
+    const res = await fetch("/api/report-groups/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orders }),
+    });
+    if (res.ok) {
+      setReportGroups(newGroups);
+    } else {
+      showToast("排序保存失败");
     }
   }
 
@@ -603,12 +627,22 @@ export default function AdminPage() {
                 {reportGroups.map((g) => (
                   <span
                     key={g.id}
+                    draggable={user?.isWorkListAdmin}
+                    onDragStart={() => setDraggedGroupId(g.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggedGroupId !== null) {
+                        reorderGroups(draggedGroupId, g.id);
+                        setDraggedGroupId(null);
+                      }
+                    }}
                     onClick={() => selectGroup(g.id)}
                     className={`inline-flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-sm ${
                       selectedGroupId === g.id
                         ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-400"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                    } ${user?.isWorkListAdmin ? "cursor-move" : ""}`}
                   >
                     {g.name}
                     {user?.isWorkListAdmin && (
@@ -648,34 +682,18 @@ export default function AdminPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         {isEditingGroup ? (
-                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              placeholder="名称"
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                            />
-                            <input
-                              type="text"
-                              value={editDescription}
-                              onChange={(e) => setEditDescription(e.target.value)}
-                              placeholder="描述"
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                            />
-                            <input
-                              type="number"
-                              value={editSortOrder}
-                              onChange={(e) => setEditSortOrder(parseInt(e.target.value) || 0)}
-                              placeholder="排序"
-                              className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            placeholder="名称"
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                          />
                         ) : (
                           <div>
                             <h3 className="text-base font-semibold text-gray-800">{selectedGroup.name}</h3>
                             <p className="text-xs text-gray-500">
-                              {selectedGroup.description || "无描述"} · 排序 {selectedGroup.sortOrder}
+                              {selectedGroup.description || "无描述"}
                             </p>
                           </div>
                         )}
