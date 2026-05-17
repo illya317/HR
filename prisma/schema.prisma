@@ -11,9 +11,9 @@ datasource db {
 // ─── 用户与认证 ───────────────────────────────────────────
 
 model User {
-  id               Int               @id @default(autoincrement())
-  wxUserId         String            @unique
-  username         String?           @unique
+  id               Int               @id @default(autoincrement()) // 主键
+  wxUserId         String            @unique // 微信用户ID
+  username         String?           @unique // 登录用户名（自取）
   password         String?
   name             String
   employeeId       String?
@@ -21,13 +21,13 @@ model User {
   departmentName   String?
   avatar           String?
   routineItems     String?
-  isWorkListAdmin  Boolean           @default(false)
-  canSelectAnyWeek Boolean           @default(false)
-  canAccessHR      Boolean           @default(false)
-  canAccessWorks   Boolean           @default(true)
+  isWorkListAdmin  Boolean           @default(false) // 是否超级管理员
+  canSelectAnyWeek Boolean           @default(false) // 是否可补填任意周报
+  canAccessHR      Boolean           @default(false) // 是否可访问人事行政
+  canAccessWorks   Boolean           @default(true) // 是否可访问工作清单
   canLogin         Boolean           @default(true)  // 离职=停用，不删号
-  apiKey           String?           @unique
-  createdAt        DateTime          @default(now())
+  apiKey           String?           @unique // API密钥
+  createdAt        DateTime          @default(now()) // 创建时间
   resourceRoles    UserResourceRole[]
   reports          WeeklyReport[]
   employees        Employee[]
@@ -37,25 +37,25 @@ model User {
 // 详见 docs/rbac.md
 
 model Resource {
-  id          Int                @id @default(autoincrement())
+  id          Int                @id @default(autoincrement()) // 主键
   key         String             @unique   // "system" | "module.hr" | "module.works" | "department" | "report_group" | "field"
   name        String
   description String?
-  sortOrder   Int                @default(0)
+  sortOrder   Int                @default(0) // 排序序号
   roles       UserResourceRole[]
 }
 
 model Role {
-  id          Int                @id @default(autoincrement())
+  id          Int                @id @default(autoincrement()) // 主键
   key         String             @unique   // "access" | "admin" | "write" | "read" | "member" | "viewer"
   name        String
   description String?
-  sortOrder   Int                @default(0)
+  sortOrder   Int                @default(0) // 排序序号
   assignments UserResourceRole[]
 }
 
 model UserResourceRole {
-  id         Int       @id @default(autoincrement())
+  id         Int       @id @default(autoincrement()) // 主键
   userId     Int
   resourceId Int
   roleId     Int
@@ -70,30 +70,30 @@ model UserResourceRole {
 // ─── 周报模块 ─────────────────────────────────────────────
 
 model ReportGroup {
-  id           Int            @id @default(autoincrement())
+  id           Int            @id @default(autoincrement()) // 主键
   name         String
   description  String?
-  sortOrder    Int            @default(0)
+  sortOrder    Int            @default(0) // 排序序号
   departmentId Int?
   department   Department?    @relation(fields: [departmentId], references: [id])
-  createdAt    DateTime       @default(now())
+  createdAt    DateTime       @default(now()) // 创建时间
   reports      WeeklyReport[]
 }
 
 model WeeklyReport {
-  id            Int             @id @default(autoincrement())
+  id            Int             @id @default(autoincrement()) // 主键
   userId        Int?
   reportGroupId Int?
   weekNumber    Int
   year          Int
-  periodType    String          @default("weekly")
+  periodType    String          @default("weekly") // 周期类型
   scopeType     String          @default("department")  // 🗑️ 待废弃，统一走 reportGroupId
   scopeId       Int                                     // 🗑️ 待废弃
   taskName      String
   notes         String?
-  version       Int             @default(1)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  version       Int             @default(1) // 版本号
+  createdAt     DateTime        @default(now()) // 创建时间
+  updatedAt     DateTime        @updatedAt // 更新时间
   history       ReportHistory[]
   items         ReportItem[]
   reportGroup   ReportGroup?    @relation(fields: [reportGroupId], references: [id])
@@ -103,7 +103,7 @@ model WeeklyReport {
 }
 
 model ReportItem {
-  id         Int          @id @default(autoincrement())
+  id         Int          @id @default(autoincrement()) // 主键
   reportId   Int
   category   String
   plan       String
@@ -115,13 +115,13 @@ model ReportItem {
 }
 
 model ReportHistory {
-  id        Int          @id @default(autoincrement())
+  id        Int          @id @default(autoincrement()) // 主键
   reportId  Int
   version   Int
   taskName  String
   notes     String?
   itemsJson String
-  createdAt DateTime     @default(now())
+  createdAt DateTime     @default(now()) // 创建时间
   report    WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@unique([reportId, version])
@@ -130,29 +130,29 @@ model ReportHistory {
 // ─── 工作清单模块（独立） ─────────────────────────────────
 
 model WorkItem {
-  id           Int               @id @default(autoincrement())
+  id           Int               @id @default(autoincrement()) // 主键
   scopeType    String?           @default("department") // "report_group" | "department" | "personal"
   scopeId      Int?                                     // ReportGroup.id | Department.id | User.id
   category     String
   content      String
-  importance   Int               @default(3)
-  urgency      Int               @default(3)
-  isArchived   Boolean           @default(false)
+  importance   Int               @default(3) // 重要度（1-5）
+  urgency      Int               @default(3) // 紧急度（1-5）
+  isArchived   Boolean           @default(false) // 是否归档
   isPrivate    Boolean           @default(false)        // personal 时默认仅自己可见
-  sortOrder    Int               @default(0)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  sortOrder    Int               @default(0) // 排序序号
+  createdAt    DateTime          @default(now()) // 创建时间
+  updatedAt    DateTime          @updatedAt // 更新时间
   participants WorkParticipant[]
 
   @@index([scopeType, scopeId, category])
 }
 
 model WorkParticipant {
-  id         Int      @id @default(autoincrement())
+  id         Int      @id @default(autoincrement()) // 主键
   workItemId Int
   name       String
   wxUserId   String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) // 创建时间
   workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
 
   @@index([workItemId])
@@ -161,8 +161,8 @@ model WorkParticipant {
 // ─── 花名册与组织架构 ─────────────────────────────────────
 
 model Employee {
-  id            Int                @id @default(autoincrement())
-  employeeId    String             @unique
+  id            Int                @id @default(autoincrement()) // 主键
+  employeeId    String             @unique // 员工编号
   name          String
   alias         String?
   gender        String?
@@ -182,11 +182,11 @@ model Employee {
   attendance2   String?
   joinDate      String?
   nature        String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt     DateTime           @default(now()) // 创建时间
+  updatedAt     DateTime           @updatedAt // 更新时间
   leaveDate     String?
-  status        String?            @default("在职")
-  deleted       Boolean?           @default(false)
+  status        String?            @default("在职") // 状态
+  deleted       Boolean?           @default(false) // 是否软删除
   deletedTime   String?
   deletedBy     String?
   userId        Int?
@@ -194,12 +194,12 @@ model Employee {
   positions     EmployeePosition[]
   editedBy      Int?
   editedAt      DateTime?
-  version       Int                @default(1)
+  version       Int                @default(1) // 版本号
 }
 
 model Department {
-  id                Int                @id @default(autoincrement())
-  code              String             @unique
+  id                Int                @id @default(autoincrement()) // 主键
+  code              String             @unique // 编码
   name              String
   companyCode       String?            // → CompanyCode (migration: copy from company)
   level             Int
@@ -210,29 +210,29 @@ model Department {
   positions         DepartmentPosition[]
   employeePositions EmployeePosition[]
   reportGroups      ReportGroup[]
-  createdAt         DateTime           @default(now())
+  createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime?
   editedBy          Int?
   editedAt          DateTime?
-  version           Int                @default(1)
+  version           Int                @default(1) // 版本号
 }
 
 model Position {
-  id                Int                @id @default(autoincrement())
-  code              String             @unique
+  id                Int                @id @default(autoincrement()) // 主键
+  code              String             @unique // 编码
   name              String
   companyCode       String?            // → CompanyCode (migration: copy from company)
   departments       DepartmentPosition[]
   employeePositions EmployeePosition[]
-  createdAt         DateTime           @default(now())
+  createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime?
   editedBy          Int?
   editedAt          DateTime?
-  version           Int                @default(1)
+  version           Int                @default(1) // 版本号
 }
 
 model EmployeePosition {
-  id           Int        @id @default(autoincrement())
+  id           Int        @id @default(autoincrement()) // 主键
   employeeId   Int
   employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   departmentId Int
@@ -241,19 +241,19 @@ model EmployeePosition {
   position     Position   @relation(fields: [positionId], references: [id])
   companyCode  String?    // 该岗位上的业务公司编码 → CompanyCode
   center       String?
-  isPrimary    Boolean    @default(false)
-  sortOrder    Int        @default(0)
+  isPrimary    Boolean    @default(false) // 是否主岗
+  sortOrder    Int        @default(0) // 排序序号
   startDate    String?    // 任职开始日期
   endDate      String?    // 任职结束日期（null=至今）
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime   @default(now()) // 创建时间
   updatedAt    DateTime?
   editedBy     Int?
   editedAt     DateTime?
-  version      Int        @default(1)
+  version      Int        @default(1) // 版本号
 }
 
 model DepartmentPosition {
-  id           Int        @id @default(autoincrement())
+  id           Int        @id @default(autoincrement()) // 主键
   departmentId Int
   positionId   Int
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
@@ -265,20 +265,20 @@ model DepartmentPosition {
 // ─── 字典 ─────────────────────────────────────────────────
 
 model CompanyCode {
-  code String @id
-  name String @unique
+  code String @id // 编码
+  name String @unique // 名称
 }
 
 // ─── 编辑历史 ─────────────────────────────────────────────
 
 model EditHistory {
-  id         Int      @id @default(autoincrement())
+  id         Int      @id @default(autoincrement()) // 主键
   entityType String   // "employee" | "employee_position" | "code_department" | "code_position"
   entityId   String
   version    Int
   dataJson   String   // 编辑前快照
   editedBy   Int
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) // 创建时间
 
   @@unique([entityType, entityId, version])
 }

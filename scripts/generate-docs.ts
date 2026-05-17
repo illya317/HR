@@ -232,6 +232,13 @@ function generateHTML(models: Model[], groups: string[]): string {
   .dep-link { display: inline-block; background: #f1f5f9; padding: 1px 8px; border-radius: 3px; font-family: "SF Mono", "Menlo", monospace; font-size: 12px; color: #475569; text-decoration: none; }
   .dep-link:hover { background: #e2e8f0; }
   .dep-none { color: #cbd5e1; }
+  .fk-out td { background: #fef9e7; }    /* amber tint — FK pointing out */
+  .fk-out td:first-child { border-left: 3px solid #f59e0b; }
+  .fk-in td { background: #ecfdf5; }     /* emerald tint — referenced by others */
+  .fk-in td:first-child { border-left: 3px solid #10b981; }
+  .legend { display: flex; gap: 16px; margin-top: 16px; font-size: 11px; color: #94a3b8; }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .legend-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -257,6 +264,10 @@ function generateHTML(models: Model[], groups: string[]): string {
     rows.push(`</div>`);
   }
 
+  rows.push(`<div class="legend">
+    <span><span class="legend-swatch" style="background:#fef9e7;border:2px solid #f59e0b"></span> FK out</span>
+    <span><span class="legend-swatch" style="background:#ecfdf5;border:2px solid #10b981"></span> Referenced</span>
+  </div>`);
   rows.push(`</nav><main>`);
 
   // Content
@@ -275,17 +286,30 @@ function generateHTML(models: Model[], groups: string[]): string {
       rows.push(`<div class="table-block" id="${m.name}">`);
       rows.push(`<div class="table-header"><h3><span class="table-num">${num}</span> ${m.name}</h3></div>`);
 
+      // Pre-compute FK highlight sets
+      // Outbound: fields in THIS model that are FKs pointing elsewhere
+      const fkOutFields = new Set(m.relations.flatMap(r => r.fields));
+      // Inbound: OTHER models' FK fields that reference THIS model's columns
+      const fkInFields = new Set<string>();
+      for (const other of models) {
+        if (other === m) continue;
+        for (const rel of other.relations) {
+          if (rel.targetModel === m.name) {
+            for (const ref of rel.references) fkInFields.add(ref);
+          }
+        }
+      }
+
       // Fields
       rows.push(`<table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>`);
       for (const f of m.fields) {
-        // Skip Prisma reverse-relation arrays (not real columns)
         if (f.type.endsWith("[]")) continue;
-        // Skip the named relation fields (the FK column IS the field)
         if (f.isRelation && !m.relations.some(r => r.fields.includes(f.name))) continue;
         const isFK = m.relations.some(r => r.fields.includes(f.name));
         const rel = m.relations.find(r => r.fields.includes(f.name));
         const comment = f.comment || (rel ? `→ ${rel.targetModel}.${rel.references[0]}` : "");
-        rows.push(`<tr>
+        const rowClass = fkOutFields.has(f.name) ? 'fk-out' : fkInFields.has(f.name) ? 'fk-in' : '';
+        rows.push(`<tr class="${rowClass}">
           <td><span class="field-name">${f.name}</span>${f.required ? ' <span class="field-required">*</span>' : ''}</td>
           <td><span class="field-type" style="background:${typeColor(f.type)}15;color:${typeColor(f.type)}">${typeBadge(f.type)}</span></td>
           <td class="field-comment">${comment}${isFK && rel ? ` <span style="color:#94a3b8">→ <a href="#${rel.targetModel}" class="dep-link">${rel.targetModel}</a></span>` : ''}</td>

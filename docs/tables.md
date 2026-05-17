@@ -9,6 +9,8 @@
 ### User
 纯认证实体。业务归属走 Employee → EmployeePosition。
 
+**外键**: 无 — 不依赖任何表
+
 | 字段 | 说明 |
 |------|------|
 | wxUserId | 微信用户ID，唯一 |

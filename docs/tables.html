@@ -40,6 +40,13 @@
   .dep-link { display: inline-block; background: #f1f5f9; padding: 1px 8px; border-radius: 3px; font-family: "SF Mono", "Menlo", monospace; font-size: 12px; color: #475569; text-decoration: none; }
   .dep-link:hover { background: #e2e8f0; }
   .dep-none { color: #cbd5e1; }
+  .fk-out td { background: #fef9e7; }    /* amber tint — FK pointing out */
+  .fk-out td:first-child { border-left: 3px solid #f59e0b; }
+  .fk-in td { background: #ecfdf5; }     /* emerald tint — referenced by others */
+  .fk-in td:first-child { border-left: 3px solid #10b981; }
+  .legend { display: flex; gap: 16px; margin-top: 16px; font-size: 11px; color: #94a3b8; }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .legend-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -78,95 +85,99 @@
 <div class="group"><div class="group-title">7. Edit History</div>
 <a href="#EditHistory">7-1 EditHistory</a>
 </div>
+<div class="legend">
+    <span><span class="legend-swatch" style="background:#fef9e7;border:2px solid #f59e0b"></span> FK out</span>
+    <span><span class="legend-swatch" style="background:#ecfdf5;border:2px solid #10b981"></span> Referenced</span>
+  </div>
 </nav><main>
 <div class="section"><div class="section-title">1. Authentication</div>
 <div class="table-block" id="User">
 <div class="table-header"><h3><span class="table-num">1-1</span> User</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">wxUserId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">微信用户ID</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">username</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">登录用户名（自取）</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">password</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">employeeId</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">departmentId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">注册时初始关联线索，非权威来源</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">departmentName</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">avatar</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">routineItems</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">isWorkListAdmin</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">是否超级管理员</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">canSelectAnyWeek</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">是否可补填任意周报</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">canAccessHR</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">是否可访问人事行政</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">canAccessWorks</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">是否可访问工作清单</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">canLogin</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
           <td class="field-comment">离职=停用，不删号</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">apiKey</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">API密钥</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -185,30 +196,30 @@
 <div class="table-block" id="Resource">
 <div class="table-header"><h3><span class="table-num">2-1</span> Resource</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">key</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">"system" | "module.hr" | "module.works" | "department" | "report_group" | "field"</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">description</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">排序序号</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -223,30 +234,30 @@
 <div class="table-block" id="Role">
 <div class="table-header"><h3><span class="table-num">2-2</span> Role</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">key</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">"access" | "admin" | "write" | "read" | "member" | "viewer"</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">description</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">排序序号</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -261,27 +272,27 @@
 <div class="table-block" id="UserResourceRole">
 <div class="table-header"><h3><span class="table-num">2-3</span> UserResourceRole</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">userId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ User.id <span style="color:#94a3b8">→ <a href="#User" class="dep-link">User</a></span></td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">resourceId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Resource.id <span style="color:#94a3b8">→ <a href="#Resource" class="dep-link">Resource</a></span></td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">roleId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Role.id <span style="color:#94a3b8">→ <a href="#Role" class="dep-link">Role</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">scopeId</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">null=全局开关(第2层), 有值=范围分配(第3层)</td>
@@ -303,35 +314,35 @@
 <div class="table-block" id="ReportGroup">
 <div class="table-header"><h3><span class="table-num">3-1</span> ReportGroup</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">description</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">排序序号</td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">departmentId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Department.id <span style="color:#94a3b8">→ <a href="#Department" class="dep-link">Department</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -346,70 +357,70 @@
 <div class="table-block" id="WeeklyReport">
 <div class="table-header"><h3><span class="table-num">3-2</span> WeeklyReport</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">userId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ User.id <span style="color:#94a3b8">→ <a href="#User" class="dep-link">User</a></span></td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">reportGroupId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ ReportGroup.id <span style="color:#94a3b8">→ <a href="#ReportGroup" class="dep-link">ReportGroup</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">weekNumber</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">year</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">periodType</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">周期类型</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">scopeType</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">🗑️ 待废弃，统一走 reportGroupId</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">scopeId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">🗑️ 待废弃</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">taskName</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">notes</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">版本号</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">更新时间</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -426,42 +437,42 @@
 <div class="table-block" id="ReportItem">
 <div class="table-header"><h3><span class="table-num">3-3</span> ReportItem</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">reportId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ WeeklyReport.id <span style="color:#94a3b8">→ <a href="#WeeklyReport" class="dep-link">WeeklyReport</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">category</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">plan</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">completion</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">nextGoal</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">workItemId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -479,40 +490,40 @@
 <div class="table-block" id="ReportHistory">
 <div class="table-header"><h3><span class="table-num">3-4</span> ReportHistory</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">reportId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ WeeklyReport.id <span style="color:#94a3b8">→ <a href="#WeeklyReport" class="dep-link">WeeklyReport</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">taskName</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">notes</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">itemsJson</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -529,65 +540,65 @@
 <div class="table-block" id="WorkItem">
 <div class="table-header"><h3><span class="table-num">4-1</span> WorkItem</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">scopeType</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">"report_group" | "department" | "personal"</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">scopeId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">ReportGroup.id | Department.id | User.id</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">category</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">content</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">importance</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">重要度（1-5）</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">urgency</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">紧急度（1-5）</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">isArchived</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">是否归档</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">isPrivate</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
           <td class="field-comment">personal 时默认仅自己可见</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">排序序号</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">更新时间</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -602,30 +613,30 @@
 <div class="table-block" id="WorkParticipant">
 <div class="table-header"><h3><span class="table-num">4-2</span> WorkParticipant</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">workItemId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ WorkItem.id <span style="color:#94a3b8">→ <a href="#WorkItem" class="dep-link">WorkItem</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">wxUserId</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -642,165 +653,165 @@
 <div class="table-block" id="Employee">
 <div class="table-header"><h3><span class="table-num">5-1</span> Employee</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">employeeId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">员工编号</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">alias</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">gender</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">ethnicity</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">hometown</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">politics</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">education</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">title</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">school</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">major</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">majorRelevant</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">phone</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">office1</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">office2</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">office3</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">attendance1</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">attendance2</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">joinDate</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">nature</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">更新时间</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">leaveDate</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">status</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">状态</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">deleted</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">是否软删除</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">deletedTime</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">deletedBy</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">userId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ User.id <span style="color:#94a3b8">→ <a href="#User" class="dep-link">User</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedBy</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedAt</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">版本号</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -815,65 +826,65 @@
 <div class="table-block" id="Department">
 <div class="table-header"><h3><span class="table-num">5-2</span> Department</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">code</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">编码</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">companyCode</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">→ CompanyCode (migration: copy from company)</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">level</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">parentId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Department.id <span style="color:#94a3b8">→ <a href="#Department" class="dep-link">Department</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">managerUserId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">负责人 → User.id（有账号时关联）</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">updatedAt</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedBy</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedAt</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">版本号</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -890,50 +901,50 @@
 <div class="table-block" id="Position">
 <div class="table-header"><h3><span class="table-num">5-3</span> Position</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">code</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">编码</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">companyCode</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">→ CompanyCode (migration: copy from company)</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">updatedAt</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedBy</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedAt</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">版本号</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -949,80 +960,80 @@
 <div class="table-block" id="EmployeePosition">
 <div class="table-header"><h3><span class="table-num">5-4</span> EmployeePosition</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">employeeId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Employee.id <span style="color:#94a3b8">→ <a href="#Employee" class="dep-link">Employee</a></span></td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">departmentId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Department.id <span style="color:#94a3b8">→ <a href="#Department" class="dep-link">Department</a></span></td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">positionId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Position.id <span style="color:#94a3b8">→ <a href="#Position" class="dep-link">Position</a></span></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">companyCode</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">该岗位上的业务公司编码 → CompanyCode</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">center</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">isPrimary</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">是否主岗</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">排序序号</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">startDate</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">任职开始日期</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">endDate</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">任职结束日期（null=至今）</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">updatedAt</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedBy</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedAt</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">版本号</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -1039,17 +1050,17 @@
 <div class="table-block" id="DepartmentPosition">
 <div class="table-header"><h3><span class="table-num">5-5</span> DepartmentPosition</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">departmentId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Department.id <span style="color:#94a3b8">→ <a href="#Department" class="dep-link">Department</a></span></td>
         </tr>
-<tr>
+<tr class="fk-out">
           <td><span class="field-name">positionId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Position.id <span style="color:#94a3b8">→ <a href="#Position" class="dep-link">Position</a></span></td>
@@ -1070,15 +1081,15 @@
 <div class="table-block" id="CompanyCode">
 <div class="table-header"><h3><span class="table-num">6-1</span> CompanyCode</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="">
           <td><span class="field-name">code</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">编码</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">name</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">名称</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -1095,40 +1106,40 @@
 <div class="table-block" id="EditHistory">
 <div class="table-header"><h3><span class="table-num">7-1</span> EditHistory</h3></div>
 <table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>
-<tr>
+<tr class="">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">主键</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">entityType</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">"employee" | "employee_position" | "code_department" | "code_position"</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">entityId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">dataJson</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">编辑前快照</td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">editedBy</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr>
+<tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment"></td>
+          <td class="field-comment">创建时间</td>
         </tr>
 </tbody></table>
 <div class="table-footer">
