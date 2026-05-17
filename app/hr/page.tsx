@@ -434,25 +434,11 @@ function CodeTab({
                     </td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
                       {isEditing ? (
-                        <div className="flex items-center gap-1">
-                          <input
-                            value={editNameValue}
-                            onChange={(e) => setEditNameValue(e.target.value)}
-                            className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-                          />
-                          <button
-                            onClick={() => saveEditRow(item.code)}
-                            className="rounded bg-green-500 px-2 py-0.5 text-xs text-white hover:bg-green-600"
-                          >
-                            保存
-                          </button>
-                          <button
-                            onClick={cancelEditRow}
-                            className="rounded bg-gray-400 px-2 py-0.5 text-xs text-white hover:bg-gray-500"
-                          >
-                            取消
-                          </button>
-                        </div>
+                        <input
+                          value={editNameValue}
+                          onChange={(e) => setEditNameValue(e.target.value)}
+                          className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
+                        />
                       ) : (
                         <span
                           className="cursor-pointer hover:text-emerald-600"

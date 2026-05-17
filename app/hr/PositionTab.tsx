@@ -202,24 +202,16 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                       const options = f.key === "dept1" ? allDepts : allPositions;
                       return (
                         <td key={f.key} className="whitespace-nowrap px-3 py-2">
-                          <div className="flex items-center gap-1">
-                            <input
-                              ref={inputRef}
-                              list={f.key === "dept1" ? "dept-list" : "pos-list"}
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={() => saveEdit()}
-                              onKeyDown={handleKeyDown}
-                              className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
-                              style={{ minWidth: "12ch" }}
-                            />
-                            <button
-                              onMouseDown={(e) => { e.preventDefault(); saveEdit(); }}
-                              className="rounded bg-green-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-green-600"
-                            >
-                              保存
-                            </button>
-                          </div>
+                          <input
+                            ref={inputRef}
+                            list={f.key === "dept1" ? "dept-list" : "pos-list"}
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={() => saveEdit()}
+                            onKeyDown={handleKeyDown}
+                            className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
+                            style={{ minWidth: "12ch" }}
+                          />
                           <datalist id={f.key === "dept1" ? "dept-list" : "pos-list"}>
                             {options.map((o) => (
                               <option key={o} value={o} />
@@ -231,23 +223,15 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                     if (isEditing) {
                       return (
                         <td key={f.key} className="whitespace-nowrap px-3 py-2">
-                          <div className="flex items-center gap-1">
-                            <input
-                              ref={inputRef}
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onBlur={() => saveEdit()}
-                              onKeyDown={handleKeyDown}
-                              className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
-                              style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
-                            />
-                            <button
-                              onMouseDown={(e) => { e.preventDefault(); saveEdit(); }}
-                              className="rounded bg-green-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-green-600"
-                            >
-                              保存
-                            </button>
-                          </div>
+                          <input
+                            ref={inputRef}
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={() => saveEdit()}
+                            onKeyDown={handleKeyDown}
+                            className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
+                            style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
+                          />
                         </td>
                       );
                     }
