@@ -167,13 +167,13 @@ export default function AdminPage() {
     return ["system", "people", "work", "docs"].includes(key);
   }
 
-  // Flatten resource tree into select options with indentation
-  function flattenResourcesForSelect(res: ResourceItem[], depth: number = 0): Array<{ key: string; name: string; depth: number }> {
-    const result: Array<{ key: string; name: string; depth: number }> = [];
-    for (const r of res) {
-      result.push({ key: r.key, name: r.name, depth });
+  // Build flat resource list from tree for state + top-level filter
+  function flattenTree(resources: ResourceItem[]): ResourceItem[] {
+    const result: ResourceItem[] = [];
+    for (const r of resources) {
+      result.push(r);
       if (r.children && r.children.length > 0) {
-        result.push(...flattenResourcesForSelect(r.children, depth + 1));
+        result.push(...flattenTree(r.children));
       }
     }
     return result;
@@ -183,13 +183,15 @@ export default function AdminPage() {
     const res = await fetch("/api/admin/permissions");
     if (res.ok) {
       const data = await res.json();
-      setResources(data.resources || []);
+      // API returns tree; flatten for state (ResourceItem[]), keeps children for select rendering
+      const flatResources = flattenTree(data.resources || []);
+      setResources(flatResources);
       setRoles(data.roles || []);
       // Default to first available resource
-      if (data.resources && data.resources.length > 0) {
+      if (flatResources.length > 0) {
         setSelectedResource((prev) => {
-          if (!prev || !data.resources.find((r: ResourceItem) => r.key === prev)) {
-            return data.resources[0].key;
+          if (!prev || !flatResources.find((r: ResourceItem) => r.key === prev)) {
+            return flatResources[0].key;
           }
           return prev;
         });
@@ -1331,11 +1333,16 @@ export default function AdminPage() {
                       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:w-auto"
                     >
                       <option value="">所有资源</option>
-                      {flattenResourcesForSelect(resources).map(r => (
-                        <option key={r.key} value={r.key}>
-                          {'  '.repeat(r.depth)}{r.name}
-                        </option>
-                      ))}
+                      {resources.map(r => {
+                        // Indent children resources based on dotted key depth
+                        const depth = r.key.split('.').length - 1;
+                        const isTopLevel = isTopLevelResource(r.key);
+                        return (
+                          <option key={r.key} value={r.key}>
+                            {'  '.repeat(depth)}{isTopLevel ? '▸ ' : ''}{r.name}
+                          </option>
+                        );
+                      })}
                     </select>
                     <button
                       onClick={() => { setFilterCompany(""); setFilterDept(""); setSearchKeyword(""); setSelectedResource(""); }}
