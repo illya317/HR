@@ -28,6 +28,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const companysParam = searchParams.get("companys");
   const company = searchParams.get("company");
+  const departmentCode = searchParams.get("departmentCode");
 
   const codes = companysParam
     ? companysParam.split(",")
@@ -35,9 +36,28 @@ export async function GET(request: Request) {
       ? [company]
       : [];
 
+  // 如果指定了部门编码，先查该部门关联的岗位ID
+  let positionIds: number[] | undefined;
+  if (departmentCode) {
+    const dept = await prisma.department.findUnique({ where: { code: departmentCode } });
+    if (dept) {
+      const links = await prisma.departmentPosition.findMany({
+        where: { departmentId: dept.id },
+        select: { positionId: true },
+      });
+      positionIds = links.map((l) => l.positionId);
+    }
+    if (!positionIds || positionIds.length === 0) {
+      return NextResponse.json({ codes: [] });
+    }
+  }
+
   const where: any = {};
   if (codes.length > 0) {
     where.OR = codes.map((cc: string) => ({ code: { startsWith: cc } }));
+  }
+  if (positionIds) {
+    where.id = { in: positionIds };
   }
 
   const result = await prisma.position.findMany({ where, orderBy: { code: "asc" } });

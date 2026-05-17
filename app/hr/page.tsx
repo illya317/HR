@@ -416,13 +416,15 @@ function CompanyCodeTab({ user }: { user: User }) {
 
 function CodesTab({ user, selectedCompany }: { user: User; selectedCompany: string }) {
   const companyCode = NAME_TO_CODE[selectedCompany] || "";
+  const [selectedDept, setSelectedDept] = useState<string | null>(null);
   return (
-    <div className="flex flex-wrap gap-6">
-      <div className="flex flex-col gap-6">
-        <CompanyCodeTab user={user} />
-        <CodeTab user={user} type="department" apiPath="/api/admin/department-codes" title="部门编码" companyCode={companyCode} selectedCompany={selectedCompany} />
+    <div className="flex gap-6">
+      <div className="w-1/2">
+        <CodeTab user={user} type="department" apiPath="/api/admin/department-codes" title="部门编码" companyCode={companyCode} selectedCompany={selectedCompany} onSelect={setSelectedDept} selectedCode={selectedDept || undefined} />
       </div>
-      <CodeTab user={user} type="position" apiPath="/api/admin/position-codes" title="岗位编码" companyCode={companyCode} selectedCompany={selectedCompany} />
+      <div className="w-1/2">
+        <CodeTab user={user} type="position" apiPath="/api/admin/position-codes" title="岗位编码" companyCode={companyCode} selectedCompany={selectedCompany} departmentCode={selectedDept || undefined} />
+      </div>
     </div>
   );
 }
@@ -434,6 +436,9 @@ function CodeTab({
   title,
   companyCode,
   selectedCompany,
+  onSelect,
+  selectedCode,
+  departmentCode,
 }: {
   user: User;
   type: "department" | "position";
@@ -441,6 +446,9 @@ function CodeTab({
   title: string;
   companyCode: string;
   selectedCompany: string;
+  onSelect?: (code: string) => void;
+  selectedCode?: string;
+  departmentCode?: string;
 }) {
   const [codes, setCodes] = useState<CodeItem[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -466,7 +474,10 @@ function CodeTab({
   async function load() {
     setLoading(true);
     const codesParam = selectedCompany ? resolveCompanyFilter(selectedCompany).map((n) => NAME_TO_CODE[n] || "").filter(Boolean).join(",") : "";
-    const url = codesParam ? `${apiPath}?companys=${codesParam}` : apiPath;
+    const params = new URLSearchParams();
+    if (codesParam) params.set("companys", codesParam);
+    if (departmentCode) params.set("departmentCode", departmentCode);
+    const url = params.toString() ? `${apiPath}?${params.toString()}` : apiPath;
     const [codesRes, empRes] = await Promise.all([
       fetch(url),
       fetch(`/api/employees?company=${encodeURIComponent(selectedCompany || "")}`),
@@ -484,7 +495,7 @@ function CodeTab({
 
   useEffect(() => {
     load();
-  }, [apiPath, companyCode, selectedCompany]);
+  }, [apiPath, companyCode, selectedCompany, departmentCode]);
 
   // 编码前缀对应的公司名（01/02/03/05 岗位编码共享）
   const PREFIX_TO_COMPANIES: Record<string, string[]> = {
@@ -766,20 +777,21 @@ function CodeTab({
                 const renderRow = (item: CodeItem) => {
                   const isEditing = editRow === item.code;
                   const count = stats[item.code] || 0;
+                  const isSelected = selectedCode === item.code;
                   return (
-                    <tr key={item.code} className="border-b last:border-0 hover:bg-gray-50">
+                    <tr key={item.code} className={`border-b last:border-0 hover:bg-gray-50 ${isSelected ? "bg-emerald-50" : ""}`}>
                       <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
                         {isEditing ? (
                           <input value={editCodeValue} onChange={(e) => setEditCodeValue(e.target.value)} className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none" />
                         ) : (
-                          <span>{item.code}{editMode && user.canAccessHR && (<button onClick={() => setDeleteCode(item.code)} className="ml-1 text-red-500 hover:text-red-700" title="删除">×</button>)}</span>
+                          <span className={onSelect ? "cursor-pointer hover:text-emerald-600" : ""} onClick={() => { if (onSelect) onSelect(item.code); }}>{item.code}{editMode && user.canAccessHR && (<button onClick={(e) => { e.stopPropagation(); setDeleteCode(item.code); }} className="ml-1 text-red-500 hover:text-red-700" title="删除">×</button>)}</span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
                         {isEditing ? (
                           <input value={editNameValue} onChange={(e) => setEditNameValue(e.target.value)} className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none" />
                         ) : (
-                          <span className="cursor-pointer hover:text-emerald-600" onClick={() => editMode && user.canAccessHR ? startEditRow(item) : setDetailModal({ open: true, code: item.code, name: item.name })}>{item.name || "-"}</span>
+                          <span className="cursor-pointer hover:text-emerald-600" onClick={() => editMode && user.canAccessHR ? startEditRow(item) : onSelect ? onSelect(item.code) : setDetailModal({ open: true, code: item.code, name: item.name })}>{item.name || "-"}</span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5 text-right text-gray-700">
