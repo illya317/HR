@@ -27,7 +27,8 @@ export default function ReportPage() {
   const { toast, showToast, closeToast } = useToast();
 
   const [user, setUser] = useState<{ id: number; name: string; departmentId: number } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [viewingVersion, setViewingVersion] = useState(0);
 
@@ -154,7 +155,7 @@ export default function ReportPage() {
       setRoutineItems(buildItems("routine"));
       setNonRoutineItems(buildItems("non-routine"));
     }
-    setLoading(false);
+    setInitialLoading(false);
   }
 
   async function loadVersion(version: number) {
@@ -246,7 +247,7 @@ export default function ReportPage() {
     },
   };
 
-  if (loading) {
+  if (initialLoading) {
     return <div className="flex min-h-screen items-center justify-center"><p className="text-gray-500">加载中...</p></div>;
   }
 
@@ -276,10 +277,7 @@ export default function ReportPage() {
                   setTargetName("");
                   setTaskName("");
                 }
-                if (user) {
-                  setLoading(true);
-                  loadReport(user, selectedYear, selectedPeriodIndex);
-                }
+                if (user) loadReport(user, selectedYear, selectedPeriodIndex);
               }}
             />
           </div>
@@ -306,8 +304,7 @@ export default function ReportPage() {
                 const info = getCurrentPeriod(pt);
                 setSelectedYear(info.year);
                 setSelectedPeriodIndex(info.periodIndex);
-                setLoading(true);
-                loadReport(user!, info.year, info.periodIndex);
+                if (user) loadReport(user, info.year, info.periodIndex);
               }}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${periodType === pt ? "bg-white text-emerald-700" : "text-white/70 hover:bg-white/10 hover:text-white"}`}
               >{getPeriodTypeName(pt)}</button>
@@ -315,17 +312,17 @@ export default function ReportPage() {
           </div>
           <div className="mb-2 flex items-center justify-center gap-3">
             {periodType === "yearly" ? (
-              <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setLoading(true); loadReport(user!, parseInt(e.target.value), 1); }}
+              <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); if (user) loadReport(user, parseInt(e.target.value), 1); }}
                 className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
                 {yearOptions.map((y) => <option key={y} value={y} className="text-gray-800">{y} 年</option>)}
               </select>
             ) : (
               <>
-                <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setLoading(true); loadReport(user!, parseInt(e.target.value), selectedPeriodIndex); }}
+                <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); if (user) loadReport(user, parseInt(e.target.value), selectedPeriodIndex); }}
                   className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
                   {yearOptions.map((y) => <option key={y} value={y} className="text-gray-800">{y} 年</option>)}
                 </select>
-                <select value={selectedPeriodIndex} onChange={(e) => { setSelectedPeriodIndex(parseInt(e.target.value)); setLoading(true); loadReport(user!, selectedYear, parseInt(e.target.value)); }}
+                <select value={selectedPeriodIndex} onChange={(e) => { setSelectedPeriodIndex(parseInt(e.target.value)); if (user) loadReport(user, selectedYear, parseInt(e.target.value)); }}
                   className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
                   {periodOptions.map((p) => <option key={p.value} value={p.value} className="text-gray-800">{p.label}</option>)}
                 </select>

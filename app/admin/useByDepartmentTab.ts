@@ -50,7 +50,7 @@ export function useByDepartmentTab(
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          departmentId: String(deptId),
+          departmentId: deptId,
           resourceKey,
           roleKey: "access",
           value,
