@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  if (!(await checkPermission(payload.userId, "system.admin"))) {
+  if (!(await checkPermission(payload.userId, "system", "admin"))) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 

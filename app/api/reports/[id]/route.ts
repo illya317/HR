@@ -30,7 +30,7 @@ export async function PUT(
 
   async function canEdit(report: NonNullable<typeof existing>) {
     // 管理员直接放行
-    if (await checkPermission(userId, "system.admin")) return true;
+    if (await checkPermission(userId, "system", "admin")) return true;
 
     // 如果有 reportGroupId，检查用户是否是填报成员或负责人
     if (report.reportGroupId) {

@@ -97,7 +97,7 @@ export async function GET(request: Request) {
       username: linkedUser?.username ?? null,
       // Backward-compat boolean fields
       isWorkListAdmin: rrs.some((rr) => rr.resource.key === "system" && rr.role.key === "admin"),
-      canAccessHR: rrs.some((rr) => rr.resource.key === "module.hr" && rr.role.key === "access"),
+      canAccessHR: rrs.some((rr) => rr.resource.key === "people" && rr.role.key === "access"),
       // New: resource+role pairs as resourceRoles for UX compatibility
       resourceRoles: rrs,
       // Granted resource+role keys (e.g., "system.admin", "module.hr.access")
@@ -172,7 +172,6 @@ export async function PUT(request: Request) {
             resourceId: resource.id,
             roleId: role.id,
             scopeId: null,
-            positionId: null,
           },
         });
         if (!existing) {
@@ -182,7 +181,6 @@ export async function PUT(request: Request) {
               resourceId: resource.id,
               roleId: role.id,
               scopeId: null,
-              positionId: null,
             },
           });
         }
@@ -194,7 +192,6 @@ export async function PUT(request: Request) {
             resourceId: resource.id,
             roleId: role.id,
             scopeId: null,
-            positionId: null,
           },
         });
       }

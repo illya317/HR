@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticate, checkPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET - get all position-level permission grants
+// GET - get all department-level permission grants
 export async function GET(request: Request) {
   const payload = await authenticate(request);
   if (!payload) {
@@ -14,23 +14,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
-  // RBAC v2: use PositionResourceRole table
-  const grants = await prisma.positionResourceRole.findMany({
+  const grants = await prisma.departmentResourceRole.findMany({
     include: {
       resource: { select: { id: true, key: true, name: true } },
       role: { select: { id: true, key: true, name: true } },
-      position: { select: { id: true, code: true, name: true, companyCode: true } },
+      department: { select: { id: true, name: true, companyCode: true } },
     },
     orderBy: [
-      { position: { companyCode: "asc" } },
-      { position: { code: "asc" } },
+      { department: { companyCode: "asc" } },
+      { department: { name: "asc" } },
     ],
   });
 
   return NextResponse.json({ grants });
 }
 
-// PUT - toggle a position-level permission grant
+// PUT - toggle a department-level permission grant
 export async function PUT(request: Request) {
   const payload = await authenticate(request);
   if (!payload) {
@@ -43,10 +42,13 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json();
-  const { positionId, resourceKey, roleKey, value } = body;
+  const { departmentId, resourceKey, roleKey, value } = body;
 
-  if (!positionId || !resourceKey || !roleKey || typeof value !== "boolean") {
-    return NextResponse.json({ error: "参数错误: 需要 positionId, resourceKey, roleKey, value" }, { status: 400 });
+  if (!departmentId || !resourceKey || !roleKey || typeof value !== "boolean") {
+    return NextResponse.json(
+      { error: "参数错误: 需要 departmentId, resourceKey, roleKey, value" },
+      { status: 400 }
+    );
   }
 
   const resource = await prisma.resource.findUnique({ where: { key: resourceKey } });
@@ -57,28 +59,27 @@ export async function PUT(request: Request) {
   }
 
   if (value) {
-    // Grant: create if not exists (RBAC v2: PositionResourceRole)
-    const existing = await prisma.positionResourceRole.findFirst({
+    const existing = await prisma.departmentResourceRole.findFirst({
       where: {
-        positionId,
+        departmentId,
         resourceId: resource.id,
         roleId: role.id,
+        scopeId: null,
       },
     });
     if (!existing) {
-      await prisma.positionResourceRole.create({
+      await prisma.departmentResourceRole.create({
         data: {
-          positionId,
+          departmentId,
           resourceId: resource.id,
           roleId: role.id,
         },
       });
     }
   } else {
-    // Revoke: delete if exists
-    await prisma.positionResourceRole.deleteMany({
+    await prisma.departmentResourceRole.deleteMany({
       where: {
-        positionId,
+        departmentId,
         resourceId: resource.id,
         roleId: role.id,
       },

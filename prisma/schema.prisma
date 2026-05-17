@@ -36,36 +36,74 @@ model User {
 // 详见 docs/rbac.md
 
 model Resource {
-  id          Int                @id @default(autoincrement()) // 主键
-  key         String             @unique   // "system" | "module.hr" | "module.works" | "department" | "report" | "report_group" | "field"
-  name        String // 名称
-  description String? // 说明
-  sortOrder   Int                @default(0) // 排序序号
-  roles       UserResourceRole[]
+  id              Int                      @id @default(autoincrement())
+  key             String                   @unique
+  name            String
+  description     String?
+  sortOrder       Int                      @default(0)
+  parentId        Int?                     // 上级资源（资源树）
+  parent          Resource?                @relation("ResHierarchy", fields: [parentId], references: [id])
+  children        Resource[]               @relation("ResHierarchy")
+  userRoles       UserResourceRole[]
+  positionRoles   PositionResourceRole[]
+  departmentRoles DepartmentResourceRole[]
 }
 
 model Role {
-  id          Int                @id @default(autoincrement()) // 主键
-  key         String             @unique   // "access" | "admin" | "write" | "read" | "member" | "viewer" | "write_any_week"
-  name        String // 名称
-  description String? // 说明
-  sortOrder   Int                @default(0) // 排序序号
-  assignments UserResourceRole[]
+  id              Int    @id @default(autoincrement())
+  key             String @unique   // "access" | "read" | "write" | "delete" | "admin" | "member" | "viewer"
+  name            String
+  description     String?
+  sortOrder       Int    @default(0)
+  userAssignments       UserResourceRole[]
+  positionAssignments   PositionResourceRole[]
+  departmentAssignments DepartmentResourceRole[]
 }
 
 model UserResourceRole {
-  id         Int       @id @default(autoincrement()) // 主键
-  userId     Int? // 用户ID（positionId有值时可为NULL）
-  resourceId Int // 资源ID → Resource
-  roleId     Int // 角色ID → Role
-  scopeId    String?   // null=全局开关(第2层), 有值=范围分配(第3层)
-  positionId Int?      // NULL=直接用户授权, 非NULL=岗位级授权 → Position
-  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resource   Resource  @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  role       Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  position   Position? @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  resourceId Int
+  roleId     Int
+  scopeId    String?  // null=全局, 有值=范围实例
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, resourceId, roleId, scopeId, positionId])
+  @@unique([userId, resourceId, roleId, scopeId])
+}
+
+model PositionResourceRole {
+  id         Int      @id @default(autoincrement())
+  positionId Int
+  resourceId Int
+  roleId     Int
+  scopeId    String?
+  position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([positionId, resourceId, roleId, scopeId])
+}
+
+model DepartmentResourceRole {
+  id           Int        @id @default(autoincrement())
+  departmentId Int
+  resourceId   Int
+  roleId       Int
+  scopeId      String?
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  resource     Resource   @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, resourceId, roleId, scopeId])
+}
+
+// ─── 系统配置 ─────────────────────────────────────────────
+
+model SystemConfig {
+  key   String @id
+  value String
 }
 
 // ─── 周报模块 ─────────────────────────────────────────────
@@ -214,6 +252,7 @@ model Department {
   positions         DepartmentPosition[]
   employeePositions EmployeePosition[]
   reportGroups      ReportGroup[]
+  resourceRoles     DepartmentResourceRole[]
   companyCode       String?            // → CompanyCode
   company           CompanyCode?       @relation(fields: [companyCode], references: [code])
   createdAt         DateTime           @default(now()) // 创建时间
@@ -232,7 +271,7 @@ model Position {
   company           CompanyCode?       @relation(fields: [companyCode], references: [code])
   departments       DepartmentPosition[]
   employeePositions EmployeePosition[]
-  resourceRoles     UserResourceRole[]
+  resourceRoles     PositionResourceRole[]
   createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime? // 更新时间
   editedBy          Int? // 编辑人用户ID

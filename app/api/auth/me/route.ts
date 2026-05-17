@@ -19,10 +19,10 @@ export async function GET(request: Request) {
   }
 
   const [isAdmin, canAnyWeek, hasHR, hasWorks, groupAdmin] = await Promise.all([
-    checkPermission(payload.userId, "system.admin"),
-    checkPermission(payload.userId, "report.write_any_week"),
-    checkPermission(payload.userId, "module.hr.access"),
-    checkPermission(payload.userId, "module.works.access"),
+    checkPermission(payload.userId, "system", "admin"),
+    checkPermission(payload.userId, "work.report", "write"),
+    checkPermission(payload.userId, "people", "access"),
+    checkPermission(payload.userId, "work", "access"),
     isAnyGroupAdmin(payload.userId),
   ]);
 

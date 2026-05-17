@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  const isSysAdmin = await checkPermission(payload.userId, "system.admin");
+  const isSysAdmin = await checkPermission(payload.userId, "system", "admin");
 
   // 获取用户在该资源上的所有角色（UserResourceRole, resource=report_group）
   const roles = await prisma.userResourceRole.findMany({

@@ -8,7 +8,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  if (!(await checkPermission(payload.userId, "system.admin"))) {
+  if (!(await checkPermission(payload.userId, "system", "admin"))) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
@@ -44,7 +44,6 @@ export async function PUT(request: Request) {
         resourceId: resource.id,
         roleId: role.id,
         scopeId: null,
-        positionId: null,
       },
     });
     if (!existing) {
@@ -54,7 +53,6 @@ export async function PUT(request: Request) {
           resourceId: resource.id,
           roleId: role.id,
           scopeId: null,
-          positionId: null,
         },
       });
     }
@@ -66,7 +64,6 @@ export async function PUT(request: Request) {
         resourceId: resource.id,
         roleId: role.id,
         scopeId: null,
-        positionId: null,
       },
     });
   }

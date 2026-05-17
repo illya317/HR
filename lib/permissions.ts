@@ -1,57 +1,61 @@
 // ============================================================
-// Permission key constants
-// All permission checks MUST use these constants, not magic strings.
+// RBAC Resource/Role keys — centralized constants
 // ============================================================
 
-export const perm = {
+export const RES = {
   system: {
-    access: "system.access",       // 可登录
-    admin: "system.admin",         // 超级管理员
+    root: "system",
+    user: "system.user",
+    audit: "system.audit",
+    config: "system.config",
   },
-  module: {
-    hr: {
-      access: "module.hr.access",   // 人事行政
-    },
-    works: {
-      access: "module.works.access", // 工作清单
-    },
+  people: {
+    root: "people",
+    employee: "people.employee",
+    org: "people.org",
   },
-  department: {
-    admin: "department.admin",     // 部门管理员 (scopeId=部门ID)
+  docs: {
+    root: "docs",
+    policy: "docs.policy",
+    manual: "docs.manual",
+    form: "docs.form",
   },
-  report: {
-    write_any_week: "report.write_any_week", // 补填任意周报
+  work: {
+    root: "work",
+    report: "work.report",
+    task: "work.task",
   },
-  report_group: {
-    admin: "report_group.admin",   // 周报分组负责人
-    member: "report_group.member", // 周报分组参与
-    viewer: "report_group.viewer", // 周报分组查看
-  },
-  field: {
-    read: "field.read",            // 字段只读
-    write: "field.write",          // 字段编辑 (scopeId=字段名)
+  finance: {
+    root: "finance",
   },
 } as const;
 
-export type PermKey = (typeof perm)[keyof typeof perm] extends infer T
-  ? T extends { [k: string]: infer V } ? V : never
-  : never;
+export const ROLE = {
+  access: "access",
+  read: "read",
+  write: "write",
+  delete: "delete",
+  admin: "admin",
+  member: "member",
+  viewer: "viewer",
+} as const;
 
-// ─── Resource/Role keys ────────────────────────────────────
+// ─── Backward compat aliases ──────────────────────────────
+// Old code using perm.system.admin strings still works at runtime,
+// but new code should use checkPermission() with separate args.
 
-export const RESOURCE_KEYS = ["system", "module.hr", "module.works", "department", "report", "report_group", "field"] as const;
-export type ResourceKey = (typeof RESOURCE_KEYS)[number];
-
-export const ROLE_KEYS = ["access", "admin", "write", "read", "member", "viewer", "write_any_week"] as const;
-export type RoleKey = (typeof ROLE_KEYS)[number];
-
-// ─── Old boolean → new permission mapping ──────────────────
-// Used only for migration/seed — new code should use perm.* constants.
-
-export const BOOLEAN_TO_PERM: Record<string, string> = {
-  isWorkListAdmin:  perm.system.admin,
-  canSelectAnyWeek: perm.report.write_any_week,
-  canAccessHR:      perm.module.hr.access,
-  canAccessWorks:   perm.module.works.access,
-  canLogin:         perm.system.access,
+export const perm = {
+  system: {
+    access: "system.access",
+    admin: "system.admin",
+  },
+  people: {
+    access: "people.access",
+  },
+  work: {
+    access: "work.access",
+  },
+  report: {
+    write_any_week: "work.report.write",
+  },
 };

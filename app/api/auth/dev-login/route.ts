@@ -32,10 +32,10 @@ export async function POST(request: Request) {
   });
 
   const [isAdmin, canAnyWeek, hasHR, hasWorks, groupAdmin] = await Promise.all([
-    checkPermission(user.id, "system.admin"),
-    checkPermission(user.id, "report.write_any_week"),
-    checkPermission(user.id, "module.hr.access"),
-    checkPermission(user.id, "module.works.access"),
+    checkPermission(user.id, "system", "admin"),
+    checkPermission(user.id, "work.report", "write"),
+    checkPermission(user.id, "people", "access"),
+    checkPermission(user.id, "work", "access"),
     isAnyGroupAdmin(user.id),
   ]);
 

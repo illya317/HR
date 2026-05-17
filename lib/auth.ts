@@ -52,10 +52,9 @@ export type AuthPayload = {
 };
 
 // ============================================================
-// Permission system helpers
+// Permission helpers (resource tree + position/department)
 // ============================================================
 
-// Helper: get all position IDs for a user
 async function getUserPositionIds(userId: number): Promise<number[]> {
   const eps = await prisma.employeePosition.findMany({
     where: { employee: { userId } },
@@ -64,139 +63,123 @@ async function getUserPositionIds(userId: number): Promise<number[]> {
   return eps.map((e) => e.positionId);
 }
 
-export async function requireAdmin(request: Request) {
-  const payload = await authenticate(request);
-  if (!payload) {
-    return { error: "未登录", status: 401, payload: null };
-  }
-  const isSysAdmin = await checkPermission(payload.userId, "system.admin");
-  if (isSysAdmin) {
-    return { error: null, status: 200, payload };
-  }
-  return { error: "无权限", status: 403, payload: null };
+async function getUserDepartmentIds(userId: number): Promise<number[]> {
+  const eps = await prisma.employeePosition.findMany({
+    where: { employee: { userId } },
+    select: { departmentId: true },
+  });
+  return [...new Set(eps.map((e) => e.departmentId))];
 }
 
-export async function isGroupAdmin(userId: number, groupId: number) {
-  if (await checkPermission(userId, "system.admin")) return true;
-  const scopeId = String(groupId);
-  // Direct grant
-  const direct = await prisma.userResourceRole.findFirst({
+// Get resource ID + all ancestor IDs (granting parent implies child)
+async function getResourceWithAncestors(resourceKey: string): Promise<number[]> {
+  const resource = await prisma.resource.findUnique({
+    where: { key: resourceKey },
+    select: { id: true, parentId: true },
+  });
+  if (!resource) return [];
+  const ids = [resource.id];
+  let current = resource;
+  while (current.parentId) {
+    const parent = await prisma.resource.findUnique({
+      where: { id: current.parentId },
+      select: { id: true, parentId: true },
+    });
+    if (!parent) break;
+    ids.push(parent.id);
+    current = parent;
+  }
+  return ids;
+}
+
+// ============================================================
+// Core permission check — union strategy (3 tables)
+// ============================================================
+
+// RULE: system.admin bypasses everything.
+// Union strategy: any of UserRole | PositionRole | DepartmentRole = allowed.
+export async function checkPermission(
+  userId: number,
+  resourceKey: string,
+  roleKey: string
+): Promise<boolean> {
+  // 0. system.admin bypass (skip if already checking system.admin itself)
+  if (!(resourceKey === "system" && roleKey === "admin")) {
+    const isSysAdmin = await checkPermission(userId, "system", "admin");
+    if (isSysAdmin) return true;
+  }
+
+  // 1. Resolve resource tree (self + ancestors)
+  const resourceIds = await getResourceWithAncestors(resourceKey);
+  if (resourceIds.length === 0) return false;
+
+  // 2. UserResourceRole (direct grant)
+  const userGrant = await prisma.userResourceRole.findFirst({
     where: {
       userId,
-      resource: { key: "report_group" },
-      role: { key: "admin" },
-      scopeId,
-      positionId: null,
+      resourceId: { in: resourceIds },
+      role: { key: roleKey },
     },
   });
-  if (direct) return true;
-  // Position-inherited grant
+  if (userGrant) return true;
+
+  // 3. PositionResourceRole (position inheritance)
   const posIds = await getUserPositionIds(userId);
   if (posIds.length > 0) {
-    const inherited = await prisma.userResourceRole.findFirst({
+    const positionGrant = await prisma.positionResourceRole.findFirst({
       where: {
-        resource: { key: "report_group" },
-        role: { key: "admin" },
-        scopeId,
         positionId: { in: posIds },
+        resourceId: { in: resourceIds },
+        role: { key: roleKey },
       },
     });
-    if (inherited) return true;
+    if (positionGrant) return true;
   }
-  return false;
-}
 
-export async function isAnyGroupAdmin(userId: number) {
-  if (await checkPermission(userId, "system.admin")) return true;
-  const directCount = await prisma.userResourceRole.count({
-    where: { userId, resource: { key: "report_group" }, role: { key: "admin" } },
-  });
-  if (directCount > 0) return true;
-  const posIds = await getUserPositionIds(userId);
-  if (posIds.length > 0) {
-    const inheritedCount = await prisma.userResourceRole.count({
-      where: { resource: { key: "report_group" }, role: { key: "admin" }, positionId: { in: posIds } },
+  // 4. DepartmentResourceRole (department inheritance)
+  const deptIds = await getUserDepartmentIds(userId);
+  if (deptIds.length > 0) {
+    const deptGrant = await prisma.departmentResourceRole.findFirst({
+      where: {
+        departmentId: { in: deptIds },
+        resourceId: { in: resourceIds },
+        role: { key: roleKey },
+      },
     });
-    if (inheritedCount > 0) return true;
+    if (deptGrant) return true;
   }
+
   return false;
 }
 
-export async function requireGroupAdmin(request: Request, groupId: number) {
-  const payload = await authenticate(request);
-  if (!payload) {
-    return { error: "未登录", status: 401, payload: null };
-  }
-  if (await checkPermission(payload.userId, "system.admin")) {
-    return { error: null, status: 200, payload };
-  }
-  const isAdmin = await isGroupAdmin(payload.userId, groupId);
-  if (!isAdmin) {
-    return { error: "无权限", status: 403, payload: null };
-  }
-  return { error: null, status: 200, payload };
-}
-
-// 验证用户是否有权限访问该周报部门（成员/负责人/viewer/管理员）
-export async function requireGroupAccess(request: Request, groupId: number) {
-  const payload = await authenticate(request);
-  if (!payload) {
-    return { error: "未登录", status: 401, payload: null };
-  }
-  if (await checkPermission(payload.userId, "system.admin")) {
-    return { error: null, status: 200, payload };
-  }
-  const hasAccess = await canAccessReportGroup(payload.userId, groupId);
-  if (hasAccess) {
-    return { error: null, status: 200, payload };
-  }
-  return { error: "无权限访问该部门", status: 403, payload: null };
-}
-
-// 验证用户是否有权限提交该周报（成员/负责人/管理员，viewer 不行）
-export async function requireGroupSubmit(request: Request, groupId: number) {
-  const payload = await authenticate(request);
-  if (!payload) {
-    return { error: "未登录", status: 401, payload: null };
-  }
-  if (await checkPermission(payload.userId, "system.admin")) {
-    return { error: null, status: 200, payload };
-  }
-  const canSubmit = await canSubmitToReportGroup(payload.userId, groupId);
-  if (canSubmit) {
-    return { error: null, status: 200, payload };
-  }
-  return { error: "无权限提交该部门周报", status: 403, payload: null };
-}
+// ============================================================
+// Auth checks
+// ============================================================
 
 export async function authenticate(
   request: Request
 ): Promise<AuthPayload | null> {
-  // 1. 先尝试 Cookie token 认证（网页版）
+  // 1. Cookie token (web)
   const token = getTokenFromCookie(request);
   if (token) {
     const payload = await verifyToken(token);
     if (payload) {
-      const user = await prisma.user.findUnique({
-        where: { id: payload.userId },
-        select: { canLogin: true },
-      });
-      if (user?.canLogin === false) return null;
+      const canLogin = await checkPermission(payload.userId, "system", "access");
+      if (!canLogin) return null;
       return payload;
     }
   }
 
-  // 2. 尝试 API Key + Username + Password 认证（机器人接入）
+  // 2. API Key + Username + Password (bot)
   const apiKey = request.headers.get("X-API-Key");
   const username = request.headers.get("X-Username");
   const password = request.headers.get("X-Password");
 
   if (apiKey && username && password) {
-    const user = await prisma.user.findUnique({
-      where: { username },
-    });
-
-    if (user && user.password === password && user.apiKey === apiKey && user.canLogin !== false) {
+    const user = await prisma.user.findUnique({ where: { username } });
+    if (user && user.password === password && user.apiKey === apiKey) {
+      const canLogin = await checkPermission(user.id, "system", "access");
+      if (!canLogin) return null;
       return {
         userId: user.id,
         wxUserId: user.wxUserId ?? "",
@@ -210,225 +193,273 @@ export async function authenticate(
 }
 
 // ============================================================
-// RBAC checkPermission with position inheritance
+// Admin / group checks
 // ============================================================
 
-// Known role keys — used to parse "resourceKey.roleKey" strings
-const KNOWN_ROLES = ["access", "admin", "write", "read", "member", "viewer"];
-
-function parsePermKey(permKey: string): { resourceKey: string; roleKey: string } {
-  for (const role of KNOWN_ROLES) {
-    if (permKey.endsWith(`.${role}`)) {
-      const resourceKey = permKey.slice(0, -(role.length + 1));
-      return { resourceKey, roleKey: role };
-    }
+export async function requireAdmin(request: Request) {
+  const payload = await authenticate(request);
+  if (!payload) return { error: "未登录", status: 401, payload: null };
+  if (await checkPermission(payload.userId, "system", "admin")) {
+    return { error: null, status: 200, payload };
   }
-  return { resourceKey: permKey, roleKey: "access" };
+  return { error: "无权限", status: 403, payload: null };
 }
 
-// Check if a user has a specific resource+role grant (e.g. "system.admin", "module.hr.access")
-// Supports direct user grants AND position-inherited grants
-// RULE: system.admin bypasses all checks — super admin has every permission
-export async function checkPermission(userId: number, permKey: string): Promise<boolean> {
-  const parsed = parsePermKey(permKey);
-
-  // Shortcut: system.admin is all-powerful (skip if already checking system.admin itself)
-  if (permKey !== "system.admin") {
-    const directAdmin = await prisma.userResourceRole.findFirst({
-      where: { userId, resource: { key: "system" }, role: { key: "admin" }, scopeId: null, positionId: null },
-    });
-    if (directAdmin) return true;
-    // Also check position-inherited system.admin
-    const posIds = await getUserPositionIds(userId);
-    if (posIds.length > 0) {
-      const inheritedAdmin = await prisma.userResourceRole.findFirst({
-        where: { resource: { key: "system" }, role: { key: "admin" }, scopeId: null, positionId: { in: posIds } },
-      });
-      if (inheritedAdmin) return true;
-    }
-  }
-
-  // 1. Direct grant: userId matches AND positionId is null (direct user grant)
-  const direct = await prisma.userResourceRole.findFirst({
-    where: {
-      userId,
-      resource: { key: parsed.resourceKey },
-      role: { key: parsed.roleKey },
-      scopeId: null,
-      positionId: null,
-    },
-  });
-  if (direct) return true;
-
-  // 2. Position-inherited grant
-  const eps = await prisma.employeePosition.findMany({
-    where: { employee: { userId } },
-    select: { positionId: true },
-  });
-  if (eps.length > 0) {
-    const posIds = eps.map((e) => e.positionId);
-    const inherited = await prisma.userResourceRole.findFirst({
-      where: {
-        resource: { key: parsed.resourceKey },
-        role: { key: parsed.roleKey },
-        scopeId: null,
-        positionId: { in: posIds },
-      },
-    });
-    if (inherited) return true;
-  }
-
-  return false;
-}
-
-// Get all UserResourceRole grants for a user (direct + position-inherited)
-export async function getUserPermissions(userId: number) {
-  const [directGrants, posIds] = await Promise.all([
-    prisma.userResourceRole.findMany({
-      where: { userId },
-      include: { resource: true, role: true },
-      orderBy: { resource: { sortOrder: "asc" } },
-    }),
-    getUserPositionIds(userId),
-  ]);
-
-  let inheritedGrants: typeof directGrants = [];
-  if (posIds.length > 0) {
-    inheritedGrants = await prisma.userResourceRole.findMany({
-      where: { positionId: { in: posIds } },
-      include: { resource: true, role: true },
-      orderBy: { resource: { sortOrder: "asc" } },
-    });
-  }
-
-  return [...directGrants, ...inheritedGrants];
-}
-
-// Get user's report group memberships (direct + position-inherited)
-export async function getUserReportGroupMemberships(userId: number) {
-  const [directGrants, posIds] = await Promise.all([
-    prisma.userResourceRole.findMany({
-      where: {
-        userId,
-        resource: { key: "report_group" },
-        role: { key: { in: ["admin", "member", "viewer"] } },
-      },
-      select: { id: true, scopeId: true, role: { select: { key: true } } },
-    }),
-    getUserPositionIds(userId),
-  ]);
-
-  let inheritedGrants: typeof directGrants = [];
-  if (posIds.length > 0) {
-    inheritedGrants = await prisma.userResourceRole.findMany({
-      where: {
-        resource: { key: "report_group" },
-        role: { key: { in: ["admin", "member", "viewer"] } },
-        positionId: { in: posIds },
-      },
-      select: { id: true, scopeId: true, role: { select: { key: true } } },
-    });
-  }
-
-  return [...directGrants, ...inheritedGrants];
-}
-
-// Get user's department admin assignments (direct + position-inherited)
-export async function getUserDepartmentAdmins(userId: number) {
-  const [directGrants, posIds] = await Promise.all([
-    prisma.userResourceRole.findMany({
-      where: { userId, resource: { key: "department" }, role: { key: "admin" } },
-      include: { resource: true, role: true },
-    }),
-    getUserPositionIds(userId),
-  ]);
-
-  let inheritedGrants: typeof directGrants = [];
-  if (posIds.length > 0) {
-    inheritedGrants = await prisma.userResourceRole.findMany({
-      where: { resource: { key: "department" }, role: { key: "admin" }, positionId: { in: posIds } },
-      include: { resource: true, role: true },
-    });
-  }
-
-  return [...directGrants, ...inheritedGrants];
-}
-
-// Check if the request is from a system admin
 export async function isAdmin(request: Request): Promise<boolean> {
   const payload = await authenticate(request);
   if (!payload) return false;
   return isSuperAdmin(payload.userId);
 }
 
-// Check if user is system admin (has "system.admin" permission)
 export async function isSuperAdmin(userId: number): Promise<boolean> {
-  return checkPermission(userId, "system.admin");
+  return checkPermission(userId, "system", "admin");
 }
 
-// Check if user has any access to a report group (admin, member, OR viewer)
-export async function canAccessReportGroup(userId: number, groupId: number): Promise<boolean> {
-  if (await checkPermission(userId, "system.admin")) return true;
-  const scopeId = String(groupId);
-  // Direct grant
-  const direct = await prisma.userResourceRole.findFirst({
-    where: { userId, resource: { key: "report_group" }, scopeId, positionId: null },
-  });
-  if (direct) return true;
-  // Position-inherited grant
-  const posIds = await getUserPositionIds(userId);
-  if (posIds.length > 0) {
-    const inherited = await prisma.userResourceRole.findFirst({
-      where: { resource: { key: "report_group" }, scopeId, positionId: { in: posIds } },
-    });
-    if (inherited) return true;
-  }
-  return false;
+// ─── Report group checks ─────────────────────────────────
+
+export async function isGroupAdmin(userId: number, groupId: number) {
+  if (await checkPermission(userId, "system", "admin")) return true;
+  return await hasGroupRole(userId, groupId, ["admin"]);
 }
 
-// Check if user can submit to a report group (admin or member, NOT viewer)
-export async function canSubmitToReportGroup(userId: number, groupId: number): Promise<boolean> {
-  if (await checkPermission(userId, "system.admin")) return true;
+export async function isAnyGroupAdmin(userId: number) {
+  if (await checkPermission(userId, "system", "admin")) return true;
+  return await hasAnyGroupRole(userId, ["admin"]);
+}
+
+export async function canAccessReportGroup(userId: number, groupId: number) {
+  if (await checkPermission(userId, "system", "admin")) return true;
+  return await hasGroupRole(userId, groupId, ["admin", "member", "viewer"]);
+}
+
+export async function canSubmitToReportGroup(userId: number, groupId: number) {
+  if (await checkPermission(userId, "system", "admin")) return true;
+  return await hasGroupRole(userId, groupId, ["admin", "member"]);
+}
+
+async function hasGroupRole(userId: number, groupId: number, roleKeys: string[]) {
   const scopeId = String(groupId);
-  // Direct grant
+  // Direct user grant
   const direct = await prisma.userResourceRole.findFirst({
     where: {
       userId,
-      resource: { key: "report_group" },
-      role: { key: { in: ["admin", "member"] } },
+      resource: { key: "work.report" },
+      role: { key: { in: roleKeys } },
       scopeId,
-      positionId: null,
     },
   });
   if (direct) return true;
-  // Position-inherited grant
+  // Position inheritance
   const posIds = await getUserPositionIds(userId);
   if (posIds.length > 0) {
-    const inherited = await prisma.userResourceRole.findFirst({
+    const posGrant = await prisma.positionResourceRole.findFirst({
       where: {
-        resource: { key: "report_group" },
-        role: { key: { in: ["admin", "member"] } },
-        scopeId,
         positionId: { in: posIds },
+        resource: { key: "work.report" },
+        role: { key: { in: roleKeys } },
+        scopeId,
       },
     });
-    if (inherited) return true;
+    if (posGrant) return true;
+  }
+  // Department inheritance
+  const deptIds = await getUserDepartmentIds(userId);
+  if (deptIds.length > 0) {
+    const deptGrant = await prisma.departmentResourceRole.findFirst({
+      where: {
+        departmentId: { in: deptIds },
+        resource: { key: "work.report" },
+        role: { key: { in: roleKeys } },
+        scopeId,
+      },
+    });
+    if (deptGrant) return true;
   }
   return false;
+}
+
+async function hasAnyGroupRole(userId: number, roleKeys: string[]) {
+  // Direct
+  const directCount = await prisma.userResourceRole.count({
+    where: { userId, resource: { key: "work.report" }, role: { key: { in: roleKeys } } },
+  });
+  if (directCount > 0) return true;
+  // Position
+  const posIds = await getUserPositionIds(userId);
+  if (posIds.length > 0) {
+    const posCount = await prisma.positionResourceRole.count({
+      where: { positionId: { in: posIds }, resource: { key: "work.report" }, role: { key: { in: roleKeys } } },
+    });
+    if (posCount > 0) return true;
+  }
+  // Department
+  const deptIds = await getUserDepartmentIds(userId);
+  if (deptIds.length > 0) {
+    const deptCount = await prisma.departmentResourceRole.count({
+      where: { departmentId: { in: deptIds }, resource: { key: "work.report" }, role: { key: { in: roleKeys } } },
+    });
+    if (deptCount > 0) return true;
+  }
+  return false;
+}
+
+export async function requireGroupAdmin(request: Request, groupId: number) {
+  const payload = await authenticate(request);
+  if (!payload) return { error: "未登录", status: 401, payload: null };
+  if (await checkPermission(payload.userId, "system", "admin")) {
+    return { error: null, status: 200, payload };
+  }
+  if (await isGroupAdmin(payload.userId, groupId)) {
+    return { error: null, status: 200, payload };
+  }
+  return { error: "无权限", status: 403, payload: null };
+}
+
+export async function requireGroupAccess(request: Request, groupId: number) {
+  const payload = await authenticate(request);
+  if (!payload) return { error: "未登录", status: 401, payload: null };
+  if (await checkPermission(payload.userId, "system", "admin")) {
+    return { error: null, status: 200, payload };
+  }
+  if (await canAccessReportGroup(payload.userId, groupId)) {
+    return { error: null, status: 200, payload };
+  }
+  return { error: "无权限访问该部门", status: 403, payload: null };
+}
+
+export async function requireGroupSubmit(request: Request, groupId: number) {
+  const payload = await authenticate(request);
+  if (!payload) return { error: "未登录", status: 401, payload: null };
+  if (await checkPermission(payload.userId, "system", "admin")) {
+    return { error: null, status: 200, payload };
+  }
+  if (await canSubmitToReportGroup(payload.userId, groupId)) {
+    return { error: null, status: 200, payload };
+  }
+  return { error: "无权限提交该部门周报", status: 403, payload: null };
+}
+
+// ============================================================
+// Permission queries (for admin UI / listing)
+// ============================================================
+
+export async function getUserPermissions(userId: number) {
+  const [direct, posIds, deptIds] = await Promise.all([
+    prisma.userResourceRole.findMany({
+      where: { userId },
+      include: { resource: true, role: true },
+      orderBy: { resource: { sortOrder: "asc" } },
+    }),
+    getUserPositionIds(userId),
+    getUserDepartmentIds(userId),
+  ]);
+
+  const result: Array<{ resource: { id: number; key: string; name: string; description: string | null; sortOrder: number; parentId: number | null }; role: { id: number; key: string; name: string; description: string | null; sortOrder: number }; scopeId: string | null }> = [...direct];
+
+  if (posIds.length > 0) {
+    const posGrants = await prisma.positionResourceRole.findMany({
+      where: { positionId: { in: posIds } },
+      include: { resource: true, role: true },
+      orderBy: { resource: { sortOrder: "asc" } },
+    });
+    for (const g of posGrants) result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
+  }
+  if (deptIds.length > 0) {
+    const deptGrants = await prisma.departmentResourceRole.findMany({
+      where: { departmentId: { in: deptIds } },
+      include: { resource: true, role: true },
+      orderBy: { resource: { sortOrder: "asc" } },
+    });
+    for (const g of deptGrants) result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
+  }
+
+  return result;
+}
+
+export async function getUserReportGroupMemberships(userId: number) {
+  const [direct, posIds, deptIds] = await Promise.all([
+    prisma.userResourceRole.findMany({
+      where: {
+        userId,
+        resource: { key: "work.report" },
+        role: { key: { in: ["admin", "member", "viewer"] } },
+      },
+      select: { scopeId: true, role: { select: { key: true } } },
+    }),
+    getUserPositionIds(userId),
+    getUserDepartmentIds(userId),
+  ]);
+
+  type Membership = { scopeId: string | null; role: { key: string } };
+  const result: Membership[] = [...direct];
+
+  if (posIds.length > 0) {
+    const posGrants = await prisma.positionResourceRole.findMany({
+      where: {
+        positionId: { in: posIds },
+        resource: { key: "work.report" },
+        role: { key: { in: ["admin", "member", "viewer"] } },
+      },
+      select: { scopeId: true, role: { select: { key: true } } },
+    });
+    for (const g of posGrants) result.push(g);
+  }
+  if (deptIds.length > 0) {
+    const deptGrants = await prisma.departmentResourceRole.findMany({
+      where: {
+        departmentId: { in: deptIds },
+        resource: { key: "work.report" },
+        role: { key: { in: ["admin", "member", "viewer"] } },
+      },
+      select: { scopeId: true, role: { select: { key: true } } },
+    });
+    for (const g of deptGrants) result.push(g);
+  }
+
+  return result;
+}
+
+export async function getUserDepartmentAdmins(userId: number) {
+  const [direct, posIds, deptIds] = await Promise.all([
+    prisma.userResourceRole.findMany({
+      where: { userId, resource: { key: "people.org" }, role: { key: "admin" } },
+      include: { resource: true, role: true },
+    }),
+    getUserPositionIds(userId),
+    getUserDepartmentIds(userId),
+  ]);
+
+  type DeptAdmin = { resource: { id: number; key: string; name: string; description: string | null; sortOrder: number; parentId: number | null }; role: { id: number; key: string; name: string; description: string | null; sortOrder: number }; scopeId: string | null };
+  const result: DeptAdmin[] = [...direct];
+
+  if (posIds.length > 0) {
+    const posGrants = await prisma.positionResourceRole.findMany({
+      where: { positionId: { in: posIds }, resource: { key: "people.org" }, role: { key: "admin" } },
+      include: { resource: true, role: true },
+    });
+    for (const g of posGrants) result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
+  }
+  if (deptIds.length > 0) {
+    const deptGrants = await prisma.departmentResourceRole.findMany({
+      where: { departmentId: { in: deptIds }, resource: { key: "people.org" }, role: { key: "admin" } },
+      include: { resource: true, role: true },
+    });
+    for (const g of deptGrants) result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
+  }
+
+  return result;
 }
 
 // ============================================================
 // Convenience access checkers
 // ============================================================
 
-// Check HR module access (system admin OR module.hr.access)
 export async function checkHRAccess(userId: number): Promise<boolean> {
-  return (await checkPermission(userId, "system.admin"))
-      || (await checkPermission(userId, "module.hr.access"));
+  return (await checkPermission(userId, "system", "admin"))
+      || (await checkPermission(userId, "people", "access"));
 }
 
-// Check Works module access (system admin OR module.works.access)
 export async function checkWorksAccess(userId: number): Promise<boolean> {
-  return (await checkPermission(userId, "system.admin"))
-      || (await checkPermission(userId, "module.works.access"));
+  return (await checkPermission(userId, "system", "admin"))
+      || (await checkPermission(userId, "work", "access"));
 }

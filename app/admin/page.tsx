@@ -41,7 +41,7 @@ interface ReportGroup {
   _count: { members: number; viewers: number; reports: number };
 }
 
-// Department admin from UserResourceRole (resource.key="department", role.key="admin")
+// Department admin from UserResourceRole (resource.key="people.org", role.key="admin")
 interface DepartmentAdmin {
   id: number;
   scopeId: string | null;
@@ -68,6 +68,7 @@ interface ResourceItem {
   name: string;
   description: string | null;
   userCount?: number;
+  children?: ResourceItem[]; // RBAC v2: hierarchical tree support
 }
 
 export default function AdminPage() {
@@ -79,7 +80,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"depts" | "permission-table">("depts");
 
-  // 人员权限（花名册表格）
   const [empPerms, setEmpPerms] = useState<
     Array<{
       employeeId: string;
@@ -98,12 +98,10 @@ export default function AdminPage() {
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({ open: false, title: "", message: "", onConfirm: () => {} });
   const { toast, showToast, closeToast } = useToast();
 
-  // 筛选
   const [filterCompany, setFilterCompany] = useState("");
   const [filterDept, setFilterDept] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // 周报管理
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editDeptId, setEditDeptId] = useState<number | null>(null);
@@ -123,7 +121,6 @@ export default function AdminPage() {
   const [adminSearchTimer, setAdminSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [draggedGroupId, setDraggedGroupId] = useState<number | null>(null);
 
-  // 管理员（系统+部门）
   const [sysAdmins, setSysAdmins] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [deptAdmins, setDeptAdmins] = useState<DepartmentAdmin[]>([]);
@@ -136,16 +133,16 @@ export default function AdminPage() {
   const [deptAdminSearchTimer, setDeptAdminSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [addingDeptAdmin, setAddingDeptAdmin] = useState<number | null>(null);
 
-  // 权限面板视图
   const [permView, setPermView] = useState<"by-user" | "by-permission" | "by-position">("by-permission");
   const [permSearchQuery, setPermSearchQuery] = useState("");
   const [permSearchResults, setPermSearchResults] = useState<User[]>([]);
   const [selectedUserPerm, setSelectedUserPerm] = useState<User | null>(null);
-  // RBAC resources and roles from API
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [roles, setRoles] = useState<Array<{ id: number; key: string; name: string; description: string | null }>>([]);
 
-  // 按岗位 — position-based permissions
+  // System config
+  const [conflictStrategy, setConflictStrategy] = useState("union");
+
   interface PosPermGrant {
     id: number;
     positionId: number;
@@ -163,6 +160,23 @@ export default function AdminPage() {
     return (u.resourceRoles || []).some(
       (rr) => rr.resource?.key === resourceKey && rr.role?.key === "access"
     );
+  }
+
+  function isTopLevelResource(key: string): boolean {
+    // RBAC v2 top-level resources (no parent prefix)
+    return ["system", "people", "work", "docs"].includes(key);
+  }
+
+  // Flatten resource tree into select options with indentation
+  function flattenResourcesForSelect(res: ResourceItem[], depth: number = 0): Array<{ key: string; name: string; depth: number }> {
+    const result: Array<{ key: string; name: string; depth: number }> = [];
+    for (const r of res) {
+      result.push({ key: r.key, name: r.name, depth });
+      if (r.children && r.children.length > 0) {
+        result.push(...flattenResourcesForSelect(r.children, depth + 1));
+      }
+    }
+    return result;
   }
 
   async function loadResources() {
@@ -183,6 +197,18 @@ export default function AdminPage() {
     }
   }
 
+  async function loadSystemConfig() {
+    try {
+      const res = await fetch("/api/admin/system-config");
+      if (res.ok) {
+        const data = await res.json();
+        setConflictStrategy(data.conflictStrategy || "union");
+      }
+    } catch {
+      // system-config endpoint may not exist yet
+    }
+  }
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -195,6 +221,7 @@ export default function AdminPage() {
         setUser(u);
         loadData();
         loadResources();
+        loadSystemConfig();
       })
       .catch(() => router.push("/login"));
   }, [router]);
@@ -237,7 +264,6 @@ export default function AdminPage() {
     const res = await fetch("/api/admin/department-admins");
     if (res.ok) {
       const data = await res.json();
-      // Normalize companyCode -> company for backward compat
       setDepartments((data.departments || []).map((d: any) => ({
         ...d,
         company: d.company || d.companyCode || "",
@@ -271,7 +297,6 @@ export default function AdminPage() {
       fetch("/api/employee-positions"),
     ]);
 
-    // Build position -> department name map from employee-position associations
     const deptByPos = new Map<number, string>();
     if (epRes.ok) {
       const epData = await epRes.json();
@@ -284,7 +309,6 @@ export default function AdminPage() {
 
     if (posRes.ok) {
       const data = await posRes.json();
-      // Map company code to name (e.g., "01" -> "丰华生物")
       setPositions((data.positions || []).map((p: any) => ({
         ...p,
         company: CODE_TO_NAME[p.company] || p.company,
@@ -337,7 +361,6 @@ export default function AdminPage() {
       body: JSON.stringify({ userId: emp.userId, resourceKey, roleKey: "access", value: !hasPerm }),
     });
     if (res.ok) {
-      // Refresh data from server
       await Promise.all([loadEmpPermData(), loadData(), loadResources()]);
     } else {
       showToast("更新失败", "error");
@@ -351,19 +374,16 @@ export default function AdminPage() {
       body: JSON.stringify({ userId, resourceKey, roleKey: "access", value: !currentValue }),
     });
     if (res.ok) {
-      // Update local state
       setUsers((prev) =>
         prev.map((u) => {
           if (u.id !== userId) return u;
           const rrs = u.resourceRoles || [];
           if (!currentValue) {
-            // Granting: add a synthetic entry
             return {
               ...u,
               resourceRoles: [...rrs, { resource: { key: resourceKey }, role: { key: "access" }, scopeId: null }],
             };
           } else {
-            // Revoking: remove matching entries
             return {
               ...u,
               resourceRoles: rrs.filter(
@@ -644,7 +664,6 @@ export default function AdminPage() {
   }
 
   async function addDeptAdmin(departmentId: number, userId: number) {
-    // Department admins now use UserResourceRole: resource="department", role="admin", scopeId=departmentId
     const res = await fetch("/api/admin/department-admins", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -1172,11 +1191,11 @@ export default function AdminPage() {
                         </button>
                       </div>
 
-                      {/* Layer 2: Global toggles */}
+                      {/* Layer 2: Global toggles — RBAC v2 top-level resources */}
                       <div className="mb-3">
                         <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">全局开关</h4>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                          {resources.filter(r => ["system", "module.hr", "module.works"].includes(r.key)).map((r) => {
+                          {resources.filter(r => isTopLevelResource(r.key)).map((r) => {
                             const hasPerm = userHasPermission(selectedUserPerm, r.key);
                             const isSystemAdmin = (selectedUserPerm.resourceRoles || []).some(
                               (rr) => rr.resource?.key === "system" && rr.role?.key === "admin"
@@ -1217,7 +1236,7 @@ export default function AdminPage() {
                         ) : (
                           <div className="space-y-1">
                             {(selectedUserPerm.resourceRoles || [])
-                              .filter(rr => rr.scopeId && rr.resource?.key === "department")
+                              .filter(rr => rr.scopeId && rr.resource?.key === "people.org")
                               .map((rr, idx) => {
                                 const dept = departments.find(d => String(d.id) === rr.scopeId);
                                 const roleLabel = rr.role?.key === "admin" ? "管理" : (rr.role?.key || "-");
@@ -1265,7 +1284,6 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                  {/* 筛选 */}
                   <FilterBar>
                     <select
                       value={filterCompany}
@@ -1306,14 +1324,17 @@ export default function AdminPage() {
                       placeholder="搜索姓名、工号或账号"
                       className="w-full flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:min-w-[200px]"
                     />
+                    {/* RBAC v2: Resource tree selector */}
                     <select
                       value={selectedResource}
                       onChange={(e) => setSelectedResource(e.target.value)}
                       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:w-auto"
                     >
                       <option value="">所有资源</option>
-                      {resources.map(r => (
-                        <option key={r.key} value={r.key}>{r.name}</option>
+                      {flattenResourcesForSelect(resources).map(r => (
+                        <option key={r.key} value={r.key}>
+                          {'  '.repeat(r.depth)}{r.name}
+                        </option>
                       ))}
                     </select>
                     <button
@@ -1458,11 +1479,11 @@ export default function AdminPage() {
             {/* 按权限视图 */}
             {permView === "by-permission" && (
               <div className="space-y-4">
-                {/* Layer 2: Global toggles — scopeId=null resources */}
+                {/* Layer 2: Global toggles — RBAC v2 top-level resources */}
                 <div className="rounded-lg bg-white p-4 shadow-sm">
                   <h3 className="mb-3 text-sm font-semibold text-gray-700">全局开关</h3>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                    {resources.filter(r => ["system", "module.hr", "module.works"].includes(r.key)).map(res => {
+                    {resources.filter(r => isTopLevelResource(r.key)).map(res => {
                       const userCount = res.userCount || 0;
                       return (
                         <div key={res.key} className="rounded-md border border-gray-200 p-3">
@@ -1613,7 +1634,6 @@ export default function AdminPage() {
                   点击下方权限标签可切换岗位的默认权限。拥有 system.admin 的岗位成员自动获得所有权限。
                 </div>
 
-                {/* Filters — same pattern as employee tab */}
                 <FilterBar>
                   <select
                     value={posCompany}
@@ -1650,7 +1670,6 @@ export default function AdminPage() {
                   />
                 </FilterBar>
 
-                {/* Position list */}
                 <div className="rounded-lg bg-white shadow-sm">
                   {positions
                     .filter(p => {
@@ -1678,9 +1697,9 @@ export default function AdminPage() {
                       .map((pos) => {
                         const posPerms = [
                           { resourceKey: "system", roleKey: "admin", label: "系统管理员" },
-                          { resourceKey: "module.hr", roleKey: "access", label: "HR访问" },
-                          { resourceKey: "module.works", roleKey: "access", label: "工作清单" },
-                          { resourceKey: "report", roleKey: "write_any_week", label: "补填任意周报" },
+                          { resourceKey: "people", roleKey: "access", label: "HR访问" },
+                          { resourceKey: "work", roleKey: "access", label: "工作清单" },
+                          { resourceKey: "work.report", roleKey: "write", label: "补填任意周报" },
                         ];
                         return (
                           <div key={pos.id} className="flex items-center gap-3 px-4 py-3">
@@ -1714,6 +1733,41 @@ export default function AdminPage() {
                         );
                       })}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* RBAC v2: System Config */}
+            {user?.isWorkListAdmin && (
+              <div className="rounded-lg bg-white p-4 shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold text-gray-700">系统配置</h3>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-600">权限冲突策略：</label>
+                  <select
+                    value={conflictStrategy}
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      setConflictStrategy(val);
+                      try {
+                        const res = await fetch("/api/admin/system-config", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ conflictStrategy: val }),
+                        });
+                        if (res.ok) {
+                          showToast("已保存", "success");
+                        } else {
+                          showToast("保存失败", "error");
+                        }
+                      } catch {
+                        showToast("保存失败", "error");
+                      }
+                    }}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                  >
+                    <option value="union">并集（任一有权限即可）</option>
+                    <option value="deny_override">拒绝优先</option>
+                  </select>
                 </div>
               </div>
             )}

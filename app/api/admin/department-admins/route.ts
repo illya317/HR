@@ -14,10 +14,10 @@ export async function GET(request: Request) {
     orderBy: [{ companyCode: "asc" }, { name: "asc" }],
   });
 
-  // 从 UserResourceRole 获取部门管理员 (resource=department, role=admin)
+  // 从 UserResourceRole 获取部门管理员 (resource=people.org, role=admin)
   const admins = await prisma.userResourceRole.findMany({
     where: {
-      resource: { key: "department" },
+      resource: { key: "people.org" },
       role: { key: "admin" },
     },
     include: {
@@ -38,7 +38,7 @@ export async function PUT(request: Request) {
   if (!departmentId || !userId) return NextResponse.json({ error: "缺少参数" }, { status: 400 });
 
   // Find resource and role
-  const resource = await prisma.resource.findUnique({ where: { key: "department" } });
+  const resource = await prisma.resource.findUnique({ where: { key: "people.org" } });
   const role = await prisma.role.findUnique({ where: { key: "admin" } });
   if (!resource || !role) {
     return NextResponse.json({ error: "系统未初始化RBAC基础数据" }, { status: 500 });

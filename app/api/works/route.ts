@@ -4,7 +4,7 @@ import { authenticate, isAnyGroupAdmin, requireGroupAccess, isAdmin, checkPermis
 
 // Check if user has admin rights for a department's works
 async function requireAdmin(userId: number, _departmentId: number) {
-  if (await checkPermission(userId, "system.admin")) return true;
+  if (await checkPermission(userId, "system", "admin")) return true;
   return isAnyGroupAdmin(userId);
 }
 

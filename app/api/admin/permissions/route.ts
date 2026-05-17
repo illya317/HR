@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   }
 
   // Check system admin access
-  if (!(await checkPermission(payload.userId, "system.admin"))) {
+  if (!(await checkPermission(payload.userId, "system", "admin"))) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 

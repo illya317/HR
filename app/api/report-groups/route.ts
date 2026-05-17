@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   }
 
   let groups;
-  if (await checkPermission(payload.userId, "system.admin")) {
+  if (await checkPermission(payload.userId, "system", "admin")) {
     groups = await prisma.reportGroup.findMany({
       orderBy: { sortOrder: "asc" },
       include: {

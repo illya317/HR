@@ -49,7 +49,7 @@ export async function GET(request: Request) {
   const dept = searchParams.get("dept") || "";
   const keyword = searchParams.get("keyword") || "";
   const exportExcel = searchParams.get("export") === "1";
-  const isAdmin = await checkPermission(payload.userId, "system.admin");
+  const isAdmin = await checkPermission(payload.userId, "system", "admin");
   console.log("[employees API] params:", { company, dept, keyword, exportExcel, isAdmin });
 
   // 在职/离职筛选（默认只看在职）
