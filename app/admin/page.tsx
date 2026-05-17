@@ -1253,7 +1253,13 @@ export default function AdminPage() {
                               }
                               return true;
                             })
-                            .sort((a, b) => (a.employeeId || "").localeCompare(b.employeeId || ""))
+                            .sort((a, b) => {
+                              const oldField = NEW_PERM_TO_OLD_FIELD[selectedPerm];
+                              const aHas = oldField ? (a as any)[oldField] === true : (a as any)[selectedPerm] === true;
+                              const bHas = oldField ? (b as any)[oldField] === true : (b as any)[selectedPerm] === true;
+                              if (aHas !== bHas) return aHas ? -1 : 1;
+                              return (a.employeeId || "").localeCompare(b.employeeId || "");
+                            })
                             .map((e) => {
                               const oldField = NEW_PERM_TO_OLD_FIELD[selectedPerm];
                               const permValue = oldField ? (e as any)[oldField] === true : (e as any)[selectedPerm] === true;
@@ -1407,8 +1413,12 @@ export default function AdminPage() {
                   const perm = permissionCategories.flatMap((c) => c.permissions).find((p) => p.key === selectedPermKey);
                   if (!perm) return null;
 
-                  const usersWithPerm = users.filter((u) => userHasPermission(u, selectedPermKey));
-                  const usersWithoutPerm = users.filter((u) => !userHasPermission(u, selectedPermKey));
+                  const usersWithPerm = users
+                    .filter((u) => userHasPermission(u, selectedPermKey))
+                    .sort((a, b) => a.name.localeCompare(b.name, "zh"));
+                  const usersWithoutPerm = users
+                    .filter((u) => !userHasPermission(u, selectedPermKey))
+                    .sort((a, b) => a.name.localeCompare(b.name, "zh"));
 
                   const query = permListSearchQuery.trim();
                   const filteredUsersWithPerm = query
@@ -1439,24 +1449,48 @@ export default function AdminPage() {
                         )}
                       </p>
                       {filteredUsersWithPerm.length + filteredUsersWithoutPerm.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                          {[...filteredUsersWithPerm, ...filteredUsersWithoutPerm].map((u) => {
-                            const hasPerm = userHasPermission(u, selectedPermKey);
-                            return (
-                              <div key={u.id} className="rounded-md border border-gray-200 p-3 flex items-center justify-between">
-                                <div>
-                                  <div className="text-sm font-medium text-gray-800">{u.name}</div>
-                                  <div className="text-xs text-gray-500">{[u.username, u.departmentName].filter(Boolean).join(" · ") || "无部门"}</div>
+                        <div className="space-y-2">
+                          {filteredUsersWithPerm.length > 0 && (
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+                              {filteredUsersWithPerm.map((u) => (
+                                <div key={u.id} className="rounded-md border border-emerald-200 bg-emerald-50/50 p-3 flex items-center justify-between">
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-800">{u.name}</div>
+                                    <div className="text-xs text-gray-500">{[u.username, u.departmentName].filter(Boolean).join(" · ") || "无部门"}</div>
+                                  </div>
+                                  <button
+                                    onClick={() => toggleUserPerm(u.id, selectedPermKey, true)}
+                                    className="text-xs ml-2 shrink-0 text-red-500 hover:text-red-700"
+                                  >
+                                    取消
+                                  </button>
                                 </div>
-                                <button
-                                  onClick={() => toggleUserPerm(u.id, selectedPermKey, hasPerm)}
-                                  className={`text-xs ml-2 shrink-0 ${hasPerm ? "text-red-500 hover:text-red-700" : "text-emerald-600 hover:text-emerald-700"}`}
-                                >
-                                  {hasPerm ? "取消" : "赋予"}
-                                </button>
-                              </div>
-                            );
-                          })}
+                              ))}
+                            </div>
+                          )}
+                          {filteredUsersWithPerm.length > 0 && filteredUsersWithoutPerm.length > 0 && (
+                            <div className="border-t border-gray-200 pt-1">
+                              <p className="text-xs text-gray-400 mb-1">无此权限</p>
+                            </div>
+                          )}
+                          {filteredUsersWithoutPerm.length > 0 && (
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+                              {filteredUsersWithoutPerm.map((u) => (
+                                <div key={u.id} className="rounded-md border border-gray-200 p-3 flex items-center justify-between">
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-800">{u.name}</div>
+                                    <div className="text-xs text-gray-500">{[u.username, u.departmentName].filter(Boolean).join(" · ") || "无部门"}</div>
+                                  </div>
+                                  <button
+                                    onClick={() => toggleUserPerm(u.id, selectedPermKey, false)}
+                                    className="text-xs ml-2 shrink-0 text-emerald-600 hover:text-emerald-700"
+                                  >
+                                    赋予
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="text-sm text-gray-400">{query ? "无匹配结果" : "暂无数据"}</p>
