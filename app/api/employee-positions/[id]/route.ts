@@ -72,3 +72,26 @@ export async function PUT(
 
   return NextResponse.json({ success: true });
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const payload = await authenticate(request);
+  if (!payload) {
+    return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { isWorkListAdmin: true, canAccessHR: true },
+  });
+
+  if (!user?.canAccessHR && !user?.isWorkListAdmin) {
+    return NextResponse.json({ error: "无权限" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  await prisma.employeePosition.delete({ where: { id: parseInt(id) } });
+  return NextResponse.json({ success: true });
+}

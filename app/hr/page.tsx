@@ -402,9 +402,6 @@ function CodeTab({
                     )}
                   </span>
                 </th>
-                {editMode && user.isWorkListAdmin && (
-                  <th className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600">操作</th>
-                )}
               </tr>
             </thead>
             <tbody>
@@ -421,20 +418,49 @@ function CodeTab({
                           className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
                         />
                       ) : (
-                        item.code
+                        <span>
+                          {item.code}
+                          {editMode && user.isWorkListAdmin && (
+                            <button
+                              onClick={() => setConfirmModal({ open: true, code: item.code })}
+                              className="ml-1 text-red-500 hover:text-red-700"
+                              title="删除"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </span>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
                       {isEditing ? (
-                        <input
-                          value={editNameValue}
-                          onChange={(e) => setEditNameValue(e.target.value)}
-                          className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-                        />
+                        <div className="flex items-center gap-1">
+                          <input
+                            value={editNameValue}
+                            onChange={(e) => setEditNameValue(e.target.value)}
+                            className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
+                          />
+                          <button
+                            onClick={() => saveEditRow(item.code)}
+                            className="rounded bg-green-500 px-2 py-0.5 text-xs text-white hover:bg-green-600"
+                          >
+                            保存
+                          </button>
+                          <button
+                            onClick={cancelEditRow}
+                            className="rounded bg-gray-400 px-2 py-0.5 text-xs text-white hover:bg-gray-500"
+                          >
+                            取消
+                          </button>
+                        </div>
                       ) : (
                         <span
                           className="cursor-pointer hover:text-emerald-600"
-                          onClick={() => setDetailModal({ open: true, code: item.code, name: item.name })}
+                          onClick={() =>
+                            editMode && user.isWorkListAdmin
+                              ? startEditRow(item)
+                              : setDetailModal({ open: true, code: item.code, name: item.name })
+                          }
                         >
                           {item.name || "-"}
                         </span>
@@ -448,42 +474,6 @@ function CodeTab({
                         {count}
                       </span>
                     </td>
-                    {editMode && user.isWorkListAdmin && (
-                      <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
-                        {isEditing ? (
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => saveEditRow(item.code)}
-                              className="rounded bg-green-500 px-2 py-0.5 text-xs text-white hover:bg-green-600"
-                            >
-                              保存
-                            </button>
-                            <button
-                              onClick={cancelEditRow}
-                              className="rounded bg-gray-400 px-2 py-0.5 text-xs text-white hover:bg-gray-500"
-                            >
-                              取消
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => startEditRow(item)}
-                              className="text-emerald-600 hover:text-emerald-800 text-xs"
-                            >
-                              修改
-                            </button>
-                            <button
-                              onClick={() => setConfirmModal({ open: true, code: item.code })}
-                              className="text-red-500 hover:text-red-700"
-                              title="删除"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    )}
                   </tr>
                 );
               })}
@@ -500,24 +490,24 @@ function CodeTab({
                     />
                   </td>
                   <td className="whitespace-nowrap px-2 py-1.5">
-                    <input
-                      type="text"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                      placeholder="名称"
-                      className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
-                    />
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+                        placeholder="名称"
+                        className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
+                      />
+                      <button
+                        onClick={handleAdd}
+                        className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-700"
+                      >
+                        添加
+                      </button>
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-2 py-1.5 text-gray-400">-</td>
-                  <td className="whitespace-nowrap px-2 py-1.5">
-                    <button
-                      onClick={handleAdd}
-                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-700"
-                    >
-                      添加
-                    </button>
-                  </td>
                 </tr>
               )}
             </tbody>

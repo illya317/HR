@@ -44,6 +44,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
   const inputRef = useRef<HTMLInputElement>(null);
   const [saveTip, setSaveTip] = useState("");
   const [editMode, setEditMode] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; row: PositionRow | null }>({ open: false, row: null });
 
   async function load() {
     setLoading(true);
@@ -171,6 +172,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                     {f.label}
                   </th>
                 ))}
+                {editMode && user.isWorkListAdmin && <th className="whitespace-nowrap px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
@@ -196,16 +198,24 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                       const options = f.key === "dept1" ? allDepts : allPositions;
                       return (
                         <td key={f.key} className="whitespace-nowrap px-3 py-2">
-                          <input
-                            ref={inputRef}
-                            list={f.key === "dept1" ? "dept-list" : "pos-list"}
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={() => saveEdit()}
-                            onKeyDown={handleKeyDown}
-                            className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
-                            style={{ minWidth: "12ch" }}
-                          />
+                          <div className="flex items-center gap-1">
+                            <input
+                              ref={inputRef}
+                              list={f.key === "dept1" ? "dept-list" : "pos-list"}
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => saveEdit()}
+                              onKeyDown={handleKeyDown}
+                              className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
+                              style={{ minWidth: "12ch" }}
+                            />
+                            <button
+                              onMouseDown={(e) => { e.preventDefault(); saveEdit(); }}
+                              className="rounded bg-green-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-green-600"
+                            >
+                              保存
+                            </button>
+                          </div>
                           <datalist id={f.key === "dept1" ? "dept-list" : "pos-list"}>
                             {options.map((o) => (
                               <option key={o} value={o} />
@@ -217,15 +227,23 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                     if (isEditing) {
                       return (
                         <td key={f.key} className="whitespace-nowrap px-3 py-2">
-                          <input
-                            ref={inputRef}
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={() => saveEdit()}
-                            onKeyDown={handleKeyDown}
-                            className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
-                            style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
-                          />
+                          <div className="flex items-center gap-1">
+                            <input
+                              ref={inputRef}
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => saveEdit()}
+                              onKeyDown={handleKeyDown}
+                              className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
+                              style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
+                            />
+                            <button
+                              onMouseDown={(e) => { e.preventDefault(); saveEdit(); }}
+                              className="rounded bg-green-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-green-600"
+                            >
+                              保存
+                            </button>
+                          </div>
                         </td>
                       );
                     }
@@ -239,12 +257,61 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                       </td>
                     );
                   })}
+                  {editMode && user.isWorkListAdmin && (
+                    <td className="whitespace-nowrap px-3 py-2">
+                      <button
+                        onClick={() => setConfirmModal({ open: true, row })}
+                        className="text-red-500 hover:text-red-700"
+                        title="删除"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      {/* 删除确认弹窗 */}
+      {confirmModal.open && confirmModal.row && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-lg font-semibold text-gray-800">删除确认</h3>
+            <p className="mb-6 text-sm text-gray-600">
+              确定删除 {confirmModal.row.name}（{confirmModal.row.employeeId}）的该岗位信息？
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal({ open: false, row: null })}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={async () => {
+                  const row = confirmModal.row!;
+                  const res = await fetch(`/api/employee-positions/${row.id}`, { method: "DELETE" });
+                  if (res.ok) {
+                    setPositions((prev) => prev.filter((p) => p.id !== row.id));
+                    setSaveTip("删除成功");
+                    setTimeout(() => setSaveTip(""), 1500);
+                  } else {
+                    setSaveTip("删除失败");
+                    setTimeout(() => setSaveTip(""), 2000);
+                  }
+                  setConfirmModal({ open: false, row: null });
+                }}
+                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
+              >
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -71,6 +71,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
   const [saveTip, setSaveTip] = useState("");
   const [rosterFilter, setRosterFilter] = useState<"在职" | "离职">("在职");
   const [editMode, setEditMode] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; emp: Employee | null }>({ open: false, emp: null });
 
   async function load() {
     setLoading(true);
@@ -197,6 +198,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
                     {f.label}
                   </th>
                 ))}
+                {editMode && user.isWorkListAdmin && <th className="whitespace-nowrap px-3 py-2"></th>}
               </tr>
             </thead>
             <tbody>
@@ -212,27 +214,90 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
                         className={`whitespace-nowrap px-3 py-2 text-gray-700 ${editMode && user.isWorkListAdmin ? "cursor-pointer hover:bg-emerald-50" : ""}`}
                       >
                         {isEditing ? (
-                          <input
-                            ref={inputRef}
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={() => saveEdit()}
-                            onKeyDown={handleKeyDown}
-                            className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
-                            style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
-                          />
+                          <div className="flex items-center gap-1">
+                            <input
+                              ref={inputRef}
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => saveEdit()}
+                              onKeyDown={handleKeyDown}
+                              className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
+                              style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
+                            />
+                            <button
+                              onMouseDown={(e) => { e.preventDefault(); saveEdit(); }}
+                              className="rounded bg-green-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-green-600"
+                            >
+                              保存
+                            </button>
+                          </div>
                         ) : (
                           val || "-"
                         )}
                       </td>
                     );
                   })}
+                  {editMode && user.isWorkListAdmin && (
+                    <td className="whitespace-nowrap px-3 py-2">
+                      <button
+                        onClick={() => setConfirmModal({ open: true, emp })}
+                        className="text-red-500 hover:text-red-700"
+                        title="标记离职"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      {/* 离职确认弹窗 */}
+      {confirmModal.open && confirmModal.emp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-lg font-semibold text-gray-800">确认离职</h3>
+            <p className="mb-6 text-sm text-gray-600">
+              确定将 {confirmModal.emp.name}（{confirmModal.emp.employeeId}）标记为离职？
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal({ open: false, emp: null })}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={async () => {
+                  const emp = confirmModal.emp!;
+                  const res = await fetch(`/api/employees/${emp.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ field: "status", value: "离职" }),
+                  });
+                  if (res.ok) {
+                    setEmployees((prev) =>
+                      prev.map((e) => (e.id === emp.id ? { ...e, status: "离职" } : e))
+                    );
+                    setSaveTip("已标记离职");
+                    setTimeout(() => setSaveTip(""), 1500);
+                  } else {
+                    setSaveTip("操作失败");
+                    setTimeout(() => setSaveTip(""), 2000);
+                  }
+                  setConfirmModal({ open: false, emp: null });
+                }}
+                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
+              >
+                确认离职
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
