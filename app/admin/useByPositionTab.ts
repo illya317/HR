@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { groupByParent } from "./lib";
 import type { ResourceItem } from "./types";
 
 interface Position {
@@ -138,9 +139,7 @@ export function useByPositionTab(
     return true;
   });
 
-  const allResources = [...resources].sort((a, b) =>
-    a.key.localeCompare(b.key)
-  );
+  const resourceGroups = useMemo(() => groupByParent(resources), [resources]);
 
   return {
     loading,
@@ -154,7 +153,7 @@ export function useByPositionTab(
     allDeptNames,
     filteredPositions,
     positionDeptMap,
-    allResources,
+    resourceGroups,
     grants,
     togglePerm,
     positionHasPerm,

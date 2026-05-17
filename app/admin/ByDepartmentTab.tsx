@@ -21,7 +21,7 @@ export default function ByDepartmentTab({ user, resources, allDepts, showToast }
     togglePerm,
     companies,
     filteredDepts,
-    topResources,
+    resourceGroups,
     deptHasPerm,
   } = useByDepartmentTab(resources, allDepts, showToast);
 
@@ -66,23 +66,52 @@ export default function ByDepartmentTab({ user, resources, allDepts, showToast }
             </div>
             <span className="text-xs text-gray-400">{dept.count}人</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {topResources.map((r) => {
-              const has = deptHasPerm(grants, dept.id, r.key, "access");
-              return (
+          <div className="space-y-2">
+            {resourceGroups.map(({ parent, children }) => (
+              <div key={parent.key} className="flex items-start gap-2">
                 <button
-                  key={r.key}
-                  onClick={() => togglePerm(dept.id, r.key, !has)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    has
+                  onClick={() =>
+                    togglePerm(
+                      dept.id,
+                      parent.key,
+                      !deptHasPerm(grants, dept.id, parent.key, "access")
+                    )
+                  }
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    deptHasPerm(grants, dept.id, parent.key, "access")
                       ? "border border-emerald-300 bg-emerald-100 text-emerald-700"
                       : "border border-gray-200 bg-gray-100 text-gray-400 hover:bg-gray-200"
                   }`}
                 >
-                  {r.name}
+                  {parent.name}
                 </button>
-              );
-            })}
+                <div className="flex flex-wrap gap-2">
+                  {children.map((child) => {
+                    const has = deptHasPerm(
+                      grants,
+                      dept.id,
+                      child.key,
+                      "access"
+                    );
+                    return (
+                      <button
+                        key={child.key}
+                        onClick={() =>
+                          togglePerm(dept.id, child.key, !has)
+                        }
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                          has
+                            ? "border border-emerald-300 bg-emerald-100 text-emerald-700"
+                            : "border border-gray-200 bg-gray-100 text-gray-400 hover:bg-gray-200"
+                        }`}
+                      >
+                        {child.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ))}

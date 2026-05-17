@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { isTopLevelResource } from "./lib";
+import { useEffect, useState, useMemo } from "react";
+import { groupByParent } from "./lib";
 import type { ResourceItem, DeptItem } from "./types";
 
 function deptHasPerm(
@@ -83,7 +83,7 @@ export function useByDepartmentTab(
     return true;
   });
 
-  const topResources = resources.filter((r) => isTopLevelResource(r.key));
+  const resourceGroups = useMemo(() => groupByParent(resources), [resources]);
 
   return {
     grants,
@@ -95,7 +95,7 @@ export function useByDepartmentTab(
     togglePerm,
     companies,
     filteredDepts,
-    topResources,
+    resourceGroups,
     deptHasPerm,
   };
 }

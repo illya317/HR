@@ -21,3 +21,14 @@ export function userHasAccess(emp: EmployeePerm, resourceKey: string): boolean {
     (rr) => rr.resource?.key === resourceKey && rr.role?.key === "access"
   );
 }
+
+export function groupByParent(
+  resources: ResourceItem[]
+): Array<{ parent: ResourceItem; children: ResourceItem[] }> {
+  const all = [...resources].sort((a, b) => a.key.localeCompare(b.key));
+  const parents = all.filter((r) => !r.key.includes("."));
+  return parents.map((parent) => ({
+    parent,
+    children: all.filter((r) => r.key.startsWith(parent.key + ".")),
+  }));
+}

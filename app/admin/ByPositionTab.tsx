@@ -22,7 +22,7 @@ export default function ByPositionTab({ user: _user, resources, showToast }: Pro
     allDeptNames,
     filteredPositions,
     positionDeptMap,
-    allResources,
+    resourceGroups,
     grants,
     togglePerm,
     positionHasPerm,
@@ -92,26 +92,52 @@ export default function ByPositionTab({ user: _user, resources, showToast }: Pro
               </div>
               <span className="text-xs text-gray-400">{pos.headcount}人</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {allResources.map((r) => {
-                const has = positionHasPerm(grants, pos.id, r.key, "access");
-                const depth = r.key.split(".").length - 1;
-                return (
+            <div className="space-y-2">
+              {resourceGroups.map(({ parent, children }) => (
+                <div key={parent.key} className="flex items-start gap-2">
                   <button
-                    key={r.key}
-                    onClick={() => togglePerm(pos.id, r.key, !has)}
-                    title={r.key}
-                    style={{ marginLeft: depth * 8 }}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      has
+                    onClick={() =>
+                      togglePerm(
+                        pos.id,
+                        parent.key,
+                        !positionHasPerm(grants, pos.id, parent.key, "access")
+                      )
+                    }
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      positionHasPerm(grants, pos.id, parent.key, "access")
                         ? "border border-emerald-300 bg-emerald-100 text-emerald-700"
                         : "border border-gray-200 bg-gray-100 text-gray-400 hover:bg-gray-200"
                     }`}
                   >
-                    {r.name}
+                    {parent.name}
                   </button>
-                );
-              })}
+                  <div className="flex flex-wrap gap-2">
+                    {children.map((child) => {
+                      const has = positionHasPerm(
+                        grants,
+                        pos.id,
+                        child.key,
+                        "access"
+                      );
+                      return (
+                        <button
+                          key={child.key}
+                          onClick={() =>
+                            togglePerm(pos.id, child.key, !has)
+                          }
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            has
+                              ? "border border-emerald-300 bg-emerald-100 text-emerald-700"
+                              : "border border-gray-200 bg-gray-100 text-gray-400 hover:bg-gray-200"
+                          }`}
+                        >
+                          {child.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         );
