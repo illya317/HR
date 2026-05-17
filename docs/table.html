@@ -62,7 +62,7 @@
 <h1>HR Database Schema</h1>
 <p style="font-size:12px;color:#94a3b8;margin-bottom:20px">20 tables</p>
 
-<div class="group"><div class="group-title">1. Authentication</div>
+<div class="group"><div class="group-title">1. System</div>
 <a href="#User">1-1 User</a>
 <a href="#SystemConfig">1-2 SystemConfig</a>
 </div>
@@ -73,28 +73,26 @@
 <a href="#PositionResourceRole">2-4 PositionResourceRole</a>
 <a href="#DepartmentResourceRole">2-5 DepartmentResourceRole</a>
 </div>
-<div class="group"><div class="group-title">6. Dictionary</div>
-<a href="#CompanyCode">3-1 CompanyCode</a>
+<div class="group"><div class="group-title">3. Reports</div>
+<a href="#ReportGroup">3-1 ReportGroup</a>
+<a href="#WeeklyReport">3-2 WeeklyReport</a>
+<a href="#ReportItem">3-3 ReportItem</a>
+<a href="#ReportHistory">3-4 ReportHistory</a>
 </div>
-<div class="group"><div class="group-title">3. Weekly Reports</div>
-<a href="#ReportGroup">4-1 ReportGroup</a>
-<a href="#WeeklyReport">4-2 WeeklyReport</a>
-<a href="#ReportItem">4-3 ReportItem</a>
-<a href="#ReportHistory">4-4 ReportHistory</a>
-</div>
-<div class="group"><div class="group-title">4. Work Items</div>
-<a href="#WorkItem">5-1 WorkItem</a>
-<a href="#WorkParticipant">5-2 WorkParticipant</a>
+<div class="group"><div class="group-title">4. Tasks</div>
+<a href="#WorkItem">4-1 WorkItem</a>
+<a href="#WorkParticipant">4-2 WorkParticipant</a>
 </div>
 <div class="group"><div class="group-title">5. Roster & Org</div>
-<a href="#Employee">6-1 Employee</a>
-<a href="#Department">6-2 Department</a>
-<a href="#Position">6-3 Position</a>
-<a href="#EmployeePosition">6-4 EmployeePosition</a>
-<a href="#DepartmentPosition">6-5 DepartmentPosition</a>
+<a href="#Employee">5-1 Employee</a>
+<a href="#Company">5-2 Company</a>
+<a href="#Department">5-3 Department</a>
+<a href="#Position">5-4 Position</a>
+<a href="#EmployeePosition">5-5 EmployeePosition</a>
+<a href="#DepartmentPosition">5-6 DepartmentPosition</a>
 </div>
-<div class="group"><div class="group-title">7. Edit History</div>
-<a href="#EditHistory">7-1 EditHistory</a>
+<div class="group"><div class="group-title">6. Edit History</div>
+<a href="#EditHistory">6-1 EditHistory</a>
 </div>
 <div class="legend">
     <span><span style="color:#ef4444;font-weight:700">*</span> = Required</span>
@@ -106,7 +104,7 @@
     <div id="export-msg" style="font-size:11px;color:#10b981;margin-top:6px;display:none">Copied!</div>
   </div>
 </nav><main>
-<div class="section"><div class="section-title">1. Authentication</div>
+<div class="section"><div class="section-title">1. System</div>
 <div class="table-block" id="User">
 <div class="table-header"><h3><span class="table-num">1-1</span> User</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
@@ -177,15 +175,16 @@
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <a href="#UserResourceRole" class="dep-link">2-3 UserResourceRole</a>
-<a href="#WeeklyReport" class="dep-link">4-2 WeeklyReport</a>
-<a href="#Employee" class="dep-link">6-1 Employee</a>
-<a href="#Employee" class="dep-link">6-1 Employee</a>
-<a href="#Department" class="dep-link">6-2 Department</a>
-<a href="#Department" class="dep-link">6-2 Department</a>
-<a href="#Position" class="dep-link">6-3 Position</a>
-<a href="#EmployeePosition" class="dep-link">6-4 EmployeePosition</a>
-<a href="#DepartmentPosition" class="dep-link">6-5 DepartmentPosition</a>
-<a href="#EditHistory" class="dep-link">7-1 EditHistory</a>
+<a href="#WeeklyReport" class="dep-link">3-2 WeeklyReport</a>
+<a href="#Employee" class="dep-link">5-1 Employee</a>
+<a href="#Employee" class="dep-link">5-1 Employee</a>
+<a href="#Company" class="dep-link">5-2 Company</a>
+<a href="#Department" class="dep-link">5-3 Department</a>
+<a href="#Department" class="dep-link">5-3 Department</a>
+<a href="#Position" class="dep-link">5-4 Position</a>
+<a href="#EmployeePosition" class="dep-link">5-5 EmployeePosition</a>
+<a href="#DepartmentPosition" class="dep-link">5-6 DepartmentPosition</a>
+<a href="#EditHistory" class="dep-link">6-1 EditHistory</a>
 </div>
 </div>
 </div>
@@ -393,7 +392,7 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#Position" class="dep-link">6-3 Position</a>
+<a href="#Position" class="dep-link">5-4 Position</a>
 <a href="#Resource" class="dep-link">2-1 Resource</a>
 <a href="#Role" class="dep-link">2-2 Role</a>
 </div>
@@ -438,7 +437,7 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#Department" class="dep-link">6-2 Department</a>
+<a href="#Department" class="dep-link">5-3 Department</a>
 <a href="#Resource" class="dep-link">2-1 Resource</a>
 <a href="#Role" class="dep-link">2-2 Role</a>
 </div>
@@ -448,30 +447,9 @@
 </div>
 </div>
 </div>
-<div class="section"><div class="section-title">6. Dictionary</div>
-<div class="table-block" id="CompanyCode">
-<div class="table-header"><h3><span class="table-num">3-1</span> CompanyCode</h3></div>
-<table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
-<tr class="" data-model="CompanyCode" data-field="name">
-          <td><span class="field-name">name</span> <span class="field-required">*</span></td>
-          <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment">公司名称（丰华生物/丰华制药等）</td>
-          <td class="notes-cell" contenteditable="true"></td>
-        </tr>
-</tbody></table>
-<div class="table-footer">
-<div class="dep-out"><span class="dep-label">Depends on:</span>
-<span class="dep-none">无</span>
-</div>
-<div class="dep-in"><span class="dep-label">Referenced by:</span>
-<span class="dep-none">无</span>
-</div>
-</div>
-</div>
-</div>
-<div class="section"><div class="section-title">3. Weekly Reports</div>
+<div class="section"><div class="section-title">3. Reports</div>
 <div class="table-block" id="ReportGroup">
-<div class="table-header"><h3><span class="table-num">4-1</span> ReportGroup</h3></div>
+<div class="table-header"><h3><span class="table-num">3-1</span> ReportGroup</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="fk-in" data-model="ReportGroup" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -512,15 +490,15 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#Department" class="dep-link">6-2 Department</a>
+<a href="#Department" class="dep-link">5-3 Department</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
-<a href="#WeeklyReport" class="dep-link">4-2 WeeklyReport</a>
+<a href="#WeeklyReport" class="dep-link">3-2 WeeklyReport</a>
 </div>
 </div>
 </div>
 <div class="table-block" id="WeeklyReport">
-<div class="table-header"><h3><span class="table-num">4-2</span> WeeklyReport</h3></div>
+<div class="table-header"><h3><span class="table-num">3-2</span> WeeklyReport</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="fk-in" data-model="WeeklyReport" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -603,17 +581,17 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#ReportGroup" class="dep-link">4-1 ReportGroup</a>
+<a href="#ReportGroup" class="dep-link">3-1 ReportGroup</a>
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
-<a href="#ReportItem" class="dep-link">4-3 ReportItem</a>
-<a href="#ReportHistory" class="dep-link">4-4 ReportHistory</a>
+<a href="#ReportItem" class="dep-link">3-3 ReportItem</a>
+<a href="#ReportHistory" class="dep-link">3-4 ReportHistory</a>
 </div>
 </div>
 </div>
 <div class="table-block" id="ReportItem">
-<div class="table-header"><h3><span class="table-num">4-3</span> ReportItem</h3></div>
+<div class="table-header"><h3><span class="table-num">3-3</span> ReportItem</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="" data-model="ReportItem" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -666,8 +644,8 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#WorkItem" class="dep-link">5-1 WorkItem</a>
-<a href="#WeeklyReport" class="dep-link">4-2 WeeklyReport</a>
+<a href="#WorkItem" class="dep-link">4-1 WorkItem</a>
+<a href="#WeeklyReport" class="dep-link">3-2 WeeklyReport</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <span class="dep-none">无</span>
@@ -675,7 +653,7 @@
 </div>
 </div>
 <div class="table-block" id="ReportHistory">
-<div class="table-header"><h3><span class="table-num">4-4</span> ReportHistory</h3></div>
+<div class="table-header"><h3><span class="table-num">3-4</span> ReportHistory</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="" data-model="ReportHistory" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -722,7 +700,7 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#WeeklyReport" class="dep-link">4-2 WeeklyReport</a>
+<a href="#WeeklyReport" class="dep-link">3-2 WeeklyReport</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <span class="dep-none">无</span>
@@ -730,9 +708,9 @@
 </div>
 </div>
 </div>
-<div class="section"><div class="section-title">4. Work Items</div>
+<div class="section"><div class="section-title">4. Tasks</div>
 <div class="table-block" id="WorkItem">
-<div class="table-header"><h3><span class="table-num">5-1</span> WorkItem</h3></div>
+<div class="table-header"><h3><span class="table-num">4-1</span> WorkItem</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="fk-in" data-model="WorkItem" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -812,13 +790,13 @@
 <span class="dep-none">无</span>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
-<a href="#ReportItem" class="dep-link">4-3 ReportItem</a>
-<a href="#WorkParticipant" class="dep-link">5-2 WorkParticipant</a>
+<a href="#ReportItem" class="dep-link">3-3 ReportItem</a>
+<a href="#WorkParticipant" class="dep-link">4-2 WorkParticipant</a>
 </div>
 </div>
 </div>
 <div class="table-block" id="WorkParticipant">
-<div class="table-header"><h3><span class="table-num">5-2</span> WorkParticipant</h3></div>
+<div class="table-header"><h3><span class="table-num">4-2</span> WorkParticipant</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="" data-model="WorkParticipant" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -853,7 +831,7 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#WorkItem" class="dep-link">5-1 WorkItem</a>
+<a href="#WorkItem" class="dep-link">4-1 WorkItem</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <span class="dep-none">无</span>
@@ -863,7 +841,7 @@
 </div>
 <div class="section"><div class="section-title">5. Roster & Org</div>
 <div class="table-block" id="Employee">
-<div class="table-header"><h3><span class="table-num">6-1</span> Employee</h3></div>
+<div class="table-header"><h3><span class="table-num">5-1</span> Employee</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="fk-in" data-model="Employee" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -1064,12 +1042,61 @@
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
-<a href="#EmployeePosition" class="dep-link">6-4 EmployeePosition</a>
+<a href="#EmployeePosition" class="dep-link">5-5 EmployeePosition</a>
+</div>
+</div>
+</div>
+<div class="table-block" id="Company">
+<div class="table-header"><h3><span class="table-num">5-2</span> Company</h3></div>
+<table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
+<tr class="" data-model="Company" data-field="name">
+          <td><span class="field-name">name</span> <span class="field-required">*</span></td>
+          <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+          <td class="field-comment">公司名称（丰华生物/丰华制药等）</td>
+          <td class="notes-cell" contenteditable="true"></td>
+        </tr>
+<tr class="" data-model="Company" data-field="createdAt">
+          <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+          <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+          <td class="field-comment">创建时间</td>
+          <td class="notes-cell" contenteditable="true"></td>
+        </tr>
+<tr class="" data-model="Company" data-field="updatedAt">
+          <td><span class="field-name">updatedAt</span></td>
+          <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+          <td class="field-comment">更新时间</td>
+          <td class="notes-cell" contenteditable="true"></td>
+        </tr>
+<tr class="fk-out" data-model="Company" data-field="editedBy">
+          <td><span class="field-name">editedBy</span></td>
+          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+          <td class="field-comment">编辑人用户ID <span class="fk-link">→ <a href="#User" class="dep-link">User</a></span></td>
+          <td class="notes-cell" contenteditable="true"></td>
+        </tr>
+<tr class="" data-model="Company" data-field="editedAt">
+          <td><span class="field-name">editedAt</span></td>
+          <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+          <td class="field-comment">编辑时间</td>
+          <td class="notes-cell" contenteditable="true"></td>
+        </tr>
+<tr class="" data-model="Company" data-field="version">
+          <td><span class="field-name">version</span> <span class="field-required">*</span></td>
+          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+          <td class="field-comment">版本号</td>
+          <td class="notes-cell" contenteditable="true"></td>
+        </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#User" class="dep-link">1-1 User</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
 </div>
 </div>
 </div>
 <div class="table-block" id="Department">
-<div class="table-header"><h3><span class="table-num">6-2</span> Department</h3></div>
+<div class="table-header"><h3><span class="table-num">5-3</span> Department</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="fk-in" data-model="Department" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -1146,20 +1173,20 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#Department" class="dep-link">6-2 Department</a>
+<a href="#Department" class="dep-link">5-3 Department</a>
 <a href="#User" class="dep-link">1-1 User</a>
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <a href="#DepartmentResourceRole" class="dep-link">2-5 DepartmentResourceRole</a>
-<a href="#ReportGroup" class="dep-link">4-1 ReportGroup</a>
-<a href="#EmployeePosition" class="dep-link">6-4 EmployeePosition</a>
-<a href="#DepartmentPosition" class="dep-link">6-5 DepartmentPosition</a>
+<a href="#ReportGroup" class="dep-link">3-1 ReportGroup</a>
+<a href="#EmployeePosition" class="dep-link">5-5 EmployeePosition</a>
+<a href="#DepartmentPosition" class="dep-link">5-6 DepartmentPosition</a>
 </div>
 </div>
 </div>
 <div class="table-block" id="Position">
-<div class="table-header"><h3><span class="table-num">6-3</span> Position</h3></div>
+<div class="table-header"><h3><span class="table-num">5-4</span> Position</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="fk-in" data-model="Position" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -1222,13 +1249,13 @@
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <a href="#PositionResourceRole" class="dep-link">2-4 PositionResourceRole</a>
-<a href="#EmployeePosition" class="dep-link">6-4 EmployeePosition</a>
-<a href="#DepartmentPosition" class="dep-link">6-5 DepartmentPosition</a>
+<a href="#EmployeePosition" class="dep-link">5-5 EmployeePosition</a>
+<a href="#DepartmentPosition" class="dep-link">5-6 DepartmentPosition</a>
 </div>
 </div>
 </div>
 <div class="table-block" id="EmployeePosition">
-<div class="table-header"><h3><span class="table-num">6-4</span> EmployeePosition</h3></div>
+<div class="table-header"><h3><span class="table-num">5-5</span> EmployeePosition</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="" data-model="EmployeePosition" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -1323,9 +1350,9 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#Employee" class="dep-link">6-1 Employee</a>
-<a href="#Department" class="dep-link">6-2 Department</a>
-<a href="#Position" class="dep-link">6-3 Position</a>
+<a href="#Employee" class="dep-link">5-1 Employee</a>
+<a href="#Department" class="dep-link">5-3 Department</a>
+<a href="#Position" class="dep-link">5-4 Position</a>
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
@@ -1334,7 +1361,7 @@
 </div>
 </div>
 <div class="table-block" id="DepartmentPosition">
-<div class="table-header"><h3><span class="table-num">6-5</span> DepartmentPosition</h3></div>
+<div class="table-header"><h3><span class="table-num">5-6</span> DepartmentPosition</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="" data-model="DepartmentPosition" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -1393,8 +1420,8 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#Department" class="dep-link">6-2 Department</a>
-<a href="#Position" class="dep-link">6-3 Position</a>
+<a href="#Department" class="dep-link">5-3 Department</a>
+<a href="#Position" class="dep-link">5-4 Position</a>
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
@@ -1403,9 +1430,9 @@
 </div>
 </div>
 </div>
-<div class="section"><div class="section-title">7. Edit History</div>
+<div class="section"><div class="section-title">6. Edit History</div>
 <div class="table-block" id="EditHistory">
-<div class="table-header"><h3><span class="table-num">7-1</span> EditHistory</h3></div>
+<div class="table-header"><h3><span class="table-num">6-1</span> EditHistory</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>
 <tr class="" data-model="EditHistory" data-field="id">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>

@@ -106,18 +106,6 @@ model DepartmentResourceRole {
   @@unique([departmentId, resourceId, roleId, scopeId])
 }
 
-// ─── 字典 ─────────────────────────────────────────────────
-
-model Company {
-  name      String    @id // 公司名称（丰华生物/丰华制药等）
-  createdAt DateTime  @default(now()) // 创建时间
-  updatedAt DateTime? // 更新时间
-  editedBy  Int? // 编辑人用户ID
-  editor    User?     @relation("CompanyEditor", fields: [editedBy], references: [id])
-  editedAt  DateTime? // 编辑时间
-  version   Int       @default(1) // 版本号
-}
-
 // ─── 周报模块 ─────────────────────────────────────────────
 
 model ReportGroup {
@@ -249,6 +237,16 @@ model Employee {
   editor        User?              @relation("EmployeeEditor", fields: [editedBy], references: [id])
   editedAt      DateTime? // 编辑时间
   version       Int                @default(1) // 版本号
+}
+
+model Company {
+  name      String    @id // 公司名称（丰华生物/丰华制药等）
+  createdAt DateTime  @default(now()) // 创建时间
+  updatedAt DateTime? // 更新时间
+  editedBy  Int? // 编辑人用户ID
+  editor    User?     @relation("CompanyEditor", fields: [editedBy], references: [id])
+  editedAt  DateTime? // 编辑时间
+  version   Int       @default(1) // 版本号
 }
 
 model Department {

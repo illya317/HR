@@ -147,13 +147,12 @@ function typeColor(type: string): string {
 }
 
 const GROUP_EN: Record<string, string> = {
-  "用户与认证": "1. Authentication",
+  "用户与认证": "1. System",
   "RBAC 权限": "2. RBAC",
-  "周报模块": "3. Weekly Reports",
-  "工作清单模块（独立）": "4. Work Items",
+  "周报模块": "3. Reports",
+  "工作清单模块（独立）": "4. Tasks",
   "花名册与组织架构": "5. Roster & Org",
-  "字典": "6. Dictionary",
-  "编辑历史": "7. Edit History",
+  "编辑历史": "6. Edit History",
 };
 
 function generateHTML(models: Model[], groups: string[]): string {
@@ -393,7 +392,7 @@ async function exportChanges() {
 // ─── Main ─────────────────────────────────────────────────
 
 const schemaPath = path.resolve(__dirname, "../prisma/schema.prisma");
-const outputPath = path.resolve(__dirname, "../docs/tables.html");
+const outputPath = path.resolve(__dirname, "../docs/table.html");
 
 const { models, groups } = parseSchema(schemaPath);
 const html = generateHTML(models, groups);
