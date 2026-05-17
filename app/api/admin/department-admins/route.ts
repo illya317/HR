@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       role: { key: "admin" },
     },
     include: {
-      user: { select: { id: true, name: true, username: true, employeeId: true } },
+      user: { select: { id: true, name: true, username: true } },
     },
   });
 

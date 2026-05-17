@@ -232,9 +232,10 @@ function generateHTML(models: Model[], groups: string[]): string {
   .dep-link { display: inline-block; background: #f1f5f9; padding: 1px 8px; border-radius: 3px; font-family: "SF Mono", "Menlo", monospace; font-size: 12px; color: #475569; text-decoration: none; }
   .dep-link:hover { background: #e2e8f0; }
   .dep-none { color: #cbd5e1; }
-  td[contenteditable] { outline: 2px solid transparent; border-radius: 3px; cursor: text; transition: outline 0.15s; }
-  td[contenteditable]:hover { outline-color: #e2e8f0; }
-  td[contenteditable]:focus { outline-color: #3b82f6; background: #eff6ff; }
+  .notes-cell { color: #dc2626; font-size: 12px; min-width: 80px; outline: 2px solid transparent; border-radius: 3px; cursor: text; }
+  .notes-cell:hover { outline-color: #e2e8f0; }
+  .notes-cell:focus { outline-color: #ef4444; background: #fef2f2; }
+  .notes-cell:empty::before { content: 'Add note…'; color: #fca5a5; }
   .export-bar { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
   .export-btn { display: block; width: 100%; padding: 8px 12px; background: #0f172a; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
   .export-btn:hover { background: #1e293b; }
@@ -312,7 +313,7 @@ function generateHTML(models: Model[], groups: string[]): string {
       }
 
       // Fields
-      rows.push(`<table class="field-table"><thead><tr><th style="width:180px">Field</th><th style="width:70px">Type</th><th>Description</th></tr></thead><tbody>`);
+      rows.push(`<table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th><th style="width:100px">Notes</th></tr></thead><tbody>`);
       for (const f of m.fields) {
         if (f.type.endsWith("[]")) continue;
         if (f.isRelation && !m.relations.some(r => r.fields.includes(f.name))) continue;
@@ -320,11 +321,12 @@ function generateHTML(models: Model[], groups: string[]): string {
         const rel = m.relations.find(r => r.fields.includes(f.name));
         const comment = f.comment || (rel ? `→ ${rel.targetModel}.${rel.references[0]}` : "");
         const rowClass = fkOutFields.has(f.name) ? 'fk-out' : fkInFields.has(f.name) ? 'fk-in' : '';
-        const origComment = comment + (isFK && rel ? ` → ${rel.targetModel}` : '');
+        const fkSuffix = isFK && rel ? ` <span class="fk-link">→ <a href="#${rel.targetModel}" class="dep-link">${rel.targetModel}</a></span>` : '';
         rows.push(`<tr class="${rowClass}" data-model="${m.name}" data-field="${f.name}">
           <td><span class="field-name">${f.name}</span>${f.required ? ' <span class="field-required">*</span>' : ''}</td>
           <td><span class="field-type" style="background:${typeColor(f.type)}15;color:${typeColor(f.type)}">${typeBadge(f.type)}</span></td>
-          <td class="field-comment" contenteditable="true" data-original="${origComment.replace(/"/g, '&quot;')}">${comment}${isFK && rel ? ` <span style="color:#94a3b8">→ <a href="#${rel.targetModel}" class="dep-link">${rel.targetModel}</a></span>` : ''}</td>
+          <td class="field-comment">${comment}${fkSuffix}</td>
+          <td class="notes-cell" contenteditable="true"></td>
         </tr>`);
       }
       rows.push(`</tbody></table>`);
@@ -363,32 +365,23 @@ function generateHTML(models: Model[], groups: string[]): string {
   rows.push(`</main>
 <script>
 async function exportChanges() {
-  const cells = document.querySelectorAll('td[contenteditable]');
-  const changes = [];
-  for (const cell of cells) {
-    const current = cell.textContent.trim();
-    const original = cell.getAttribute('data-original') || '';
-    if (current !== original) {
-      const row = cell.parentElement;
-      changes.push({ model: row.getAttribute('data-model'), field: row.getAttribute('data-field'), original, current });
-    }
-  }
-  const msg = document.getElementById('export-msg');
-  if (changes.length === 0) {
-    msg.style.display = 'block';
-    msg.style.color = '#94a3b8';
+  const cells = document.querySelectorAll('td.notes-cell:not(:empty)');
+  if (cells.length === 0) {
+    const msg = document.getElementById('export-msg');
+    msg.style.display = 'block'; msg.style.color = '#94a3b8';
     msg.textContent = 'No changes to copy.';
     setTimeout(() => msg.style.display = 'none', 2000);
     return;
   }
   let text = '';
-  for (const c of changes) {
-    text += c.model + '\\t' + c.field + '\\t' + c.original + '\\t' + c.current + '\\n';
+  for (const cell of cells) {
+    const row = cell.parentElement;
+    text += row.getAttribute('data-model') + '\\t' + row.getAttribute('data-field') + '\\t' + cell.textContent.trim() + '\\n';
   }
   await navigator.clipboard.writeText(text);
-  msg.style.display = 'block';
-  msg.style.color = '#10b981';
-  msg.textContent = 'Copied ' + changes.length + ' changes to clipboard';
+  const msg = document.getElementById('export-msg');
+  msg.style.display = 'block'; msg.style.color = '#10b981';
+  msg.textContent = 'Copied ' + cells.length + ' changes';
   setTimeout(() => msg.style.display = 'none', 2000);
 }
 </script>

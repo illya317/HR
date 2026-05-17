@@ -16,9 +16,7 @@ model User {
   username         String?           @unique // 登录用户名（自取）
   password         String? // 登录密码
   name             String // 名称
-  employeeId       String? // 员工编号
-  departmentId     Int               // 注册时初始关联线索，非权威来源
-  departmentName   String? // 部门名称
+  departmentId     Int               // 临时保留，待迁移到EmployeePosition
   avatar           String? // 头像URL
   routineItems     String? // 日常工作模板JSON
   isWorkListAdmin  Boolean           @default(false) // 是否超级管理员
