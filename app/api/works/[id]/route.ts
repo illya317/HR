@@ -36,8 +36,8 @@ export async function PUT(
     return NextResponse.json({ error: "工作项不存在" }, { status: 404 });
   }
 
-  // Check department-level scope access (scopeType=department + scopeId must match user's department)
-  if (existing.scopeType !== "department" || existing.scopeId !== payload.departmentId) {
+  // Check department-level scope access (targetType=department + targetId must match user's department)
+  if (existing.targetType !== "department" || existing.targetId !== payload.departmentId) {
     return NextResponse.json({ error: "无权操作" }, { status: 403 });
   }
 
@@ -112,7 +112,7 @@ export async function DELETE(
   }
 
   // Check department-level scope access
-  if (existing.scopeType !== "department" || existing.scopeId !== payload.departmentId) {
+  if (existing.targetType !== "department" || existing.targetId !== payload.departmentId) {
     return NextResponse.json({ error: "无权操作" }, { status: 403 });
   }
 

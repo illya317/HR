@@ -11,6 +11,15 @@ export const NAME_TO_CODE: Record<string, string> = Object.fromEntries(
   Object.entries(CODE_TO_NAME).map(([k, v]) => [v, k])
 );
 
+// 管理体系分组（页面展示用）
+export const BIO_GROUP_CODES = ["01", "02", "03", "05"]; // 丰华生物体系
+export const PHARMA_CODE = "04"; // 丰华制药
+
+export function getManagementGroup(code: string): string {
+  const prefix = code.slice(0, 2);
+  return BIO_GROUP_CODES.includes(prefix) ? "丰华生物体系" : "丰华制药";
+}
+
 // 丰华生物集团（共享数据）
 export const FENGHUA_BIO_GROUP = ["丰华生物", "丰华天力通", "丰华悦通", "加拿大"];
 export const FENGHUA_BIO_CODES = Object.keys(CODE_TO_NAME);

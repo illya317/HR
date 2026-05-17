@@ -49,7 +49,7 @@ async function main() {
   }
 
   // ─── Step 3: WorkItem migration ──────────────────────────
-  console.log("\n4. Migrating WorkItem departmentId → scopeType/scopeId...");
+  console.log("\n4. Migrating WorkItem departmentId → targetType/targetId...");
   const workItems = await prisma.workItem.findMany();
   let wiCount = 0;
   for (const wi of workItems) {
@@ -57,8 +57,8 @@ async function main() {
     await prisma.workItem.update({
       where: { id: wi.id },
       data: {
-        scopeType: oldDeptId ? "department" : "personal",
-        scopeId: oldDeptId || undefined,
+        targetType: oldDeptId ? "department" : "personal",
+        targetId: oldDeptId || undefined,
       },
     });
     wiCount++;

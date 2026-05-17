@@ -13,7 +13,6 @@ export async function GET(request: Request) {
     groups = await prisma.reportGroup.findMany({
       orderBy: { sortOrder: "asc" },
       include: {
-        department: { select: { id: true, name: true, company: true } },
         _count: { select: { reports: true } },
       },
     });
@@ -35,7 +34,6 @@ export async function GET(request: Request) {
       where: { id: { in: groupIds } },
       orderBy: { sortOrder: "asc" },
       include: {
-        department: { select: { id: true, name: true, company: true } },
         _count: { select: { reports: true } },
       },
     });
@@ -73,14 +71,6 @@ export async function GET(request: Request) {
     }));
   }
 
-  // Normalize department.company -> company for backward compat
-  groups = groups.map((g: any) => ({
-    ...g,
-    department: g.department
-      ? { ...g.department, company: g.department.company || "" }
-      : null,
-  }));
-
   return NextResponse.json({ groups });
 }
 
@@ -89,7 +79,7 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ error }, { status });
 
   const body = await request.json();
-  const { name, description, sortOrder, departmentId } = body;
+  const { name, description, sortOrder, targetType, targetId } = body;
 
   if (!name) {
     return NextResponse.json({ error: "名称不能为空" }, { status: 400 });
@@ -100,7 +90,9 @@ export async function POST(request: Request) {
       name,
       description: description || null,
       sortOrder: sortOrder ?? 0,
-      departmentId: departmentId || null,
+      periodType: "weekly",
+      targetType: targetType || "department",
+      targetId: targetId ?? 0,
     },
   });
 

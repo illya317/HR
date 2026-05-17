@@ -10,16 +10,10 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const year = searchParams.get("year");
-  const week = searchParams.get("week");
+  const date = searchParams.get("date");
   const reportGroupId = searchParams.get("reportGroupId")
     ? parseInt(searchParams.get("reportGroupId")!)
     : null;
-  const scopeType = searchParams.get("scopeType") || "department";
-  const scopeId = searchParams.get("scopeId")
-    ? parseInt(searchParams.get("scopeId")!)
-    : payload.departmentId;
-
   const reportGroupIds = searchParams.get("reportGroupIds");
 
   // 权限校验：按单个 reportGroupId 查询时验证权限
@@ -28,25 +22,19 @@ export async function GET(request: Request) {
     if (error) return NextResponse.json({ error }, { status });
   }
 
-  let where: any;
+  let where: any = {};
 
   if (reportGroupIds) {
     // 按多个 reportGroupId 查询（History 用）
-    where = {
-      reportGroupId: { in: reportGroupIds.split(",").map(Number) },
-    };
+    where.reportGroupId = { in: reportGroupIds.split(",").map(Number) };
   } else if (reportGroupId) {
     // 按单个 reportGroupId 查询（Dashboard 用）
-    where = { reportGroupId };
-  } else {
-    // 回退逻辑：按 scopeType + scopeId 查询（兼容旧数据）
-    where = { scopeType, scopeId };
+    where.reportGroupId = reportGroupId;
   }
 
-  if (year) where.year = parseInt(year);
-  if (week) where.weekNumber = parseInt(week);
+  if (date) where.date = date;
 
-  const reports = await prisma.weeklyReport.findMany({
+  const reports = await prisma.report.findMany({
     where,
     include: {
       items: {
@@ -56,7 +44,7 @@ export async function GET(request: Request) {
         select: { name: true },
       },
     },
-    orderBy: [{ year: "desc" }, { weekNumber: "desc" }],
+    orderBy: { date: "desc" },
   });
 
   return NextResponse.json({ reports });
@@ -79,11 +67,7 @@ export async function POST(request: Request) {
     taskName,
     notes,
     items,
-    year,
-    weekNumber,
-    periodType,
-    scopeType,
-    scopeId,
+    date,
     reportGroupId,
   } = body as {
     taskName: string;
@@ -96,11 +80,7 @@ export async function POST(request: Request) {
       sortOrder?: number;
       workId?: number;
     }>;
-    year?: number;
-    weekNumber?: number;
-    periodType?: string;
-    scopeType?: string;
-    scopeId?: number;
+    date?: string;
     reportGroupId?: number;
   };
 
@@ -111,11 +91,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const reportYear = year ?? getCurrentWeekInfo().year;
-  const reportWeek = weekNumber ?? getCurrentWeekInfo().weekNumber;
-  const reportPeriodType = periodType || "weekly";
-  const reportScopeType = scopeType || "department";
-  const reportScopeId = scopeId ?? payload.departmentId;
+  const reportDate = date ?? getCurrentWeekInfo().weekStart.toISOString().slice(0, 10);
 
   // 如果有 reportGroupId，查出名称作为 taskName
   let finalTaskName = taskName;
@@ -139,7 +115,7 @@ export async function POST(request: Request) {
   const hasRoutine = items.some((i) => i.category === "routine");
   if (!hasRoutine) {
     const works = await prisma.workItem.findMany({
-      where: { scopeType: "department", scopeId: reportScopeId, category: "routine" },
+      where: { targetType: "department", targetId: payload.departmentId, category: "routine" },
       orderBy: { sortOrder: "asc" },
     });
     if (works.length > 0) {
@@ -156,14 +132,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const report = await prisma.weeklyReport.create({
+    const report = await prisma.report.create({
       data: {
         userId: payload.userId,
-        year: reportYear,
-        weekNumber: reportWeek,
-        periodType: reportPeriodType,
-        scopeType: reportScopeType,
-        scopeId: reportScopeId,
+        date: reportDate,
         reportGroupId: finalReportGroupId,
         taskName: finalTaskName,
         notes: notes || null,

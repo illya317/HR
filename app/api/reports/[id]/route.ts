@@ -14,7 +14,7 @@ export async function PUT(
   const { id } = await params;
   const reportId = parseInt(id);
 
-  const existing = await prisma.weeklyReport.findUnique({
+  const existing = await prisma.report.findUnique({
     where: { id: reportId },
   });
 
@@ -26,7 +26,6 @@ export async function PUT(
   }
 
   const userId = payload.userId;
-  const departmentId = payload.departmentId;
 
   async function canEdit(report: NonNullable<typeof existing>) {
     // 管理员直接放行
@@ -55,13 +54,7 @@ export async function PUT(
       ]);
       return !!member || !!admin;
     }
-    // 旧数据回退逻辑
-    if (report.scopeType === "department") {
-      return report.scopeId === departmentId;
-    }
-    if (report.scopeType === "project") {
-      return false;
-    }
+    // 无 reportGroupId 则只有所有者能编辑
     return report.userId === userId;
   }
 
@@ -110,7 +103,7 @@ export async function PUT(
       },
     }),
     prisma.reportItem.deleteMany({ where: { reportId } }),
-    prisma.weeklyReport.update({
+    prisma.report.update({
       where: { id: reportId },
       data: {
         taskName,
@@ -130,7 +123,7 @@ export async function PUT(
     }),
   ]);
 
-  const updated = await prisma.weeklyReport.findUnique({
+  const updated = await prisma.report.findUnique({
     where: { id: reportId },
     include: {
       items: {

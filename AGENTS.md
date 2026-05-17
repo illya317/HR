@@ -16,17 +16,18 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **部署**: 本地 `npm run build` → standalone → rsync 到服务器 → PM2 (`weekly`)
 - **Excel**: `xlsx` 库读写
 
-## 数据库模型（17 张表，详见 `docs/tables.md`，权限模型详见 `docs/rbac.md`）
+## 数据库模型（22 张表，详见 `docs/tables.md`，权限模型详见 `docs/rbac.md`）
 
 | 模块 | 模型 | 说明 |
 |------|------|------|
 | 用户 | `User` | 纯认证实体，无业务字段 |
-| 周报 | `ReportGroup`, `WeeklyReport`, `ReportItem`, `ReportHistory` | 周报填报、版本快照 |
-| 工作 | `WorkItem`, `WorkParticipant` | 独立模块，scopeType/scopeId 泛化归属 |
+| 周报 | `ReportGroup`, `Report`, `ReportItem`, `ReportHistory` | 报告分组+填报+条目+版本快照 |
+| 工作 | `WorkItem`, `WorkParticipant` | 独立模块，targetType/targetId 多态归属 |
 | 员工 | `Employee` | 花名册 |
 | 组织 | `Department`, `Position`, `EmployeePosition`, `DepartmentPosition` | 部门岗位体系 |
-| RBAC | `Resource`, `Role`, `UserResourceRole` | 3 表替代旧 7 张权限表 |
-| 字典 | `CompanyCode` | 公司编码 |
+| 项目 | `Project`, `EmployeeProject` | 项目/部门分组，人员分配 |
+| RBAC | `Resource`, `Role`, `UserResourceRole`, `PositionResourceRole`, `DepartmentResourceRole` | 5 表权限系统 |
+| 公司 | `Company` | 公司编码+名称 |
 | 历史 | `EditHistory` | 通用编辑快照 |
 
 **已删除**：`PermissionCategory`, `Permission`, `UserPermission`, `DepartmentAdmin`, `FieldPermission`, `GlobalFieldPermission`, `ReportGroupAdmin`, `ReportGroupMember`, `ReportGroupViewer`, `ReportGroupMembership`
@@ -41,7 +42,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | **生命周期** | 入职 → 调岗 → 离职 | 注册 → 活跃 → 停用 |
 | **数据归属** | 公司资产（人事档案） | 业务资产（工作记录） |
 | **权限逻辑** | 谁能看/改**哪个人**的资料 | 谁能看/填**哪个分组**的周报 |
-| **时间维度** | 强（`startDate`/`endDate`/`joinDate`/`leaveDate`） | 弱（`year`+`weekNumber`） |
+| **时间维度** | 强（`startDate`/`endDate`/`joinDate`/`leaveDate`） | `date` 字段，周期类型由 ReportGroup.periodType 决定 |
 | **版本追踪** | `EditHistory`（字段级快照） | `ReportHistory`（整份周报快照） |
 | **多人协作** | 无（独占编辑） | 有（同组共享周报） |
 

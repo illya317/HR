@@ -15,23 +15,19 @@ export async function GET(
   const reportId = parseInt(id);
   const versionNum = parseInt(version);
 
-  const report = await prisma.weeklyReport.findUnique({
+  const report = await prisma.report.findUnique({
     where: { id: reportId },
-    select: { userId: true, scopeType: true, scopeId: true },
+    select: { userId: true },
   });
 
-  const canAccess =
-    report &&
-    (report.scopeType === "department"
-      ? report.scopeId === payload.departmentId
-      : report.userId === payload.userId);
+  const canAccess = report && report.userId === payload.userId;
 
   if (!canAccess) {
     return NextResponse.json({ error: "无权访问" }, { status: 403 });
   }
 
   if (versionNum === 0) {
-    const current = await prisma.weeklyReport.findUnique({
+    const current = await prisma.report.findUnique({
       where: { id: reportId },
       include: {
         items: {

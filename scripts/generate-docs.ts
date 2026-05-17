@@ -389,16 +389,103 @@ async function exportChanges() {
   return rows.join("\n");
 }
 
+// ─── Generate Markdown ────────────────────────────────────
+
+function generateMD(models: Model[], groups: string[]): string {
+  const modelMap = new Map(models.map(m => [m.name, m]));
+  const uniqueGroups = [...new Set(models.map(m => m.comment))];
+  const lines: string[] = [];
+
+  // Assign model numbers
+  const modelNumbers = new Map<string, string>();
+  let globalIdx = 0;
+  for (const g of uniqueGroups) {
+    globalIdx++;
+    let seq = 0;
+    for (const m of models) {
+      if (m.comment === g) {
+        seq++;
+        modelNumbers.set(m.name, `${globalIdx}-${seq}`);
+      }
+    }
+  }
+
+  lines.push(`# HR Database Schema (${models.length} tables)\n`);
+
+  for (const g of uniqueGroups) {
+    const enTitle = GROUP_EN[g] || g;
+    lines.push(`## ${enTitle}\n`);
+
+    for (const m of models) {
+      if (m.comment !== g) continue;
+      const num = modelNumbers.get(m.name)!;
+
+      // FK sets
+      const fkOutFields = new Set(m.relations.flatMap(r => r.fields));
+      const fkInFields = new Set<string>();
+      for (const other of models) {
+        if (other === m) continue;
+        for (const rel of other.relations) {
+          if (rel.targetModel === m.name) {
+            for (const ref of rel.references) fkInFields.add(ref);
+          }
+        }
+      }
+
+      lines.push(`### ${num} ${m.name}\n`);
+
+      // Fields table
+      lines.push(`| Field | Type | Required | FK | Note |`);
+      lines.push(`|-------|------|----------|----|------|`);
+
+      for (const f of m.fields) {
+        if (f.type.endsWith("[]")) continue; // skip array relation fields
+        if (f.isRelation && !m.relations.some(r => r.fields.includes(f.name))) continue;
+        const isFK = fkOutFields.has(f.name);
+        const isRef = fkInFields.has(f.name);
+        const rel = m.relations.find(r => r.fields.includes(f.name));
+        const comment = f.comment || (rel ? `→ ${rel.targetModel}.${rel.references[0]}` : "");
+        const fkFlag = isFK ? "FK" : isRef ? "REF" : "";
+        lines.push(`| \`${f.name}\` | ${f.type} | ${f.required ? "*" : ""} | ${fkFlag} | ${comment} |`);
+      }
+
+      // Dependencies
+      const outDeps = m.relations.map(r => r.targetModel).filter(t => modelMap.has(t));
+      const inDeps = m.inboundFrom.filter(t => modelMap.has(t));
+
+      if (outDeps.length > 0) {
+        const links = outDeps.map(d => {
+          const dNum = modelNumbers.get(d) || "";
+          return `[${dNum} ${d}](#${d.toLowerCase()})`;
+        }).join(", ");
+        lines.push(`\n→ Depends on: ${links}`);
+      }
+      if (inDeps.length > 0) {
+        const links = inDeps.map(d => {
+          const dNum = modelNumbers.get(d) || "";
+          return `[${dNum} ${d}](#${d.toLowerCase()})`;
+        }).join(", ");
+        lines.push(`\n← Referenced by: ${links}`);
+      }
+      lines.push("");
+    }
+  }
+
+  return lines.join("\n");
+}
+
 // ─── Main ─────────────────────────────────────────────────
 
 const schemaPath = path.resolve(__dirname, "../prisma/schema.prisma");
-const outputPath = path.resolve(__dirname, "../docs/tables.html");
+const htmlPath = path.resolve(__dirname, "../docs/tables.html");
+const mdPath = path.resolve(__dirname, "../docs/tables.md");
 
 const { models, groups } = parseSchema(schemaPath);
-const html = generateHTML(models, groups);
-fs.writeFileSync(outputPath, html, "utf-8");
+fs.writeFileSync(htmlPath, generateHTML(models, groups), "utf-8");
+fs.writeFileSync(mdPath, generateMD(models, groups), "utf-8");
 
-console.log(`Generated ${outputPath}`);
+console.log(`Generated ${htmlPath}`);
+console.log(`Generated ${mdPath}`);
 console.log(`  ${models.length} models in ${[...new Set(models.map(m => m.comment))].length} groups`);
 for (const m of models) {
   console.log(`  ${m.name}: ${m.fields.length} fields, ${m.relations.length} outbound, ${m.inboundFrom.length} inbound`);

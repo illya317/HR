@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
 import { matchEmployee } from "@/lib/search";
-import { NAME_TO_CODE, SHARED_GROUP_CODES, resolveCompanyFilter } from "@/lib/company";
+import { NAME_TO_CODE, SHARED_GROUP_CODES, resolveCompanyFilter, BIO_GROUP_CODES, PHARMA_CODE } from "@/lib/company";
 import EmployeeTab from "./EmployeeTab";
 import PositionTab from "./PositionTab";
 import EditToolbar from "@/app/components/EditToolbar";
@@ -82,6 +82,8 @@ interface CodeItem {
 
 function CompanyCodeTab({ user }: { user: User }) {
   const [codes, setCodes] = useState<CodeItem[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [stats, setStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const { toast, showToast, closeToast } = useToast();
   const [newCode, setNewCode] = useState("");
@@ -97,10 +99,17 @@ function CompanyCodeTab({ user }: { user: User }) {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/admin/company-codes");
-    if (res.ok) {
-      const data = await res.json();
+    const [codesRes, empRes] = await Promise.all([
+      fetch("/api/admin/company-codes"),
+      fetch("/api/employees?status=在职"),
+    ]);
+    if (codesRes.ok) {
+      const data = await codesRes.json();
       setCodes(data.codes || []);
+    }
+    if (empRes.ok) {
+      const data = await empRes.json();
+      setEmployees(data.employees || []);
     }
     setLoading(false);
   }
@@ -108,6 +117,17 @@ function CompanyCodeTab({ user }: { user: User }) {
   useEffect(() => {
     load();
   }, []);
+
+  // 计算每个公司编码的人数统计
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    for (const c of codes) {
+      map[c.code] = new Set(
+        employees.filter((e) => e.company === c.name).map((e) => e.employeeId)
+      ).size;
+    }
+    setStats(map);
+  }, [codes, employees]);
 
   function startEditRow(item: CodeItem) {
     if (!user.canAccessHR) return;
@@ -257,86 +277,111 @@ function CompanyCodeTab({ user }: { user: User }) {
               <tr>
                 <th className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600">编号</th>
                 <th className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600">名称</th>
+                <th className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600">人数</th>
               </tr>
             </thead>
             <tbody>
-              {codes.map((item) => {
-                const isEditing = editRow === item.code;
+              {(() => {
+                const bioCodes = codes.filter((c) => BIO_GROUP_CODES.includes(c.code));
+                const pharmaCodes = codes.filter((c) => c.code === PHARMA_CODE);
+                const bioTotal = bioCodes.reduce((sum, c) => sum + (stats[c.code] || 0), 0);
+                const pharmaTotal = pharmaCodes.reduce((sum, c) => sum + (stats[c.code] || 0), 0);
+                const grandTotal = codes.reduce((sum, c) => sum + (stats[c.code] || 0), 0);
                 return (
-                  <tr key={item.code} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
-                      {isEditing ? (
-                        <input
-                          value={editCodeValue}
-                          onChange={(e) => setEditCodeValue(e.target.value)}
-                          className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-                        />
-                      ) : (
-                        <span>
-                          {item.code}
-                          {editMode && user.canAccessHR && (
-                            <button
-                              onClick={() => setDeleteCode(item.code)}
-                              className="ml-1 text-red-500 hover:text-red-700"
-                              title="删除"
-                            >
-                              ×
-                            </button>
-                          )}
-                        </span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
-                      {isEditing ? (
-                        <input
-                          value={editNameValue}
-                          onChange={(e) => setEditNameValue(e.target.value)}
-                          className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-                        />
-                      ) : (
-                        <span
-                          className="cursor-pointer hover:text-emerald-600"
-                          onClick={() => editMode && user.canAccessHR && startEditRow(item)}
-                        >
-                          {item.name || "-"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
+                  <>
+                    {bioCodes.length > 0 && (
+                      <>
+                        <tr className="bg-gray-100">
+                          <td colSpan={3} className="px-2 py-1 font-medium text-gray-600">丰华生物体系</td>
+                        </tr>
+                        {bioCodes.map((item) => {
+                          const isEditing = editRow === item.code;
+                          const count = stats[item.code] || 0;
+                          return (
+                            <tr key={item.code} className="border-b last:border-0 hover:bg-gray-50">
+                              <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                                {isEditing ? (
+                                  <input value={editCodeValue} onChange={(e) => setEditCodeValue(e.target.value)} className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none" />
+                                ) : (
+                                  <span>{item.code}{editMode && user.canAccessHR && (<button onClick={() => setDeleteCode(item.code)} className="ml-1 text-red-500 hover:text-red-700" title="删除">×</button>)}</span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                                {isEditing ? (
+                                  <input value={editNameValue} onChange={(e) => setEditNameValue(e.target.value)} className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none" />
+                                ) : (
+                                  <span className="cursor-pointer hover:text-emerald-600" onClick={() => editMode && user.canAccessHR && startEditRow(item)}>{item.name || "-"}</span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">{count}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        <tr className="border-b bg-gray-50">
+                          <td colSpan={2} className="px-2 py-1.5 text-right font-medium text-gray-600">小计</td>
+                          <td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{bioTotal}</td>
+                        </tr>
+                      </>
+                    )}
+                    {pharmaCodes.length > 0 && (
+                      <>
+                        <tr className="bg-gray-100">
+                          <td colSpan={3} className="px-2 py-1 font-medium text-gray-600">丰华制药</td>
+                        </tr>
+                        {pharmaCodes.map((item) => {
+                          const isEditing = editRow === item.code;
+                          const count = stats[item.code] || 0;
+                          return (
+                            <tr key={item.code} className="border-b last:border-0 hover:bg-gray-50">
+                              <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                                {isEditing ? (
+                                  <input value={editCodeValue} onChange={(e) => setEditCodeValue(e.target.value)} className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none" />
+                                ) : (
+                                  <span>{item.code}{editMode && user.canAccessHR && (<button onClick={() => setDeleteCode(item.code)} className="ml-1 text-red-500 hover:text-red-700" title="删除">×</button>)}</span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                                {isEditing ? (
+                                  <input value={editNameValue} onChange={(e) => setEditNameValue(e.target.value)} className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none" />
+                                ) : (
+                                  <span className="cursor-pointer hover:text-emerald-600" onClick={() => editMode && user.canAccessHR && startEditRow(item)}>{item.name || "-"}</span>
+                                )}
+                              </td>
+                              <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">{count}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        <tr className="border-b bg-gray-50">
+                          <td colSpan={2} className="px-2 py-1.5 text-right font-medium text-gray-600">小计</td>
+                          <td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{pharmaTotal}</td>
+                        </tr>
+                      </>
+                    )}
+                    <tr className="bg-gray-100">
+                      <td colSpan={2} className="px-2 py-1.5 text-right font-bold text-gray-700">合计</td>
+                      <td className="whitespace-nowrap px-2 py-1.5 font-bold text-emerald-700">{grandTotal}</td>
+                    </tr>
+                    {editMode && user.canAccessHR && (
+                      <tr className="border-b last:border-0 bg-gray-50">
+                        <td className="whitespace-nowrap px-2 py-1.5">
+                          <input type="text" value={newCode} onChange={(e) => setNewCode(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }} placeholder="如01" className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none" />
+                        </td>
+                        <td className="whitespace-nowrap px-2 py-1.5">
+                          <div className="flex items-center gap-1">
+                            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }} placeholder="名称" className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none" />
+                            <button onClick={handleAdd} className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-700">添加</button>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-2 py-1.5 text-gray-400">-</td>
+                      </tr>
+                    )}
+                  </>
                 );
-              })}
-              {editMode && user.canAccessHR && (
-                <tr className="border-b last:border-0 bg-gray-50">
-                  <td className="whitespace-nowrap px-2 py-1.5">
-                    <input
-                      type="text"
-                      value={newCode}
-                      onChange={(e) => setNewCode(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                      placeholder="如01"
-                      className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="text"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                        placeholder="名称"
-                        className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
-                      />
-                      <button
-                        onClick={handleAdd}
-                        className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-700"
-                      >
-                        添加
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
+              })()}
             </tbody>
           </table>
         )}
@@ -703,97 +748,64 @@ function CodeTab({
               </tr>
             </thead>
             <tbody>
-              {sortedCodes.map((item) => {
-                const isEditing = editRow === item.code;
-                const count = stats[item.code] || 0;
+              {(() => {
+                const bioCodes = sortedCodes.filter((c) => BIO_GROUP_CODES.includes(c.code.slice(0, 2)));
+                const pharmaCodes = sortedCodes.filter((c) => c.code.slice(0, 2) === PHARMA_CODE);
+                const bioTotal = bioCodes.reduce((sum, c) => sum + (stats[c.code] || 0), 0);
+                const pharmaTotal = pharmaCodes.reduce((sum, c) => sum + (stats[c.code] || 0), 0);
+                const grandTotal = sortedCodes.reduce((sum, c) => sum + (stats[c.code] || 0), 0);
+                const renderRow = (item: CodeItem) => {
+                  const isEditing = editRow === item.code;
+                  const count = stats[item.code] || 0;
+                  return (
+                    <tr key={item.code} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                        {isEditing ? (
+                          <input value={editCodeValue} onChange={(e) => setEditCodeValue(e.target.value)} className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none" />
+                        ) : (
+                          <span>{item.code}{editMode && user.canAccessHR && (<button onClick={() => setDeleteCode(item.code)} className="ml-1 text-red-500 hover:text-red-700" title="删除">×</button>)}</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                        {isEditing ? (
+                          <input value={editNameValue} onChange={(e) => setEditNameValue(e.target.value)} className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none" />
+                        ) : (
+                          <span className="cursor-pointer hover:text-emerald-600" onClick={() => editMode && user.canAccessHR ? startEditRow(item) : setDetailModal({ open: true, code: item.code, name: item.name })}>{item.name || "-"}</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                        <span className="cursor-pointer rounded-full bg-gray-100 px-2 py-0.5 text-xs hover:bg-gray-200" onClick={() => setDetailModal({ open: true, code: item.code, name: item.name })}>{count}</span>
+                      </td>
+                    </tr>
+                  );
+                };
                 return (
-                  <tr key={item.code} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
-                      {isEditing ? (
-                        <input
-                          value={editCodeValue}
-                          onChange={(e) => setEditCodeValue(e.target.value)}
-                          className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-                        />
-                      ) : (
-                        <span>
-                          {item.code}
-                          {editMode && user.canAccessHR && (
-                            <button
-                              onClick={() => setDeleteCode(item.code)}
-                              className="ml-1 text-red-500 hover:text-red-700"
-                              title="删除"
-                            >
-                              ×
-                            </button>
-                          )}
-                        </span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
-                      {isEditing ? (
-                        <input
-                          value={editNameValue}
-                          onChange={(e) => setEditNameValue(e.target.value)}
-                          className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-                        />
-                      ) : (
-                        <span
-                          className="cursor-pointer hover:text-emerald-600"
-                          onClick={() =>
-                            editMode && user.canAccessHR
-                              ? startEditRow(item)
-                              : setDetailModal({ open: true, code: item.code, name: item.name })
-                          }
-                        >
-                          {item.name || "-"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
-                      <span
-                        className="cursor-pointer rounded-full bg-gray-100 px-2 py-0.5 text-xs hover:bg-gray-200"
-                        onClick={() => setDetailModal({ open: true, code: item.code, name: item.name })}
-                      >
-                        {count}
-                      </span>
-                    </td>
-                  </tr>
+                  <>
+                    {bioCodes.length > 0 && (
+                      <>
+                        <tr className="bg-gray-100"><td colSpan={3} className="px-2 py-1 font-medium text-gray-600">丰华生物体系</td></tr>
+                        {bioCodes.map(renderRow)}
+                        <tr className="border-b bg-gray-50"><td colSpan={2} className="px-2 py-1.5 text-right font-medium text-gray-600">小计</td><td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{bioTotal}</td></tr>
+                      </>
+                    )}
+                    {pharmaCodes.length > 0 && (
+                      <>
+                        <tr className="bg-gray-100"><td colSpan={3} className="px-2 py-1 font-medium text-gray-600">丰华制药</td></tr>
+                        {pharmaCodes.map(renderRow)}
+                        <tr className="border-b bg-gray-50"><td colSpan={2} className="px-2 py-1.5 text-right font-medium text-gray-600">小计</td><td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{pharmaTotal}</td></tr>
+                      </>
+                    )}
+                    <tr className="bg-gray-100"><td colSpan={2} className="px-2 py-1.5 text-right font-bold text-gray-700">合计</td><td className="whitespace-nowrap px-2 py-1.5 font-bold text-emerald-700">{grandTotal}</td></tr>
+                    {editMode && user.canAccessHR && (
+                      <tr className="border-b last:border-0 bg-gray-50">
+                        <td className="whitespace-nowrap px-2 py-1.5"><input type="text" value={newCode} onChange={(e) => setNewCode(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }} placeholder="如001" className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none" /></td>
+                        <td className="whitespace-nowrap px-2 py-1.5"><div className="flex items-center gap-1"><input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }} placeholder="名称" className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none" /><button onClick={handleAdd} className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-700">添加</button></div></td>
+                        <td className="whitespace-nowrap px-2 py-1.5 text-gray-400">-</td>
+                      </tr>
+                    )}
+                  </>
                 );
-              })}
-              {editMode && user.canAccessHR && (
-                <tr className="border-b last:border-0 bg-gray-50">
-                  <td className="whitespace-nowrap px-2 py-1.5">
-                    <input
-                      type="text"
-                      value={newCode}
-                      onChange={(e) => setNewCode(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                      placeholder="如001"
-                      className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="text"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                        placeholder="名称"
-                        className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
-                      />
-                      <button
-                        onClick={handleAdd}
-                        className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-700"
-                      >
-                        添加
-                      </button>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-2 py-1.5 text-gray-400">-</td>
-                </tr>
-              )}
+              })()}
             </tbody>
           </table>
         )}

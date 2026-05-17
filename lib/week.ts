@@ -17,7 +17,17 @@ export function getCurrentWeekInfo() {
         (prevEndOfYear.getTime() - prevFirstMonday.getTime()) /
           (7 * 24 * 60 * 60 * 1000)
       ) + 1;
-    return { year: prevYear, weekNumber, firstMonday: prevFirstMonday };
+    const prevWeekStart = prevFirstMonday;
+    const prevWeekEnd = new Date(prevWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+    return {
+      year: prevYear,
+      weekNumber,
+      weekStart: prevWeekStart,
+      weekEnd: prevWeekEnd,
+      firstMonday: prevFirstMonday,
+      label: `${prevYear} 年第 ${weekNumber} 周`,
+      dateRange: `${formatDate(prevWeekStart)} - ${formatDate(prevWeekEnd)}`,
+    };
   }
 
   const weekNumber =

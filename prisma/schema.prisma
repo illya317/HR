@@ -22,7 +22,7 @@ model User {
   apiKey           String?           @unique // API密钥
   createdAt        DateTime          @default(now()) // 创建时间
   resourceRoles           UserResourceRole[]
-  reports                 WeeklyReport[]
+  reports                 Report[]
   employees               Employee[]        @relation("EmployeeUser")
   editedEmployees         Employee[]        @relation("EmployeeEditor")
   managedDepartments      Department[]      @relation("DepartmentManager")
@@ -32,6 +32,8 @@ model User {
   editedDepartmentPositions DepartmentPosition[] @relation("DeptPosEditor")
   editedCompanies         Company[]         @relation("CompanyEditor")
   editHistories           EditHistory[]     @relation("EditHistoryEditor")
+  editedProjects          Project[]         @relation("ProjectEditor")
+  editedEmployeeProjects  EmployeeProject[] @relation("EmpProjectEditor")
 }
 
 model SystemConfig {
@@ -109,36 +111,33 @@ model DepartmentResourceRole {
 // ─── 周报模块 ─────────────────────────────────────────────
 
 model ReportGroup {
-  id           Int            @id @default(autoincrement()) // 主键
-  name         String // 名称
-  description  String? // 说明
-  sortOrder    Int            @default(0) // 排序序号
-  departmentId Int? // 部门ID
-  department   Department?    @relation(fields: [departmentId], references: [id])
-  createdAt    DateTime       @default(now()) // 创建时间
-  reports      WeeklyReport[]
+  id          Int      @id @default(autoincrement()) // 主键
+  name        String // 名称
+  description String? // 说明
+  sortOrder   Int      @default(0) // 排序序号
+  periodType  String   @default("weekly") // "daily" | "weekly" | "monthly"
+  targetType  String   @default("department") // "project" | "department" | "position"
+  targetId    Int      @default(0) // 多态 FK
+  createdAt   DateTime @default(now()) // 创建时间
+  reports     Report[]
 }
 
-model WeeklyReport {
-  id            Int             @id @default(autoincrement()) // 主键
+model Report {
+  id            Int          @id @default(autoincrement()) // 主键
   userId        Int? // 用户ID
-  reportGroupId Int? // 周报分组ID
-  weekNumber    Int // 周数（1-52）
-  year          Int // 年份
-  periodType    String          @default("weekly") // 周期类型
-  scopeType     String          @default("department")  // 🗑️ 待废弃，统一走 reportGroupId
-  scopeId       Int                                     // 🗑️ 待废弃
+  reportGroupId Int? // 报告分组ID
+  date          String // 日期（yyyy-MM-dd，日报=当天，周报=周一，月报=月初）
   taskName      String // 任务名称
   notes         String? // 备注
-  version       Int             @default(1) // 版本号
-  createdAt     DateTime        @default(now()) // 创建时间
-  updatedAt     DateTime        @updatedAt // 更新时间
+  version       Int          @default(1) // 版本号
+  createdAt     DateTime     @default(now()) // 创建时间
+  updatedAt     DateTime     @updatedAt // 更新时间
   history       ReportHistory[]
   items         ReportItem[]
-  reportGroup   ReportGroup?    @relation(fields: [reportGroupId], references: [id])
-  user          User?           @relation(fields: [userId], references: [id])
+  reportGroup   ReportGroup? @relation(fields: [reportGroupId], references: [id])
+  user          User?        @relation(fields: [userId], references: [id])
 
-  @@unique([scopeType, scopeId, periodType, year, weekNumber])
+  @@unique([reportGroupId, date])
 }
 
 model ReportItem {
@@ -151,7 +150,7 @@ model ReportItem {
   sortOrder  Int // 排序序号
   workItemId Int? // 关联工作清单条目ID
   workItem   WorkItem?       @relation(fields: [workItemId], references: [id])
-  report     WeeklyReport    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  report     Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
 }
 
 model ReportHistory {
@@ -162,7 +161,7 @@ model ReportHistory {
   notes     String? // 备注
   itemsJson String // 条目JSON快照
   createdAt DateTime     @default(now()) // 创建时间
-  report    WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  report    Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@unique([reportId, version])
 }
@@ -171,8 +170,8 @@ model ReportHistory {
 
 model WorkItem {
   id           Int               @id @default(autoincrement()) // 主键
-  scopeType    String?           @default("department") // "report_group" | "department" | "personal"
-  scopeId      Int?                                     // ReportGroup.id | Department.id | User.id
+  targetType   String            @default("personal") // "project" | "department" | "position" | "personal"
+  targetId     Int?                                      // 多态 FK
   category     String // 分类
   content      String // 内容
   importance   Int               @default(3) // 重要度（1-5）
@@ -185,7 +184,7 @@ model WorkItem {
   participants WorkParticipant[]
   reportItems  ReportItem[]
 
-  @@index([scopeType, scopeId, category])
+  @@index([targetType, targetId, category])
 }
 
 model WorkParticipant {
@@ -233,6 +232,7 @@ model Employee {
   userId        Int? // 用户ID
   user          User?              @relation("EmployeeUser", fields: [userId], references: [id])
   positions     EmployeePosition[]
+  projects      EmployeeProject[]
   editedBy      Int? // 编辑人用户ID
   editor        User?              @relation("EmployeeEditor", fields: [editedBy], references: [id])
   editedAt      DateTime? // 编辑时间
@@ -263,8 +263,8 @@ model Department {
   manager           User?              @relation("DepartmentManager", fields: [managerUserId], references: [id])
   positions         DepartmentPosition[]
   employeePositions EmployeePosition[]
-  reportGroups      ReportGroup[]
   resourceRoles     DepartmentResourceRole[]
+  projects          Project[]
   company           String?            // 公司编码（如 01/02/03）
   createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime? // 更新时间
@@ -327,6 +327,41 @@ model DepartmentPosition {
   version      Int          @default(1) // 版本号
 
   @@unique([departmentId, positionId])
+}
+
+model Project {
+  id           Int              @id @default(autoincrement()) // 主键
+  name         String // 项目名称
+  type         String           @default("project") // "department" | "project"
+  departmentId Int? // type=department 时关联部门
+  department   Department?      @relation(fields: [departmentId], references: [id])
+  description  String? // 说明
+  createdAt    DateTime         @default(now()) // 创建时间
+  updatedAt    DateTime? // 更新时间
+  editedBy     Int? // 编辑人用户ID
+  editor       User?            @relation("ProjectEditor", fields: [editedBy], references: [id])
+  editedAt     DateTime? // 编辑时间
+  version      Int              @default(1) // 版本号
+  employees    EmployeeProject[]
+}
+
+model EmployeeProject {
+  id         Int       @id @default(autoincrement()) // 主键
+  employeeId Int // 员工ID
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  projectId  Int // 项目ID
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role       String? // 项目角色
+  startDate  String? // 开始日期
+  endDate    String? // 结束日期
+  createdAt  DateTime  @default(now()) // 创建时间
+  updatedAt  DateTime? // 更新时间
+  editedBy   Int? // 编辑人用户ID
+  editor     User?     @relation("EmpProjectEditor", fields: [editedBy], references: [id])
+  editedAt   DateTime? // 编辑时间
+  version    Int       @default(1) // 版本号
+
+  @@unique([employeeId, projectId])
 }
 
 // ─── 编辑历史 ─────────────────────────────────────────────

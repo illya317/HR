@@ -43,16 +43,16 @@ export async function GET(request: Request) {
 
     const rg = await prisma.reportGroup.findUnique({
       where: { id: rgId },
-      select: { departmentId: true },
+      select: { targetType: true, targetId: true },
     });
-    if (rg?.departmentId) {
-      departmentId = rg.departmentId;
+    if (rg?.targetType === "department" && rg?.targetId) {
+      departmentId = rg.targetId;
     }
   }
 
-  const where: { scopeType: string; scopeId: number; category?: string; isArchived?: boolean } = {
-    scopeType: "department",
-    scopeId: departmentId,
+  const where: { targetType: string; targetId: number; category?: string; isArchived?: boolean } = {
+    targetType: "department",
+    targetId: departmentId,
   };
   if (category) where.category = category;
   if (!includeArchived) where.isArchived = false;
@@ -116,8 +116,8 @@ export async function POST(request: Request) {
 
   const work = await prisma.workItem.create({
     data: {
-      scopeType: "department",
-      scopeId: targetDeptId,
+      targetType: "department",
+      targetId: targetDeptId,
       category,
       content,
       importance: importance ?? 3,
