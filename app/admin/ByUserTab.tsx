@@ -320,7 +320,6 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
                   <th className="whitespace-nowrap pb-2 pr-3">公司</th>
                   <th className="whitespace-nowrap pb-2 pr-3">部门</th>
                   <th className="whitespace-nowrap pb-2 pr-3">岗位</th>
-                  <th className="whitespace-nowrap pb-2 pr-3">权限状态</th>
                   <th className="whitespace-nowrap pb-2">操作</th>
                 </tr>
               </thead>
@@ -349,19 +348,11 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
                       <td className="whitespace-nowrap py-2 pr-3 text-gray-600">
                         {formatCsv(emp.roles.map((r) => r.position))}
                       </td>
-                      <td className="whitespace-nowrap py-2 pr-3">
-                        <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${
-                          hasAccess ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
-                        }`}>
-                          {hasAccess ? "已授权" : "未授权"}
-                        </span>
-                      </td>
                       <td className="whitespace-nowrap py-2">
                         <button
                           onClick={async () => {
                             if (selectedChild === "__all__") {
-                              // Batch: toggle all children of selected parent
-                              const val = userHasAccess(emp, selectedParent + "." + childrenOfParent[0]?.key?.split(".").pop());
+                              const val = childrenOfParent.length > 0 && userHasAccess(emp, childrenOfParent[0].key);
                               const targets = [selectedParent, ...childrenOfParent.map(c => c.key)];
                               for (const key of targets) {
                                 await fetch("/api/admin/user-permissions", {
@@ -376,12 +367,12 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
                             }
                             loadEmpPerms();
                           }}
-                          className={`rounded px-2 py-1 text-xs transition-colors ${
+                          className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                             hasAccess
-                              ? "bg-red-50 text-red-600 hover:bg-red-100"
-                              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                              ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-600"
+                              : "bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600"
                           }`}>
-                          {hasAccess ? "取消" : "授权"}
+                          {hasAccess ? "已授权" : "未授权"}
                         </button>
                         {user.isWorkListAdmin && emp.userId && (
                           <button
