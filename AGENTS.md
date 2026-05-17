@@ -30,7 +30,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | 字典 | `CompanyCode` | 公司编码 |
 | 历史 | `EditHistory` | 通用编辑快照 |
 
-**待清理**（迁移后删除）：`PermissionCategory`, `Permission`, `UserPermission`, `DepartmentAdmin`, `FieldPermission`, `GlobalFieldPermission`, `ReportGroupAdmin`, `ReportGroupMember`, `ReportGroupViewer`
+**待清理**（迁移后删除）：`PermissionCategory`, `Permission`, `UserPermission`, `DepartmentAdmin`, `FieldPermission`, `GlobalFieldPermission`, `ReportGroupAdmin`, `ReportGroupMember`, `ReportGroupViewer`, `ReportGroupMembership`
 
 **关联**: `Employee.userId` → `User.id`（单向，通过姓名初始化匹配）
 

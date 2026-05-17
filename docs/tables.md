@@ -40,7 +40,7 @@
 | sortOrder | 排序 |
 
 ### ReportGroupMembership
-分组成员关系表。待 RBAC 迁移后变更为 `UserResourceRole`（resource=report_group）。
+分组成员关系表。RBAC 迁移后删除，由 `UserResourceRole`（resource=report_group）替代。
 
 | 字段 | 说明 |
 |------|------|
@@ -48,7 +48,7 @@
 | reportGroupId | 分组 |
 | role | admin / member / viewer |
 
-> 🗑️ `ReportGroupAdmin`、`ReportGroupMember`、`ReportGroupViewer` 三表待删除，数据已迁入 Membership。
+> 🗑️ RBAC 迁移完成后删除本表 + `ReportGroupAdmin/Member/Viewer` 三表。禁止双写。
 
 ### WeeklyReport
 周报主表。每人每周每组一篇。
@@ -223,16 +223,18 @@
 | field | 字段 |
 
 ### Role
-角色定义表。定义能干什么。
+角色定义表。定义能干什么。行为枚举表，新增角色 INSERT 一行即可。
 
 | key | name | 说明 |
 |-----|------|------|
-| access | 可进入 | 系统/模块级别开关 |
-| admin | 管理 | 可分配资源权限给他人 |
+| access | 可进入 | 系统/模块级别开关（scopeId=null 时有效） |
+| admin | 管理 | 编辑数据 + 分配该资源权限给他人 |
 | write | 编辑 | 可修改数据 |
 | read | 只读 | 可查看数据 |
-| member | 参与 | 可提交周报 |
-| viewer | 查看 | 可查看周报 |
+| member | 参与 | 可提交（周报分组场景） |
+| viewer | 查看 | 可查看（周报分组场景） |
+
+> **为什么不做 `permissionsJson`**：角色是行为维度，行为种类有限（看、改、管、提交）。如果真有"审批"、"导出"等新行为，INSERT 一行即可——这正是 Role 表独立于 Resource 表的意义。细粒度权限由 `Resource` × `scopeId` 控制，不是角色层的事。
 
 ### UserResourceRole
 权限分配表。谁（userId）在哪个范围（scopeId）干什么（role）。
@@ -249,15 +251,19 @@
 - scopeId 有值 → 第 3 层权限（范围分配）
 
 **旧表迁移**：
-| 旧表 | → 新 |
-|------|------|
-| Permission | → Resource |
-| — | → Role |
-| UserPermission | → UserResourceRole (scopeId=null) |
-| DepartmentAdmin | → UserResourceRole (resource=department, role=admin, scopeId=departmentId) |
-| ReportGroupMembership | → UserResourceRole (resource=report_group, scopeId=reportGroupId) |
-| FieldPermission | → UserResourceRole (resource=field, role=read/write, scopeId=fieldName) |
-| GlobalFieldPermission | → UserResourceRole (userId=0) |
+| 旧表 | → 新 | 迁移后 |
+|------|------|--------|
+| Permission | → Resource | 删除 |
+| — | → Role | 保留 |
+| UserPermission | → UserResourceRole (scopeId=null) | 删除 |
+| DepartmentAdmin | → UserResourceRole (resource=department, role=admin, scopeId=departmentId) | 删除 |
+| ReportGroupAdmin/Member/Viewer | → 已迁入 Membership | 删除 |
+| ReportGroupMembership | → UserResourceRole (resource=report_group, scopeId=reportGroupId) | 删除 |
+| FieldPermission | → UserResourceRole (resource=field, role=read/write, scopeId=fieldName) | 删除 |
+| GlobalFieldPermission | → UserResourceRole (userId=0) | 删除 |
+| PermissionCategory | → 废弃（Resource 不分 category） | 删除 |
+
+**迁移后权限表从 9 张缩减为 3 张**（Resource + Role + UserResourceRole）。禁止 ReportGroupMembership 与 UserResourceRole 双写并存。
 
 ---
 
@@ -282,14 +288,12 @@
 User
 ├── 1:N WeeklyReport
 ├── 1:N UserResourceRole → Resource + Role
-├── 1:N ReportGroupMembership → ReportGroup
 ├── 1:1 Employee（通过 Employee.userId）
 │   └── 1:N EmployeePosition
 │       ├── N:1 Department
 │       └── N:1 Position
 
 ReportGroup
-├── 1:N ReportGroupMembership
 ├── 1:N WeeklyReport
 │   ├── 1:N ReportItem
 │   └── 1:N ReportHistory
