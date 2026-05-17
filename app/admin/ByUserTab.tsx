@@ -315,7 +315,8 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500">
-                  <th className="whitespace-nowrap pb-2 pr-3">姓名 / 工号</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">姓名</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">工号</th>
                   <th className="whitespace-nowrap pb-2 pr-3">账号</th>
                   <th className="whitespace-nowrap pb-2 pr-3">公司</th>
                   <th className="whitespace-nowrap pb-2 pr-3">部门</th>
@@ -326,12 +327,18 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
               <tbody>
                 {filteredEmpPerms.map((emp) => {
                   const hasAccess = userHasAccess(emp, selectedResource);
+                  // Deduplicate roles by company+dept+position
+                  const uniqueRoles = emp.roles.filter((r, i) =>
+                    i === emp.roles.findIndex(t => t.company === r.company && t.dept1 === r.dept1 && t.position === r.position)
+                  );
                   return (
                     <tr key={`${emp.employeeId}-${emp.userId ?? "x"}`}
                       className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="whitespace-nowrap py-2 pr-3">
                         <span className="font-medium text-gray-800">{emp.name}</span>
-                        <span className="ml-1.5 text-xs text-gray-400">{emp.employeeId}</span>
+                      </td>
+                      <td className="whitespace-nowrap py-2 pr-3">
+                        <span className="text-xs text-gray-500">{emp.employeeId}</span>
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">
                         <span className="text-gray-600">{emp.username || "-"}</span>
@@ -339,14 +346,14 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
                           <span className="ml-1 rounded bg-red-100 px-1 text-xs text-red-600">停</span>
                         )}
                       </td>
-                      <td className="whitespace-nowrap py-2 pr-3 text-gray-600">
-                        {emp.roles[0]?.company || "-"}
+                      <td className="py-2 pr-3 text-gray-600 text-xs leading-relaxed">
+                        {uniqueRoles.map((r, i) => <div key={i}>{r.company || "-"}</div>)}
                       </td>
-                      <td className="whitespace-nowrap py-2 pr-3 text-gray-600">
-                        {formatCsv(emp.roles.map((r) => r.dept1))}
+                      <td className="py-2 pr-3 text-gray-600 text-xs leading-relaxed">
+                        {uniqueRoles.map((r, i) => <div key={i}>{r.dept1 || "-"}</div>)}
                       </td>
-                      <td className="whitespace-nowrap py-2 pr-3 text-gray-600">
-                        {formatCsv(emp.roles.map((r) => r.position))}
+                      <td className="py-2 pr-3 text-gray-600 text-xs leading-relaxed">
+                        {uniqueRoles.map((r, i) => <div key={i}>{r.position || "-"}</div>)}
                       </td>
                       <td className="whitespace-nowrap py-2">
                         <button
