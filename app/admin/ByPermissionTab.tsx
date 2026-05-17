@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useByPermissionTab } from "./useByPermissionTab";
 import type { ResourceItem } from "./types";
 
@@ -9,13 +10,25 @@ interface Props {
   showToast: (msg: string, type?: "success" | "error") => void;
 }
 
-function OverviewSection({ resources }: { resources: ResourceItem[] }) {
+function OverviewSection({ resources, onSelect, selectedKey }: {
+  resources: ResourceItem[];
+  onSelect: (key: string | null) => void;
+  selectedKey: string | null;
+}) {
   return (
     <section>
       <h2 className="mb-3 text-lg font-semibold text-gray-800">全局权限概览</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {resources.map((r) => (
-          <div key={r.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <button
+            key={r.id}
+            onClick={() => onSelect(selectedKey === r.key ? null : r.key)}
+            className={`rounded-lg border p-4 text-left shadow-sm transition-colors ${
+              selectedKey === r.key
+                ? "border-emerald-400 bg-emerald-50 ring-1 ring-emerald-400"
+                : "border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50"
+            }`}
+          >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-800">{r.name}</h3>
               <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
@@ -23,7 +36,7 @@ function OverviewSection({ resources }: { resources: ResourceItem[] }) {
               </span>
             </div>
             {r.description && <p className="mt-1 text-xs text-gray-500">{r.description}</p>}
-          </div>
+          </button>
         ))}
       </div>
     </section>
@@ -78,10 +91,7 @@ function SystemAdminsSection({
                       {a.name} <span className="text-xs text-gray-400">({a.username})</span>
                       <button
                         type="button"
-                        onClick={() => {
-                          console.log("[ByPermissionTab] remove click adminId=", a.id, "confirming=", confirming);
-                          onRemove(a.id);
-                        }}
+                        onClick={() => onRemove(a.id)}
                         className={`ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
                           confirming
                             ? "bg-red-100 text-red-600"
@@ -109,10 +119,7 @@ function SystemAdminsSection({
                     {sysResults.map((emp) => (
                       <div
                         key={`${emp.rowId}-${emp.employeeId}`}
-                        onClick={() => {
-                          console.log("[ByPermissionTab] add click userId=", emp.userId, "name=", emp.name);
-                          onAdd(emp.userId!, emp.name);
-                        }}
+                        onClick={() => onAdd(emp.userId!, emp.name)}
                         className="flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-emerald-50"
                       >
                         <span className="font-medium text-gray-800">{emp.name}</span>
@@ -146,9 +153,39 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
     addSystemAdmin,
   } = useByPermissionTab({ user, resources, showToast });
 
+  const [selectedParentKey, setSelectedParentKey] = useState<string | null>(null);
+  const subResources = resources.filter(
+    (r) => selectedParentKey && r.key.startsWith(selectedParentKey + ".") && r.key.split(".").length === selectedParentKey.split(".").length + 1
+  );
+
   return (
     <div className="space-y-6">
-      <OverviewSection resources={topResources} />
+      <OverviewSection resources={topResources} selectedKey={selectedParentKey} onSelect={setSelectedParentKey} />
+
+      {/* Sub-resources drill-down */}
+      {selectedParentKey && subResources.length > 0 && (
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-800">子权限</h2>
+            <span className="text-sm text-gray-400">({selectedParentKey})</span>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {subResources.map((r) => (
+              <div key={r.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700">{r.name}</h3>
+                    <p className="mt-0.5 text-xs text-gray-400">{r.key}</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                    {r.userCount ?? 0} 人
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {user.isWorkListAdmin && (
         <SystemAdminsSection
