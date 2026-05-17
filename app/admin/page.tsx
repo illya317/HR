@@ -73,22 +73,27 @@ export default function AdminPage() {
 
   async function loadInitial() {
     try {
-      const [resRes, deptRes, cfgRes] = await Promise.all([
+      const [resRes, deptRes] = await Promise.all([
         fetch("/api/admin/permissions"),
         fetch("/api/admin/departments"),
-        fetch("/api/admin/system-config").catch(() => null),
       ]);
+      if (!resRes.ok) showToast("加载权限资源失败: " + resRes.status, "error");
+      if (!deptRes.ok) showToast("加载部门列表失败: " + deptRes.status, "error");
       const resData = await resRes.json();
       const deptData = await deptRes.json();
       setResources(flattenTree(resData.resources || []));
       setRoles(resData.roles || []);
       setAllDepts(deptData.departments || []);
-      if (cfgRes && cfgRes.ok) {
-        const cfgData = await cfgRes.json();
-        setConflictStrategy(cfgData.conflictStrategy || "union");
-      }
+      try {
+        const cfgRes = await fetch("/api/admin/system-config");
+        if (cfgRes.ok) {
+          const cfgData = await cfgRes.json();
+          setConflictStrategy(cfgData.conflictStrategy || "union");
+        }
+      } catch { /* config endpoint optional */ }
     } catch (e) {
       console.error("loadInitial failed:", e);
+      showToast("加载后台数据失败，请刷新重试", "error");
     } finally {
       setLoading(false);
     }

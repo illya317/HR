@@ -20,7 +20,7 @@ interface User {
   company?: string | null;
 }
 
-const HR_COMPANIES = ["丰华生物", "丰华制药"];
+const HR_COMPANIES = ["丰华集团", "丰华生物", "丰华制药"];
 
 type HRTab = "roster" | "employees" | "positions" | "projects" | "project-info" | "codes" | "attendance" | "works" | "performance";
 
@@ -52,10 +52,10 @@ export default function HRPage() {
           return;
         }
         setUser(data.user);
-        const defaultCompany = data.user.isWorkListAdmin
-          ? (HR_COMPANIES.includes(data.user.company || "") ? data.user.company : HR_COMPANIES[0])
-          : (data.user.company || "");
-        setSelectedCompany(defaultCompany);
+        const defaultCompany = HR_COMPANIES.includes(data.user.company || "")
+          ? data.user.company
+          : HR_COMPANIES[0];
+        setSelectedCompany(defaultCompany || "");
         setLoading(false);
       })
       .catch(() => router.push("/portal"));
@@ -100,21 +100,15 @@ export default function HRPage() {
         {/* 公司选择器 */}
         <div className="mb-4 flex items-center gap-3">
           <span className="text-sm font-medium text-gray-600">当前公司：</span>
-          {user?.isWorkListAdmin ? (
-            <select
-              value={selectedCompany}
-              onChange={(e) => setSelectedCompany(e.target.value)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
-            >
-              {HR_COMPANIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          ) : (
-            <span className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700">
-              {selectedCompany || "未设置"}
-            </span>
-          )}
+          <select
+            value={selectedCompany}
+            onChange={(e) => setSelectedCompany(e.target.value)}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
+          >
+            {HR_COMPANIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
 
         <div className="mb-6 flex gap-2 overflow-x-auto border-b border-gray-200 pb-1">
