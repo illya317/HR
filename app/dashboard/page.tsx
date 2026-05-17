@@ -135,7 +135,7 @@ export default function DashboardPage() {
       if (groupsRes.ok) {
         const groupsData = await groupsRes.json();
         if (!groupsData.isAdmin && groupsData.submitGroups.length === 0) {
-          router.push("/portal");
+          router.push("/reports");
           return;
         }
       }
