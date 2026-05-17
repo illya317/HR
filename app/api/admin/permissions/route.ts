@@ -2,6 +2,25 @@ import { NextResponse } from "next/server";
 import { authenticate, checkPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+function buildTree(r: any, countMap: Map<number, number>): any {
+  const children = (r.children || []).map((c: any) => ({
+    id: c.id, key: c.key, name: c.name, description: c.description,
+    parentId: c.parentId, sortOrder: c.sortOrder,
+    userCount: countMap.get(c.id) || 0,
+    children: (c.children || []).map((gc: any) => ({
+      id: gc.id, key: gc.key, name: gc.name, description: gc.description,
+      parentId: gc.parentId, sortOrder: gc.sortOrder,
+      userCount: countMap.get(gc.id) || 0,
+    })),
+  }));
+  return {
+    id: r.id, key: r.key, name: r.name, description: r.description,
+    parentId: r.parentId, sortOrder: r.sortOrder,
+    userCount: countMap.get(r.id) || 0,
+    children,
+  };
+}
+
 export async function GET(request: Request) {
   const payload = await authenticate(request);
   if (!payload) {
@@ -40,26 +59,10 @@ export async function GET(request: Request) {
   });
   const countMap = new Map(counts.map((c) => [c.resourceId, c._count]));
 
-  // Return ALL resources (flat) with userCount, let frontend build tree
-  const resources = allResources.map((r) => ({
-    id: r.id,
-    key: r.key,
-    name: r.name,
-    description: r.description,
-    parentId: r.parentId,
-    sortOrder: r.sortOrder,
-    userCount: countMap.get(r.id) || 0,
-    children: (r as any).children?.map((c: any) => ({
-      id: c.id, key: c.key, name: c.name, description: c.description,
-      parentId: c.parentId, sortOrder: c.sortOrder,
-      userCount: countMap.get(c.id) || 0,
-      children: (c.children || []).map((gc: any) => ({
-        id: gc.id, key: gc.key, name: gc.name, description: gc.description,
-        parentId: gc.parentId, sortOrder: gc.sortOrder,
-        userCount: countMap.get(gc.id) || 0,
-      })),
-    })),
-  }));
+  // Build tree with user counts, only top-level returned
+  const resources = allResources
+    .filter((r) => r.parentId === null)
+    .map((r) => buildTree(r, countMap));
 
   const roles = await prisma.role.findMany({
     orderBy: { sortOrder: "asc" },
