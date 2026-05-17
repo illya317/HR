@@ -81,6 +81,7 @@ export default function AdminPage() {
   >([]);
   const [empPermLoading, setEmpPermLoading] = useState(false);
   const [selectedPerm, setSelectedPerm] = useState("");
+  const [selectedPermCat, setSelectedPermCat] = useState("");
   const [resetResult, setResetResult] = useState<{ name: string; password: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({ open: false, title: "", message: "", onConfirm: () => {} });
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "error" | "success" }>({ show: false, message: "", type: "error" });
@@ -1195,16 +1196,28 @@ export default function AdminPage() {
                       className="w-full flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:min-w-[200px]"
                     />
                     <select
-                      value={selectedPerm}
-                      onChange={(e) => setSelectedPerm(e.target.value)}
+                      value={selectedPermCat}
+                      onChange={(e) => { setSelectedPermCat(e.target.value); setSelectedPerm(""); }}
                       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none sm:w-auto"
                     >
-                      {permissionCategories.flatMap(cat => cat.permissions).map(p => (
+                      <option value="">所有权限类别</option>
+                      {permissionCategories.map(cat => (
+                        <option key={cat.key} value={cat.key}>{cat.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={selectedPerm}
+                      onChange={(e) => setSelectedPerm(e.target.value)}
+                      disabled={!selectedPermCat}
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400 sm:w-auto"
+                    >
+                      <option value="">{selectedPermCat ? "所有权限" : "请先选择类别"}</option>
+                      {(permissionCategories.find(cat => cat.key === selectedPermCat)?.permissions || []).map(p => (
                         <option key={p.key} value={p.key}>{p.name}</option>
                       ))}
                     </select>
                     <button
-                      onClick={() => { setFilterCompany(""); setFilterDept(""); setSearchKeyword(""); setSelectedPerm(""); }}
+                      onClick={() => { setFilterCompany(""); setFilterDept(""); setSearchKeyword(""); setSelectedPerm(""); setSelectedPermCat(""); }}
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 sm:w-auto"
                     >
                       重置
