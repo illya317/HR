@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
 import NavLink from "@/app/components/NavLink";
-import ReportGroupSwitcher from "@/app/components/ReportGroupSwitcher";
+import TargetSwitcher from "@/app/components/TargetSwitcher";
 import { getCurrentPeriod, getPeriodRange, getPreviousPeriod, getPeriodOptions, getYearOptions, getPeriodTypeName } from "@/lib/period";
 import type { PeriodType } from "@/lib/period";
 import Toast from "@/app/components/Toast";
@@ -34,8 +34,9 @@ export default function ReportPage() {
   const [report, setReport] = useState<Report | null>(null);
   const [taskName, setTaskName] = useState("");
   const [notes, setNotes] = useState("");
-  const [reportGroupId, setReportGroupId] = useState<number | null>(null);
-  const [reportGroupName, setReportGroupName] = useState("");
+  const [targetType, setTargetType] = useState("department");
+  const [targetId, setTargetId] = useState(0);
+  const [targetName, setTargetName] = useState("");
   const [periodType, setPeriodType] = useState<PeriodType>("weekly");
 
   const [routineItems, setRoutineItems] = useState<ItemRow[]>([]);
@@ -62,22 +63,18 @@ export default function ReportPage() {
       const data = await res.json();
       setUser(data.user);
 
-      const gRes = await fetch("/api/report-groups/my");
-      if (gRes.ok) {
-        const gData = await gRes.json();
-        if (!gData.isAdmin && gData.submitGroups.length === 0) { router.push("/reports"); return; }
+      // Load user period preference
+      const savedPeriodType = typeof window !== "undefined" ? localStorage.getItem("selectedPeriodType") as PeriodType | null : null;
+      if (savedPeriodType) setPeriodType(savedPeriodType);
 
-        // Determine periodType: user preference > group default > "weekly"
-        const allGroups = [...gData.submitGroups, ...(gData.viewGroups || [])];
-        const savedPeriodType = typeof window !== "undefined" ? localStorage.getItem("selectedPeriodType") as PeriodType | null : null;
-        const groupPeriodType = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupPeriodType") as PeriodType | null : null;
-        if (savedPeriodType) {
-          setPeriodType(savedPeriodType);
-        } else if (groupPeriodType) {
-          setPeriodType(groupPeriodType);
-        } else if (allGroups.length > 0) {
-          setPeriodType((allGroups[0].periodType as PeriodType) || "weekly");
-        }
+      // Load saved target from localStorage
+      const savedTT = typeof window !== "undefined" ? localStorage.getItem("selectedTargetType") : null;
+      const savedTI = typeof window !== "undefined" ? localStorage.getItem("selectedTargetId") : null;
+      const savedTN = typeof window !== "undefined" ? localStorage.getItem("selectedTargetName") : null;
+      if (savedTT && savedTI) {
+        setTargetType(savedTT);
+        setTargetId(parseInt(savedTI));
+        setTargetName(savedTN || "");
       }
 
       const info = getCurrentPeriod(periodType);
@@ -91,21 +88,19 @@ export default function ReportPage() {
     const range = getPeriodRange(periodType, year, periodIndex);
     setPeriodInfo({ label: range.label, dateRange: range.dateRange });
 
-    const savedRgId = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupId") : null;
-    const savedRgName = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupName") : null;
-    const rgId = savedRgId ? parseInt(savedRgId) : null;
-    setReportGroupId(rgId);
-    if (savedRgName) setReportGroupName(savedRgName);
-    const rgParam = rgId ? `&reportGroupId=${rgId}` : "";
+    // Use current targetType/targetId (from state, set by TargetSwitcher)
+    const tt = targetType || "department";
+    const ti = targetId;
+    const targetParam = tt && ti ? `&targetType=${tt}&targetIds=${ti}` : "";
 
     const date = range.date;
     const prev = getPreviousPeriod(periodType, year, periodIndex);
     const prevDate = prev.date;
 
     const [reportsRes, prevRes, worksRes] = await Promise.all([
-      fetch(`/api/reports?date=${date}${rgParam}`),
-      fetch(`/api/reports?date=${prevDate}${rgParam}`),
-      fetch(rgId ? `/api/works?reportGroupId=${rgId}` : `/api/works?deptId=${u.departmentId}`),
+      fetch(`/api/reports?date=${date}${targetParam}`),
+      fetch(`/api/reports?date=${prevDate}${targetParam}`),
+      fetch(tt && ti ? `/api/works?targetType=${tt}&targetId=${ti}` : `/api/works?deptId=${u.departmentId}`),
     ]);
 
     const reportsData = await reportsRes.json();
@@ -183,7 +178,7 @@ export default function ReportPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    if (!reportGroupId && !report) { showToast("请先选择汇报对象", "error"); setSaving(false); return; }
+    if (!targetId && !report) { showToast("请先选择汇报对象", "error"); setSaving(false); return; }
 
     const items = [
       ...routineItems.map((it, i) => ({ category: "routine" as const, plan: it.completion || it.plan, completion: it.completion, nextGoal: it.nextGoal, sortOrder: i, workId: it.workId })),
@@ -191,10 +186,10 @@ export default function ReportPage() {
     ];
 
     const pInfo = getPeriodRange(periodType, selectedYear, selectedPeriodIndex);
-    const autoTaskName = reportGroupName ? `${reportGroupName}${pInfo.label}${getPeriodTypeName(periodType)}` : taskName;
+    const autoTaskName = targetName ? `${targetName}${pInfo.label}${getPeriodTypeName(periodType)}` : taskName;
     const body = report
       ? { taskName: autoTaskName, notes, items }
-      : { taskName: autoTaskName, notes, items, date: pInfo.date, reportGroupId };
+      : { taskName: autoTaskName, notes, items, date: pInfo.date, targetType, targetId };
 
     const res = await fetch(report ? `/api/reports/${report.id}` : "/api/reports", {
       method: report ? "PUT" : "POST",
@@ -263,23 +258,24 @@ export default function ReportPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <Image src="/company/logo.png" alt="logo" width={100} height={30} className="h-auto w-auto max-w-[100px] object-contain" />
-            <ReportGroupSwitcher
-              value={reportGroupId}
-              onChange={(group) => {
-                if (group) {
-                  localStorage.setItem("selectedReportGroupId", String(group.id));
-                  localStorage.setItem("selectedReportGroupName", group.name);
-                  localStorage.setItem("selectedReportGroupPeriodType", group.periodType);
-                  setReportGroupName(group.name);
-                  setTaskName(group.name);
+            <TargetSwitcher
+              value={targetId ? { targetType, targetId, targetName } : null}
+              onChange={(target) => {
+                if (target) {
+                  localStorage.setItem("selectedTargetType", target.targetType);
+                  localStorage.setItem("selectedTargetId", String(target.targetId));
+                  localStorage.setItem("selectedTargetName", target.targetName);
+                  setTargetType(target.targetType);
+                  setTargetId(target.targetId);
+                  setTargetName(target.targetName);
+                  setTaskName(target.targetName);
                 } else {
-                  localStorage.removeItem("selectedReportGroupId");
-                  localStorage.removeItem("selectedReportGroupName");
-                  localStorage.removeItem("selectedReportGroupPeriodType");
-                  setReportGroupName("");
+                  localStorage.removeItem("selectedTargetType");
+                  localStorage.removeItem("selectedTargetId");
+                  localStorage.removeItem("selectedTargetName");
+                  setTargetName("");
                   setTaskName("");
                 }
-                setReportGroupId(group?.id ?? null);
                 window.location.reload();
               }}
             />
@@ -334,7 +330,7 @@ export default function ReportPage() {
             )}
           </div>
           <h2 className="mb-1 text-lg font-bold">
-            {reportGroupName ? `${reportGroupName}${periodInfo?.label || ""}${periodTypeName}` : "工作汇报"}
+            {targetName ? `${targetName}${periodInfo?.label || ""}${periodTypeName}` : "工作汇报"}
           </h2>
           <p className="text-sm opacity-90">{periodInfo?.dateRange}</p>
         </div>

@@ -65,33 +65,15 @@ export default function HistoryPage() {
 
   async function fetchReports(currentUser: User) {
     try {
-      // 获取可查看的报告分组
-      const rgRes = await fetch("/api/report-groups/my");
-      if (!rgRes.ok) {
-        router.push("/login");
+      // 获取所有报告（无过滤 = 用户自己的报告）
+      const res = await fetch("/api/reports");
+      if (!res.ok) {
+        setReports([]);
+        setLoading(false);
         return;
       }
-      const rgData = await rgRes.json();
-      const viewGroupIds = (rgData.viewGroups || []).map((g: any) => g.id);
-
-      let allReports: Report[] = [];
-
-      // 查新数据（有 reportGroupId 的）
-      if (viewGroupIds.length > 0) {
-        const res = await fetch(`/api/reports?reportGroupIds=${viewGroupIds.join(",")}`);
-        if (res.ok) {
-          const data = await res.json();
-          allReports = [...(data.reports || [])];
-        }
-      }
-
-      // 去重（按 id）
-      const seen = new Set<number>();
-      allReports = allReports.filter((r) => {
-        if (seen.has(r.id)) return false;
-        seen.add(r.id);
-        return true;
-      });
+      const data = await res.json();
+      let allReports: Report[] = data.reports || [];
 
       // 排序
       allReports.sort((a, b) => b.date.localeCompare(a.date));
