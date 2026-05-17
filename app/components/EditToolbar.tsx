@@ -66,7 +66,7 @@ export default function EditToolbar({
               onClick={() => { onSelectVersion(0); setShowVersions(false); }}
               className={`w-full rounded px-3 py-1.5 text-left text-xs ${!currentVersion || currentVersion === 0 ? "bg-emerald-50 text-emerald-700" : "text-gray-600 hover:bg-gray-50"}`}
             >
-              原始版本
+              V0 原始
             </button>
             {(!versions || versions.length === 0) && (
               <div className="px-3 py-2 text-xs text-gray-400">暂无编辑历史</div>
