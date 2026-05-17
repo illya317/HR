@@ -83,9 +83,8 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
     setLoading(false);
   }
 
-  useEffect(() => {
-    load();
-  }, [selectedCompany, rosterFilter, keyword]);
+  useEffect(() => { load(); }, [selectedCompany, rosterFilter, keyword]);
+  useEffect(() => { if (employees.length > 0) loadVersions(employees[0].id); }, [employees]);
 
   useEffect(() => {
     if (editingCell && inputRef.current) {
@@ -111,7 +110,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
   }
 
   async function handleSelectVersion(version: number) {
-    if (version === 0) { setCurrentVersion(undefined); return; }
+    if (version === 0) { setCurrentVersion(undefined); load(); return; }
     if (!editingCell) { setCurrentVersion(version); return; }
     const res = await fetch(`/api/admin/edit-history?entityType=employee&entityId=${editingCell.id}&version=${version}`);
     if (res.ok) {

@@ -107,7 +107,8 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
   }
 
   async function handleSelectVersion(version: number) {
-    if (!editingCell) return;
+    if (version === 0) { setCurrentVersion(undefined); load(); return; }
+    if (!editingCell) { setCurrentVersion(version); return; }
     const res = await fetch(`/api/admin/edit-history?entityType=employee_position&entityId=${editingCell.id}&version=${version}`);
     if (res.ok) {
       const data = await res.json();
