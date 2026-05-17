@@ -48,10 +48,27 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | **查询模式** | 按人/部门/岗位筛选 | 按周+分组筛选 |
 | **数据量** | ~200人 × 多岗 | 每周 × 分组数 × 条目数 |
 
-**设计影响**：
-- HR 的 `Employee` 和 `User` 解耦：员工可能没有系统账号，用户不一定在花名册里
-- 周报的 `User` 是填写人，`Employee` 是花名册里的人——两者通过 `Employee.userId` 桥接
-- 权限校验时，HR 查 `Employee` 的公司/部门归属，周报查 `ReportGroupMembership`
+### User 与 Employee 边界
+
+```
+User（纯认证实体）               Employee（纯业务实体）
+─────────────────                ──────────────────
+wxUserId                         employeeId（权威业务编号）
+username（用户自取，非业务标识）    name（档案名，权威来源）
+password                         company/department（通过 EmployeePosition）
+name（登录显示名）                 position/status
+apiKey                           joinDate/leaveDate
+canLogin（离职=停用，不删号）       startDate/endDate
+departmentId（注册时匹配线索）      → 多岗通过 EmployeePosition
+
+          Employee.userId → User.id（可选，0或1对1）
+```
+
+**规则**：
+- `User` 不存 `company`、`departmentName`、`employeeId` — 这些从 `Employee` 侧查
+- 查"某用户在哪个部门" → `Employee.userId → EmployeePosition`
+- 周报成员用 `User.id`（需登录），HR 操作对象是 `Employee.id`
+- `User.name` 不强制同步 `Employee.name`；`username` 用户自由设定
 
 ## 关键路由
 
