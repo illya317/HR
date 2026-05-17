@@ -471,7 +471,7 @@ function CodeTab({
                       value={newCode}
                       onChange={(e) => setNewCode(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-                      placeholder="编号(如01)"
+                      placeholder="如001"
                       className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
                     />
                   </td>
