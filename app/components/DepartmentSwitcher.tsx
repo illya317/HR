@@ -16,7 +16,7 @@ interface UserInfo {
   isWorkListAdmin: boolean;
 }
 
-export default function DepartmentSwitcher() {
+export default function DepartmentSwitcher({ onChange }: { onChange?: (deptId: number | null) => void }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [depts, setDepts] = useState<Dept[]>([]);
   const [companies, setCompanies] = useState<string[]>([]);
@@ -58,14 +58,14 @@ export default function DepartmentSwitcher() {
   function handleDeptChange(deptId: number) {
     setSelectedDeptId(deptId);
     localStorage.setItem("selectedDeptId", String(deptId));
-    window.location.reload();
+    if (onChange) onChange(deptId);
   }
 
   function clearSelection() {
     setSelectedCompany("");
     setSelectedDeptId(null);
     localStorage.removeItem("selectedDeptId");
-    window.location.reload();
+    if (onChange) onChange(null);
   }
 
   if (!user) return null;

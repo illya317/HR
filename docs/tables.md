@@ -1,4 +1,4 @@
-# HR Database Schema (22 tables)
+# HR Database Schema (21 tables)
 
 ## 1. System
 
@@ -17,7 +17,7 @@
 | `apiKey` | String |  |  | API密钥 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 
-← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-2 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-3 Department](#department), [5-3 Department](#department), [5-4 Position](#position), [5-5 EmployeePosition](#employeeposition), [5-6 DepartmentPosition](#departmentposition), [5-7 Project](#project), [5-8 EmployeeProject](#employeeproject), [6-1 EditHistory](#edithistory)
+← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-3 Department](#department), [5-3 Department](#department), [5-4 Position](#position), [5-5 EmployeePosition](#employeeposition), [5-6 DepartmentPosition](#departmentposition), [5-7 Project](#project), [5-8 EmployeeProject](#employeeproject), [6-1 EditHistory](#edithistory)
 
 ### 1-2 SystemConfig
 
@@ -48,7 +48,7 @@
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * | REF |  |
-| `key` | String | * |  | "access" | "read" | "write" | "delete" | "admin" | "member" | "viewer" |
+| `key` | String | * |  | "access" | "read" | "write" | "delete" | "admin" |
 | `name` | String | * |  |  |
 | `description` | String |  |  |  |
 | `sortOrder` | Int | * |  |  |
@@ -91,30 +91,16 @@
 
 → Depends on: [5-3 Department](#department), [2-1 Resource](#resource), [2-2 Role](#role)
 
-## 3. Reports
+## 报告模块
 
-### 3-1 ReportGroup
-
-| Field | Type | Required | FK | Note |
-|-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
-| `name` | String | * |  | 名称 |
-| `description` | String |  |  | 说明 |
-| `sortOrder` | Int | * |  | 排序序号 |
-| `periodType` | String | * |  | "daily" | "weekly" | "monthly" |
-| `targetType` | String | * |  | "project" | "department" | "position" |
-| `targetId` | Int | * |  | 多态 FK |
-| `createdAt` | DateTime | * |  | 创建时间 |
-
-← Referenced by: [3-2 Report](#report)
-
-### 3-2 Report
+### 3-1 Report
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * | REF | 主键 |
 | `userId` | Int |  | FK | 用户ID |
-| `reportGroupId` | Int |  | FK | 报告分组ID |
+| `targetType` | String | * |  | "department" | "project" | "position" |
+| `targetId` | Int | * |  | 多态 FK → Department.id | Project.id | Position.id |
 | `date` | String | * |  | 日期（yyyy-MM-dd，日报=当天，周报=周一，月报=月初） |
 | `taskName` | String | * |  | 任务名称 |
 | `notes` | String |  |  | 备注 |
@@ -122,11 +108,11 @@
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime | * |  | 更新时间 |
 
-→ Depends on: [3-1 ReportGroup](#reportgroup), [1-1 User](#user)
+→ Depends on: [1-1 User](#user)
 
-← Referenced by: [3-3 ReportItem](#reportitem), [3-4 ReportHistory](#reporthistory)
+← Referenced by: [3-2 ReportItem](#reportitem), [3-3 ReportHistory](#reporthistory)
 
-### 3-3 ReportItem
+### 3-2 ReportItem
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
@@ -139,9 +125,9 @@
 | `sortOrder` | Int | * |  | 排序序号 |
 | `workItemId` | Int |  | FK | 关联工作清单条目ID |
 
-→ Depends on: [4-1 WorkItem](#workitem), [3-2 Report](#report)
+→ Depends on: [4-1 WorkItem](#workitem), [3-1 Report](#report)
 
-### 3-4 ReportHistory
+### 3-3 ReportHistory
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
@@ -153,7 +139,7 @@
 | `itemsJson` | String | * |  | 条目JSON快照 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 
-→ Depends on: [3-2 Report](#report)
+→ Depends on: [3-1 Report](#report)
 
 ## 4. Tasks
 
@@ -174,7 +160,7 @@
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime | * |  | 更新时间 |
 
-← Referenced by: [3-3 ReportItem](#reportitem), [4-2 WorkParticipant](#workparticipant)
+← Referenced by: [3-2 ReportItem](#reportitem), [4-2 WorkParticipant](#workparticipant)
 
 ### 4-2 WorkParticipant
 
@@ -235,8 +221,10 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `code` | String | * |  | 公司编码（01/02/03/04/05） |
-| `name` | String | * |  | 公司名称（丰华生物/丰华制药等） |
+| `id` | Int | * |  | 主键 |
+| `code` | String | * |  | 本级编码（一级: 0,1; 二级: 0,1,2,3...） |
+| `name` | String | * |  | 公司名称（父级内唯一） |
+| `parentId` | Int |  | FK | 上级公司ID（null=一级公司） |
 | `sortOrder` | Int | * |  | 排序 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime |  |  | 更新时间 |
@@ -244,7 +232,7 @@
 | `editedAt` | DateTime |  |  | 编辑时间 |
 | `version` | Int | * |  | 版本号 |
 
-→ Depends on: [1-1 User](#user)
+→ Depends on: [5-2 Company](#company), [1-1 User](#user)
 
 ### 5-3 Department
 

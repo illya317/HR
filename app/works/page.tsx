@@ -223,7 +223,7 @@ export default function WorksPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <Image src="/company/logo.png" alt={process.env.NEXT_PUBLIC_COMPANY_NAME || "公司"} width={100} height={30} className="h-auto w-auto max-w-[100px] object-contain" />
-            <DepartmentSwitcher />
+            <DepartmentSwitcher onChange={() => { setLoading(true); fetchWorks(); }} />
           </div>
           <div className="flex items-center gap-5">
             <button

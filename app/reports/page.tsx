@@ -276,7 +276,10 @@ export default function ReportPage() {
                   setTargetName("");
                   setTaskName("");
                 }
-                window.location.reload();
+                if (user) {
+                  setLoading(true);
+                  loadReport(user, selectedYear, selectedPeriodIndex);
+                }
               }}
             />
           </div>
