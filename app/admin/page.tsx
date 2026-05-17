@@ -402,10 +402,7 @@ export default function AdminPage() {
   }
 
   function addMember(emp: { rowId: number; employeeId: string; name: string; dept1: string; position: string; userId: number | null }) {
-    if (!emp.userId) {
-      showToast("该员工尚未关联系统用户，无法添加");
-      return;
-    }
+    if (!emp.userId) return;
     if (groupMembers.some((m) => m.userId === emp.userId)) return;
     setGroupMembers([
       ...groupMembers,
@@ -430,10 +427,7 @@ export default function AdminPage() {
   }
 
   function addAdmin(emp: { rowId: number; employeeId: string; name: string; dept1: string; position: string; userId: number | null }) {
-    if (!emp.userId) {
-      showToast("该员工尚未关联系统用户，无法设置为负责人");
-      return;
-    }
+    if (!emp.userId) return;
     if (adminUserIds.includes(emp.userId)) return;
     setAdminUserIds([...adminUserIds, emp.userId]);
     setGroupAdmins([...groupAdmins, { id: emp.userId, name: emp.name, dept1: emp.dept1, position: emp.position }]);
@@ -789,11 +783,10 @@ export default function AdminPage() {
                               {adminSearchResults.map((emp) => (
                                 <div
                                   key={`admin-${emp.rowId}-${emp.dept1}-${emp.position}`}
-                                  onClick={() => { if (emp.userId) addAdmin(emp); }}
-                                  className={`px-3 py-2 text-sm text-gray-800 ${emp.userId ? "cursor-pointer hover:bg-gray-50" : "pointer-events-none opacity-50"}`}
+                                  onClick={() => addAdmin(emp)}
+                                  className="cursor-pointer px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
                                 >
                                   {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
-                                  {!emp.userId && <span className="text-gray-400"> (未关联用户)</span>}
                                 </div>
                               ))}
                             </div>
@@ -850,11 +843,10 @@ export default function AdminPage() {
                               {memberSearchResults.map((emp) => (
                                 <div
                                   key={`member-${emp.rowId}-${emp.dept1}-${emp.position}`}
-                                  onClick={() => { if (emp.userId) addMember(emp); }}
-                                  className={`px-3 py-2 text-sm text-gray-800 ${emp.userId ? "cursor-pointer hover:bg-gray-50" : "pointer-events-none opacity-50"}`}
+                                  onClick={() => addMember(emp)}
+                                  className="cursor-pointer px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
                                 >
                                   {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
-                                  {!emp.userId && <span className="text-gray-400"> (未关联用户)</span>}
                                 </div>
                               ))}
                             </div>
@@ -1419,10 +1411,9 @@ export default function AdminPage() {
                                         <div
                                           key={emp.rowId}
                                           onClick={() => { if (emp.userId) addDeptAdmin(dept.name, dept.company, emp.userId); }}
-                                          className={`px-3 py-2 text-sm text-gray-800 ${emp.userId ? "cursor-pointer hover:bg-gray-50" : "pointer-events-none opacity-50"}`}
+                                          className="cursor-pointer px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
                                         >
                                           {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
-                                          {!emp.userId && <span className="text-gray-400"> (未关联用户)</span>}
                                         </div>
                                       ))}
                                     </div>
