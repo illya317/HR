@@ -103,7 +103,7 @@ export default function ByPositionTab({ user: _user, resources, showToast }: Pro
                         !positionHasPerm(grants, pos.id, parent.key, "access")
                       )
                     }
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                       positionHasPerm(grants, pos.id, parent.key, "access")
                         ? "border border-emerald-300 bg-emerald-100 text-emerald-700"
                         : "border border-gray-200 bg-gray-100 text-gray-400 hover:bg-gray-200"

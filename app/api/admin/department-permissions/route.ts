@@ -83,11 +83,12 @@ export async function PUT(request: Request) {
       }
     }
   } else {
-    // Revoke: delete only the exact resource
+    // Revoke: delete this resource + all descendants
+    const descendantIds = await getResourceDescendants(resource.id);
     await prisma.departmentResourceRole.deleteMany({
       where: {
         departmentId,
-        resourceId: resource.id,
+        resourceId: { in: descendantIds },
         roleId: role.id,
       },
     });

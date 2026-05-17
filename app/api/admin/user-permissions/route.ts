@@ -64,11 +64,12 @@ export async function PUT(request: Request) {
     if (resourceKey === "system" && roleKey === "admin" && userId === payload.userId) {
       return NextResponse.json({ error: "不能取消自己的系统管理员权限" }, { status: 403 });
     }
-    // Revoke: delete only the exact resource (children remain independent)
+    // Revoke: delete this resource + all descendants
+    const descendantIds = await getResourceDescendants(resource.id);
     await prisma.userResourceRole.deleteMany({
       where: {
         userId,
-        resourceId: resource.id,
+        resourceId: { in: descendantIds },
         roleId: role.id,
         scopeId: null,
       },
