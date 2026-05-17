@@ -328,8 +328,7 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500">
-                  <th className="whitespace-nowrap pb-2 pr-3">姓名</th>
-                  <th className="whitespace-nowrap pb-2 pr-3">工号</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">姓名 / 工号</th>
                   <th className="whitespace-nowrap pb-2 pr-3">账号</th>
                   <th className="whitespace-nowrap pb-2 pr-3">公司</th>
                   <th className="whitespace-nowrap pb-2 pr-3">部门</th>
@@ -348,10 +347,10 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
                     <tr key={`${emp.employeeId}-${emp.userId ?? "x"}`}
                       className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="whitespace-nowrap py-2 pr-3">
-                        <span className="font-medium text-gray-800">{emp.name}</span>
-                      </td>
-                      <td className="whitespace-nowrap py-2 pr-3">
-                        <span className="text-xs text-gray-500">{emp.employeeId}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-800">{emp.name}</span>
+                          <span className="text-xs text-gray-400">{emp.employeeId}</span>
+                        </div>
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">
                         <span className="text-gray-600">{emp.username || "-"}</span>
