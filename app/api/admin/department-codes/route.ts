@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const SHARED_GROUP = ["01", "02", "03"];
+const SHARED_GROUP = ["01", "02", "03", "05"];
 
 function normalizeCompanyCode(companyCode: string): string {
   if (SHARED_GROUP.includes(companyCode)) return "01";
