@@ -37,8 +37,12 @@ export async function PUT(
   });
   if (oldData) {
     const entityId = String(oldData.id);
+    // Beijing time (UTC+8) day boundary
+    const now = new Date();
+    const bj = new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10); // Beijing date
+    const beijingMidnight = new Date(`${bj}T00:00:00+08:00`);
     const maxVer = await prisma.editHistory.findFirst({
-      where: { entityType: "employee", entityId },
+      where: { entityType: "employee", entityId, createdAt: { gte: beijingMidnight } },
       orderBy: { version: "desc" },
       select: { version: true },
     });
