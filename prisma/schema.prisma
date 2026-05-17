@@ -25,9 +25,15 @@ model User {
   canLogin         Boolean           @default(true)  // 离职=停用，不删号
   apiKey           String?           @unique // API密钥
   createdAt        DateTime          @default(now()) // 创建时间
-  resourceRoles    UserResourceRole[]
-  reports          WeeklyReport[]
-  employees        Employee[]
+  resourceRoles           UserResourceRole[]
+  reports                 WeeklyReport[]
+  employees               Employee[]        @relation("EmployeeUser")
+  editedEmployees         Employee[]        @relation("EmployeeEditor")
+  managedDepartments      Department[]      @relation("DepartmentManager")
+  editedDepartments       Department[]      @relation("DepartmentEditor")
+  editedPositions         Position[]        @relation("PositionEditor")
+  editedEmployeePositions EmployeePosition[] @relation("EmpPositionEditor")
+  editHistories           EditHistory[]     @relation("EditHistoryEditor")
 }
 
 // ─── RBAC 权限 ────────────────────────────────────────────
@@ -108,7 +114,8 @@ model ReportItem {
   nextGoal   String? // 下周目标
   sortOrder  Int // 排序序号
   workItemId Int? // 关联工作清单条目ID
-  report     WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  workItem   WorkItem?       @relation(fields: [workItemId], references: [id])
+  report     WeeklyReport    @relation(fields: [reportId], references: [id], onDelete: Cascade)
 }
 
 model ReportHistory {
@@ -140,6 +147,7 @@ model WorkItem {
   createdAt    DateTime          @default(now()) // 创建时间
   updatedAt    DateTime          @updatedAt // 更新时间
   participants WorkParticipant[]
+  reportItems  ReportItem[]
 
   @@index([scopeType, scopeId, category])
 }
@@ -187,9 +195,10 @@ model Employee {
   deletedTime   String? // 删除时间
   deletedBy     String? // 删除操作人
   userId        Int? // 用户ID
-  user          User?              @relation(fields: [userId], references: [id])
+  user          User?              @relation("EmployeeUser", fields: [userId], references: [id])
   positions     EmployeePosition[]
   editedBy      Int? // 编辑人用户ID
+  editor        User?              @relation("EmployeeEditor", fields: [editedBy], references: [id])
   editedAt      DateTime? // 编辑时间
   version       Int                @default(1) // 版本号
 }
@@ -198,18 +207,21 @@ model Department {
   id                Int                @id @default(autoincrement()) // 主键
   code              String             @unique // 编码
   name              String // 名称
-  companyCode       String?            // → CompanyCode (migration: copy from company)
   level             Int // 层级
   parentId          Int? // 上级ID
   parent            Department?        @relation("DeptHierarchy", fields: [parentId], references: [id])
   children          Department[]       @relation("DeptHierarchy")
-  managerUserId     Int?               // 负责人 → User.id（有账号时关联）
+  managerUserId     Int?               // 负责人 → User.id
+  manager           User?              @relation("DepartmentManager", fields: [managerUserId], references: [id])
   positions         DepartmentPosition[]
   employeePositions EmployeePosition[]
   reportGroups      ReportGroup[]
+  companyCode       String?            // → CompanyCode
+  company           CompanyCode?       @relation(fields: [companyCode], references: [code])
   createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime? // 更新时间
   editedBy          Int? // 编辑人用户ID
+  editor            User?              @relation("DepartmentEditor", fields: [editedBy], references: [id])
   editedAt          DateTime? // 编辑时间
   version           Int                @default(1) // 版本号
 }
@@ -218,12 +230,14 @@ model Position {
   id                Int                @id @default(autoincrement()) // 主键
   code              String             @unique // 编码
   name              String // 名称
-  companyCode       String?            // → CompanyCode (migration: copy from company)
+  companyCode       String?            // → CompanyCode
+  company           CompanyCode?       @relation(fields: [companyCode], references: [code])
   departments       DepartmentPosition[]
   employeePositions EmployeePosition[]
   createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime? // 更新时间
   editedBy          Int? // 编辑人用户ID
+  editor            User?              @relation("PositionEditor", fields: [editedBy], references: [id])
   editedAt          DateTime? // 编辑时间
   version           Int                @default(1) // 版本号
 }
@@ -236,7 +250,8 @@ model EmployeePosition {
   department   Department @relation(fields: [departmentId], references: [id])
   positionId   Int // 岗位ID
   position     Position   @relation(fields: [positionId], references: [id])
-  companyCode  String?    // 该岗位上的业务公司编码 → CompanyCode
+  companyCode  String?    // → CompanyCode
+  company      CompanyCode? @relation(fields: [companyCode], references: [code])
   center       String? // 中心
   isPrimary    Boolean    @default(false) // 是否主岗
   sortOrder    Int        @default(0) // 排序序号
@@ -245,6 +260,7 @@ model EmployeePosition {
   createdAt    DateTime   @default(now()) // 创建时间
   updatedAt    DateTime? // 更新时间
   editedBy     Int? // 编辑人用户ID
+  editor       User?         @relation("EmpPositionEditor", fields: [editedBy], references: [id])
   editedAt     DateTime? // 编辑时间
   version      Int        @default(1) // 版本号
 }
@@ -262,8 +278,11 @@ model DepartmentPosition {
 // ─── 字典 ─────────────────────────────────────────────────
 
 model CompanyCode {
-  code String @id // 编码
-  name String @unique // 名称
+  code              String             @id // 编码
+  name              String             @unique // 名称
+  departments       Department[]
+  positions         Position[]
+  employeePositions EmployeePosition[]
 }
 
 // ─── 编辑历史 ─────────────────────────────────────────────
@@ -275,6 +294,7 @@ model EditHistory {
   version    Int // 版本号
   dataJson   String   // 编辑前快照
   editedBy   Int // 编辑人用户ID
+  editor     User     @relation("EditHistoryEditor", fields: [editedBy], references: [id])
   createdAt  DateTime @default(now()) // 创建时间
 
   @@unique([entityType, entityId, version])
