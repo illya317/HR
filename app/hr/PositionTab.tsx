@@ -229,7 +229,6 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                             type="checkbox"
                             checked={editBool}
                             onChange={(e) => setEditBool(e.target.checked)}
-                            onBlur={() => saveEdit()}
                             className="h-4 w-4 rounded border-emerald-400 text-emerald-600"
                           />
                         </td>
@@ -244,7 +243,6 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                             list={f.key === "dept1" ? "dept-list" : "pos-list"}
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={() => saveEdit()}
                             onKeyDown={handleKeyDown}
                             className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
                             style={{ minWidth: "12ch" }}
@@ -264,7 +262,6 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                             ref={inputRef}
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={() => saveEdit()}
                             onKeyDown={handleKeyDown}
                             className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
                             style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}

@@ -256,7 +256,6 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
                             ref={inputRef}
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={() => saveEdit()}
                             onKeyDown={handleKeyDown}
                             className="rounded border border-emerald-400 px-2 py-1 text-xs focus:outline-none"
                             style={{ minWidth: val ? `${String(val).length + 4}ch` : "8ch" }}
