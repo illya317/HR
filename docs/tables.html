@@ -46,7 +46,6 @@
   .export-bar { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
   .export-btn { display: block; width: 100%; padding: 8px 12px; background: #0f172a; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
   .export-btn:hover { background: #1e293b; }
-  .export-output { margin-top: 8px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-family: monospace; font-size: 11px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; display: none; }
   .fk-out td { background: #fef9e7; }    /* amber tint — FK pointing out */
   .fk-out td:first-child { border-left: 3px solid #f59e0b; }
   .fk-in td { background: #ecfdf5; }     /* emerald tint — referenced by others */
@@ -98,8 +97,8 @@
     <span><span class="legend-swatch" style="background:#ecfdf5;border:2px solid #10b981"></span> Referenced</span>
   </div>
 <div class="export-bar">
-    <button class="export-btn" onclick="exportChanges()">Export Changes</button>
-    <pre class="export-output" id="export-output"></pre>
+    <button class="export-btn" onclick="exportChanges()">Copy Changes</button>
+    <div id="export-msg" style="font-size:11px;color:#10b981;margin-top:6px;display:none">Copied!</div>
   </div>
 </nav><main>
 <div class="section"><div class="section-title">1. Authentication</div>
@@ -1166,7 +1165,7 @@
 </div>
 </main>
 <script>
-function exportChanges() {
+async function exportChanges() {
   const cells = document.querySelectorAll('td[contenteditable]');
   const changes = [];
   for (const cell of cells) {
@@ -1174,27 +1173,26 @@ function exportChanges() {
     const original = cell.getAttribute('data-original') || '';
     if (current !== original) {
       const row = cell.parentElement;
-      changes.push({
-        model: row.getAttribute('data-model'),
-        field: row.getAttribute('data-field'),
-        original,
-        current
-      });
+      changes.push({ model: row.getAttribute('data-model'), field: row.getAttribute('data-field'), original, current });
     }
   }
-  const out = document.getElementById('export-output');
+  const msg = document.getElementById('export-msg');
   if (changes.length === 0) {
-    out.style.display = 'block';
-    out.textContent = 'No changes detected.';
+    msg.style.display = 'block';
+    msg.style.color = '#94a3b8';
+    msg.textContent = 'No changes to copy.';
+    setTimeout(() => msg.style.display = 'none', 2000);
     return;
   }
-  // Format as table
-  let text = 'Model\tField\tOriginal\tChanged\n';
+  let text = '';
   for (const c of changes) {
     text += c.model + '\t' + c.field + '\t' + c.original + '\t' + c.current + '\n';
   }
-  out.style.display = 'block';
-  out.textContent = changes.length + ' changes found:\n\n' + text + '\n(Copy this to send feedback)';
+  await navigator.clipboard.writeText(text);
+  msg.style.display = 'block';
+  msg.style.color = '#10b981';
+  msg.textContent = 'Copied ' + changes.length + ' changes to clipboard';
+  setTimeout(() => msg.style.display = 'none', 2000);
 }
 </script>
 </body></html>
