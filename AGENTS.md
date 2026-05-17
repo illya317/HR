@@ -34,6 +34,25 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 **关联**: `Employee.userId` → `User.id`（单向，通过姓名初始化匹配）
 
+## 核心模块维度对比
+
+| 维度 | HR 模块（花名册） | 周报模块 |
+|------|------------------|---------|
+| **核心实体** | `Employee`（雇佣关系） | `User`（系统账号） |
+| **生命周期** | 入职 → 调岗 → 离职 | 注册 → 活跃 → 停用 |
+| **数据归属** | 公司资产（人事档案） | 业务资产（工作记录） |
+| **权限逻辑** | 谁能看/改**哪个人**的资料 | 谁能看/填**哪个分组**的周报 |
+| **时间维度** | 强（`startDate`/`endDate`/`joinDate`/`leaveDate`） | 弱（`year`+`weekNumber`） |
+| **版本追踪** | `EditHistory`（字段级快照） | `ReportHistory`（整份周报快照） |
+| **多人协作** | 无（独占编辑） | 有（同组共享周报） |
+| **查询模式** | 按人/部门/岗位筛选 | 按周+分组筛选 |
+| **数据量** | ~200人 × 多岗 | 每周 × 分组数 × 条目数 |
+
+**设计影响**：
+- HR 的 `Employee` 和 `User` 解耦：员工可能没有系统账号，用户不一定在花名册里
+- 周报的 `User` 是填写人，`Employee` 是花名册里的人——两者通过 `Employee.userId` 桥接
+- 权限校验时，HR 查 `Employee` 的公司/部门归属，周报查 `ReportGroupMembership`
+
 ## 关键路由
 
 | 页面 | 路径 | 权限 |
