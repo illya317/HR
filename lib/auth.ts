@@ -209,10 +209,9 @@ export async function authenticate(
     if (user && user.password === password && user.apiKey === apiKey && user.canLogin !== false) {
       return {
         userId: user.id,
-        wxUserId: user.wxUserId,
+        wxUserId: user.wxUserId ?? "",
         name: user.name,
         departmentId: user.departmentId,
-        departmentName: user.departmentName,
       };
     }
   }

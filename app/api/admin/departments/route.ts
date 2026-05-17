@@ -69,7 +69,6 @@ export async function DELETE(request: Request) {
   await prisma.user.updateMany({
     where: { departmentId },
     data: {
-      departmentName: newDeptName,
       departmentId: newDeptId,
     },
   });

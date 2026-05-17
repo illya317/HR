@@ -53,7 +53,7 @@ export async function GET(request: Request) {
         orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
       },
       user: {
-        select: { name: true, departmentName: true },
+        select: { name: true },
       },
     },
     orderBy: [{ year: "desc" }, { weekNumber: "desc" }],

@@ -38,7 +38,7 @@ export async function GET(
           orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
         },
         user: {
-          select: { name: true, departmentName: true },
+          select: { name: true },
         },
       },
     });

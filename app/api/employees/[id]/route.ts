@@ -36,16 +36,6 @@ export async function PUT(
     return NextResponse.json({ error: "非法字段" }, { status: 400 });
   }
 
-  // 如果修改 employeeId，需要先记录旧值以便同步 User 表
-  let oldEmployeeId: string | null = null;
-  if (field === "employeeId") {
-    const emp = await prisma.employee.findUnique({
-      where: { id: parseInt(id) },
-      select: { employeeId: true },
-    });
-    oldEmployeeId = emp?.employeeId ?? null;
-  }
-
   // 快照旧数据到 EditHistory
   const oldData = await prisma.employee.findUnique({
     where: { id: parseInt(id) },
@@ -74,23 +64,15 @@ export async function PUT(
     data: { [field]: value, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
   });
 
-  // 同步更新 User 表的 employeeId（改一处，处处改）
-  if (field === "employeeId" && oldEmployeeId && value) {
-    await prisma.user.updateMany({
-      where: { employeeId: oldEmployeeId },
-      data: { employeeId: value },
-    });
-  }
-
   // 如果标记为离职，自动禁用关联用户的登录
   if (field === "status" && value === "离职") {
     const emp = await prisma.employee.findUnique({
       where: { id: parseInt(id) },
-      select: { employeeId: true },
+      select: { employeeId: true, userId: true },
     });
-    if (emp?.employeeId) {
-      await prisma.user.updateMany({
-        where: { employeeId: emp.employeeId },
+    if (emp?.userId) {
+      await prisma.user.update({
+        where: { id: emp.userId },
         data: { canLogin: false },
       });
     }

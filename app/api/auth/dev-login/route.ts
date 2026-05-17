@@ -25,10 +25,9 @@ export async function POST(request: Request) {
 
   const token = await createToken({
     userId: user.id,
-    wxUserId: user.wxUserId,
+    wxUserId: user.wxUserId ?? "",
     name: user.name,
     departmentId: user.departmentId,
-    departmentName: user.departmentName,
   });
 
   const response = NextResponse.json({
@@ -37,7 +36,6 @@ export async function POST(request: Request) {
       id: user.id,
       name: user.name,
       departmentId: user.departmentId,
-      departmentName: user.departmentName,
       isWorkListAdmin: user.isWorkListAdmin,
       canSelectAnyWeek: user.canSelectAnyWeek,
       canAccessHR: user.canAccessHR,

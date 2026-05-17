@@ -25,23 +25,10 @@ export async function PUT(
   if (canAccessWorks !== undefined) updateData.canAccessWorks = canAccessWorks;
   if (isWorkListAdmin !== undefined) updateData.isWorkListAdmin = isWorkListAdmin;
 
-  const targetUser = await prisma.user.findUnique({
+  await prisma.user.update({
     where: { id: parseInt(id) },
-    select: { employeeId: true },
+    data: updateData,
   });
-
-  if (targetUser?.employeeId) {
-    // 同步更新所有同 employeeId 的 User，保持权限一致
-    await prisma.user.updateMany({
-      where: { employeeId: targetUser.employeeId },
-      data: updateData,
-    });
-  } else {
-    await prisma.user.update({
-      where: { id: parseInt(id) },
-      data: updateData,
-    });
-  }
 
   return NextResponse.json({ success: true });
 }

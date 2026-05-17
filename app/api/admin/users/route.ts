@@ -18,30 +18,19 @@ export async function GET(request: Request) {
   }
 
   const users = await prisma.user.findMany({
-    orderBy: [{ departmentName: "asc" }, { name: "asc" }],
+    orderBy: [{ name: "asc" }],
     select: {
       id: true,
       username: true,
       name: true,
-      departmentName: true,
       departmentId: true,
       isWorkListAdmin: true,
       canLogin: true,
       canSelectAnyWeek: true,
       canAccessHR: true,
       canAccessWorks: true,
-      employeeId: true,
     },
   });
 
-  // 按 employeeId 去重合并（同一人在多岗时可能有多个 User 账号）
-  const seenEmployeeIds = new Set<string>();
-  const deduped = users.filter((u) => {
-    if (!u.employeeId) return true;
-    if (seenEmployeeIds.has(u.employeeId)) return false;
-    seenEmployeeIds.add(u.employeeId);
-    return true;
-  });
-
-  return NextResponse.json({ users: deduped });
+  return NextResponse.json({ users });
 }
