@@ -7,13 +7,7 @@ import ConfirmModal from "@/app/components/ConfirmModal";
 import Toast from "@/app/components/Toast";
 import { useToast } from "@/app/hooks/useToast";
 
-interface User {
-  id: number;
-  name: string;
-  canAccessHR: boolean;
-  isWorkListAdmin: boolean;
-  company?: string | null;
-}
+import type { HRUser as User } from "./types";
 
 interface PositionRow {
   id: number;

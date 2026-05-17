@@ -8,13 +8,7 @@ import Toast from "@/app/components/Toast";
 import { NAME_TO_CODE, BIO_GROUP_CODES, PHARMA_CODE, SHARED_GROUP_CODES, resolveCompanyFilter } from "@/lib/company";
 import { useCodeTab } from "@/app/hr/useCodeTab";
 
-interface User {
-  id: number;
-  name: string;
-  canAccessHR: boolean;
-  isWorkListAdmin: boolean;
-  company?: string | null;
-}
+import type { HRUser as User } from "./types";
 
 interface Employee {
   id: number;

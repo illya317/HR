@@ -185,6 +185,7 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
   } = useByPermissionTab({ user, resources, showToast });
 
   const [drillKey, setDrillKey] = useState<string | null>(null);
+  const [parentKey, setParentKey] = useState<string | null>(null);
   const [empPerms, setEmpPerms] = useState<EmployeePerm[]>([]);
   const [empLoading, setEmpLoading] = useState(false);
 
@@ -239,14 +240,25 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
     );
   }
 
-  const selectedChildren = drillKey && resources.some(r => r.key === drillKey && !r.key.includes("."))
-    ? getDirectChildren(drillKey) : [];
+  const selectedChildren = parentKey ? getDirectChildren(parentKey) : [];
+
+  function handleCardClick(key: string) {
+    const isTop = !key.includes(".");
+    if (isTop) {
+      // Toggle parent: if already selected, deselect both
+      if (parentKey === key) { setParentKey(null); setDrillKey(null); }
+      else { setParentKey(key); setDrillKey(key); }
+    } else {
+      // Sub-card: toggle drill key, keep parent
+      setDrillKey(drillKey === key ? null : key);
+    }
+  }
 
   return (
     <div className="space-y-6">
       <section>
         <h2 className="mb-3 text-lg font-semibold text-gray-800">全局权限概览</h2>
-        <CardGrid resources={topResources} selectedKey={drillKey} onCardClick={setDrillKey} />
+        <CardGrid resources={topResources} selectedKey={drillKey} onCardClick={handleCardClick} />
       </section>
 
       {/* Sub-permissions (only for top-level cards that have children) */}
@@ -254,9 +266,9 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
         <section>
           <div className="mb-3 flex items-center gap-2">
             <h2 className="text-lg font-semibold text-gray-800">子权限</h2>
-            <span className="text-sm text-gray-400">({drillKey})</span>
+            <span className="text-sm text-gray-400">({parentKey})</span>
           </div>
-          <CardGrid resources={selectedChildren} selectedKey={drillKey} onCardClick={setDrillKey} />
+          <CardGrid resources={selectedChildren} selectedKey={drillKey} onCardClick={handleCardClick} />
         </section>
       )}
 
@@ -268,7 +280,7 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
           fCompany={fCompany} fDept={fDept} fKeyword={fKeyword}
           setFCompany={setFCompany} setFDept={setFDept} setFKeyword={setFKeyword}
           allCompanies={allCompanies} allDepts={allDepts}
-          onToggle={togglePerm} onClose={() => setDrillKey(null)}
+          onToggle={togglePerm} onClose={() => { setDrillKey(null); setParentKey(null); }}
           empHasAccess={empHasAccess}
         />
       )}

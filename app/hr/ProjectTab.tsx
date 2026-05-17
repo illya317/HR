@@ -20,12 +20,7 @@ interface Department {
   company: string;
 }
 
-interface User {
-  id: number;
-  name: string;
-  canAccessHR: boolean;
-  isWorkListAdmin: boolean;
-}
+import type { HRUser as User } from "./types";
 
 export default function ProjectTab({ user }: { user: User }) {
   const [projects, setProjects] = useState<ProjectItem[]>([]);

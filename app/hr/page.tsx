@@ -12,13 +12,7 @@ import RosterTab from "./RosterTab";
 import { CodesTab } from "./CodeTab";
 import PlaceholderTab from "./PlaceholderTab";
 
-interface User {
-  id: number;
-  name: string;
-  canAccessHR: boolean;
-  isWorkListAdmin: boolean;
-  company?: string | null;
-}
+import type { HRUser as User } from "./types";
 
 const HR_COMPANIES = ["全部", "丰华生物", "丰华制药"];
 

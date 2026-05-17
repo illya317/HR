@@ -19,12 +19,7 @@ interface ProjectItem {
   name: string;
 }
 
-interface User {
-  id: number;
-  name: string;
-  canAccessHR: boolean;
-  isWorkListAdmin: boolean;
-}
+import type { HRUser as User } from "./types";
 
 export default function ProjectInfoTab({ user }: { user: User }) {
   const [entries, setEntries] = useState<EntryItem[]>([]);

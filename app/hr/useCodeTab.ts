@@ -8,13 +8,7 @@ import {
   resolveCompanyFilter,
 } from "@/lib/company";
 
-interface User {
-  id: number;
-  name: string;
-  canAccessHR: boolean;
-  isWorkListAdmin: boolean;
-  company?: string | null;
-}
+import type { HRUser as User } from "./types";
 
 interface Employee {
   id: number;
