@@ -240,7 +240,9 @@ model Employee {
 }
 
 model Company {
-  name      String    @id // 公司名称（丰华生物/丰华制药等）
+  code      String    @id // 公司编码（01/02/03/04/05）
+  name      String    @unique // 公司名称（丰华生物/丰华制药等）
+  sortOrder Int       @default(0) // 排序
   createdAt DateTime  @default(now()) // 创建时间
   updatedAt DateTime? // 更新时间
   editedBy  Int? // 编辑人用户ID

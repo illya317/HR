@@ -80,11 +80,294 @@ interface CodeItem {
   name: string;
 }
 
+function CompanyCodeTab({ user }: { user: User }) {
+  const [codes, setCodes] = useState<CodeItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast, showToast, closeToast } = useToast();
+  const [newCode, setNewCode] = useState("");
+  const [newName, setNewName] = useState("");
+  const [deleteCode, setDeleteCode] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editRow, setEditRow] = useState<string | null>(null);
+  const [editCodeValue, setEditCodeValue] = useState("");
+  const [editNameValue, setEditNameValue] = useState("");
+  const [versions, setVersions] = useState<Array<{ version: number; createdAt: string }>>([]);
+  const [currentVersion, setCurrentVersion] = useState<number | undefined>(undefined);
+  const [saving, setSaving] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    const res = await fetch("/api/admin/company-codes");
+    if (res.ok) {
+      const data = await res.json();
+      setCodes(data.codes || []);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  function startEditRow(item: CodeItem) {
+    if (!user.canAccessHR) return;
+    setEditRow(item.code);
+    setEditCodeValue(item.code);
+    setEditNameValue(item.name);
+    loadVersions(item.code);
+  }
+
+  function cancelEditRow() {
+    setEditRow(null);
+    setEditCodeValue("");
+    setEditNameValue("");
+  }
+
+  async function saveEditRow(originalCode: string) {
+    if (!/^\d{2}$/.test(editCodeValue)) {
+      showToast("编号必须为2位数字", "error");
+      return;
+    }
+    if (editCodeValue !== originalCode && codes.some((c) => c.code === editCodeValue)) {
+      showToast("编号已存在", "error");
+      return;
+    }
+
+    const putRes = await fetch("/api/admin/company-codes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: editCodeValue,
+        name: editNameValue.trim(),
+        originalCode: editCodeValue !== originalCode ? originalCode : undefined,
+      }),
+    });
+    if (!putRes.ok) {
+      const err = await putRes.json().catch(() => ({ error: "保存失败" }));
+      showToast(err.error || "保存失败", "error");
+      setEditRow(null);
+      return;
+    }
+    setCodes((prev) =>
+      prev
+        .filter((c) => c.code !== originalCode)
+        .concat({ code: editCodeValue, name: editNameValue.trim() })
+        .sort((a, b) => a.code.localeCompare(b.code))
+    );
+    showToast("保存成功");
+    setEditRow(null);
+  }
+
+  async function doDelete(code: string) {
+    const res = await fetch(`/api/admin/company-codes?code=${encodeURIComponent(code)}`, { method: "DELETE" });
+    if (res.ok) {
+      setCodes((prev) => prev.filter((c) => c.code !== code));
+      showToast("删除成功");
+    } else {
+      const err = await res.json().catch(() => ({ error: "删除失败" }));
+      showToast(err.error || "删除失败", "error");
+    }
+  }
+
+  async function handleAdd() {
+    if (!/^\d{2}$/.test(newCode)) {
+      showToast("编号必须为2位数字", "error");
+      return;
+    }
+    if (!newName.trim()) {
+      showToast("名称不能为空", "error");
+      return;
+    }
+    if (codes.some((c) => c.code === newCode)) {
+      showToast("编号已存在", "error");
+      return;
+    }
+    const res = await fetch("/api/admin/company-codes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: newCode, name: newName.trim() }),
+    });
+    if (res.ok) {
+      setCodes((prev) =>
+        [...prev, { code: newCode, name: newName.trim() }].sort((a, b) => a.code.localeCompare(b.code))
+      );
+      setNewCode("");
+      setNewName("");
+      showToast("添加成功");
+    } else {
+      showToast("添加失败", "error");
+    }
+  }
+
+  async function loadVersions(entityId: string) {
+    const res = await fetch(`/api/admin/edit-history?entityType=code_company&entityId=${entityId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setVersions(data.versions || []);
+    }
+  }
+
+  async function handleSelectVersion(version: number) {
+    if (!editRow) return;
+    const res = await fetch(`/api/admin/edit-history?entityType=code_company&entityId=${editRow}&version=${version}`);
+    if (res.ok) {
+      const data = await res.json();
+      const snapshot = JSON.parse(data.version.dataJson);
+      setEditCodeValue(snapshot.code || "");
+      setEditNameValue(snapshot.name || "");
+      setCurrentVersion(version);
+    }
+  }
+
+  async function handleSave() {
+    if (!editRow) return;
+    setSaving(true);
+    try {
+      await saveEditRow(editRow);
+      setEditMode(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-700">公司编码</h3>
+        {user.canAccessHR && (
+          <EditToolbar
+            editMode={editMode}
+            onStartEdit={() => setEditMode(true)}
+            onSave={handleSave}
+            onCancel={() => { setEditRow(null); }}
+            canEdit={user.canAccessHR}
+            versions={versions}
+            currentVersion={currentVersion}
+            onSelectVersion={handleSelectVersion}
+            saving={saving}
+          />
+        )}
+      </div>
+      <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+        {loading ? (
+          <p className="p-8 text-center text-gray-500">加载中...</p>
+        ) : (
+          <table className="text-xs">
+            <thead className="border-b bg-gray-50">
+              <tr>
+                <th className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600">编号</th>
+                <th className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-gray-600">名称</th>
+              </tr>
+            </thead>
+            <tbody>
+              {codes.map((item) => {
+                const isEditing = editRow === item.code;
+                return (
+                  <tr key={item.code} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                      {isEditing ? (
+                        <input
+                          value={editCodeValue}
+                          onChange={(e) => setEditCodeValue(e.target.value)}
+                          className="w-16 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
+                        />
+                      ) : (
+                        <span>
+                          {item.code}
+                          {editMode && user.canAccessHR && (
+                            <button
+                              onClick={() => setDeleteCode(item.code)}
+                              className="ml-1 text-red-500 hover:text-red-700"
+                              title="删除"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
+                      {isEditing ? (
+                        <input
+                          value={editNameValue}
+                          onChange={(e) => setEditNameValue(e.target.value)}
+                          className="w-32 rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
+                        />
+                      ) : (
+                        <span
+                          className="cursor-pointer hover:text-emerald-600"
+                          onClick={() => editMode && user.canAccessHR && startEditRow(item)}
+                        >
+                          {item.name || "-"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {editMode && user.canAccessHR && (
+                <tr className="border-b last:border-0 bg-gray-50">
+                  <td className="whitespace-nowrap px-2 py-1.5">
+                    <input
+                      type="text"
+                      value={newCode}
+                      onChange={(e) => setNewCode(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+                      placeholder="如01"
+                      className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
+                    />
+                  </td>
+                  <td className="whitespace-nowrap px-2 py-1.5">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+                        placeholder="名称"
+                        className="w-32 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
+                      />
+                      <button
+                        onClick={handleAdd}
+                        className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:bg-emerald-700"
+                      >
+                        添加
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <ConfirmModal
+        open={!!deleteCode}
+        title="删除确认"
+        message="确定删除该公司编码？"
+        confirmLabel="确定"
+        onConfirm={() => {
+          if (deleteCode) {
+            doDelete(deleteCode);
+            setDeleteCode(null);
+          }
+        }}
+        onCancel={() => setDeleteCode(null)}
+      />
+      <Toast message={toast?.message || ""} type={toast?.type as any} show={!!toast} onClose={closeToast} />
+    </div>
+  );
+}
+
 function CodesTab({ user, selectedCompany }: { user: User; selectedCompany: string }) {
   const companyCode = NAME_TO_CODE[selectedCompany] || "";
   return (
     <div className="flex flex-wrap gap-6">
-      <CodeTab user={user} type="department" apiPath="/api/admin/department-codes" title="部门编码" companyCode={companyCode} selectedCompany={selectedCompany} />
+      <div className="flex flex-col gap-6">
+        <CompanyCodeTab user={user} />
+        <CodeTab user={user} type="department" apiPath="/api/admin/department-codes" title="部门编码" companyCode={companyCode} selectedCompany={selectedCompany} />
+      </div>
       <CodeTab user={user} type="position" apiPath="/api/admin/position-codes" title="岗位编码" companyCode={companyCode} selectedCompany={selectedCompany} />
     </div>
   );
