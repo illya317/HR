@@ -320,7 +320,8 @@ function CompanyCodeTab({ user }: { user: User }) {
                           );
                         })}
                         <tr className="border-b bg-gray-50">
-                          <td colSpan={2} className="px-2 py-1.5 text-right font-medium text-gray-600">小计</td>
+                          <td className="px-2 py-1.5" />
+                          <td className="whitespace-nowrap px-2 py-1.5 text-right font-medium text-gray-600">小计</td>
                           <td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{bioTotal}</td>
                         </tr>
                       </>
@@ -356,13 +357,15 @@ function CompanyCodeTab({ user }: { user: User }) {
                           );
                         })}
                         <tr className="border-b bg-gray-50">
-                          <td colSpan={2} className="px-2 py-1.5 text-right font-medium text-gray-600">小计</td>
+                          <td className="px-2 py-1.5" />
+                          <td className="whitespace-nowrap px-2 py-1.5 text-right font-medium text-gray-600">小计</td>
                           <td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{pharmaTotal}</td>
                         </tr>
                       </>
                     )}
                     <tr className="bg-gray-100">
-                      <td colSpan={2} className="px-2 py-1.5 text-right font-bold text-gray-700">合计</td>
+                      <td className="px-2 py-1.5" />
+                      <td className="whitespace-nowrap px-2 py-1.5 text-right font-bold text-gray-700">合计</td>
                       <td className="whitespace-nowrap px-2 py-1.5 font-bold text-emerald-700">{grandTotal}</td>
                     </tr>
                     {editMode && user.canAccessHR && (
@@ -785,17 +788,17 @@ function CodeTab({
                       <>
                         <tr className="bg-gray-100"><td colSpan={3} className="px-2 py-1 font-medium text-gray-600">丰华生物体系</td></tr>
                         {bioCodes.map(renderRow)}
-                        <tr className="border-b bg-gray-50"><td colSpan={2} className="px-2 py-1.5 text-right font-medium text-gray-600">小计</td><td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{bioTotal}</td></tr>
+                        <tr className="border-b bg-gray-50"><td className="px-2 py-1.5" /><td className="whitespace-nowrap px-2 py-1.5 text-right font-medium text-gray-600">小计</td><td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{bioTotal}</td></tr>
                       </>
                     )}
                     {pharmaCodes.length > 0 && (
                       <>
                         <tr className="bg-gray-100"><td colSpan={3} className="px-2 py-1 font-medium text-gray-600">丰华制药</td></tr>
                         {pharmaCodes.map(renderRow)}
-                        <tr className="border-b bg-gray-50"><td colSpan={2} className="px-2 py-1.5 text-right font-medium text-gray-600">小计</td><td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{pharmaTotal}</td></tr>
+                        <tr className="border-b bg-gray-50"><td className="px-2 py-1.5" /><td className="whitespace-nowrap px-2 py-1.5 text-right font-medium text-gray-600">小计</td><td className="whitespace-nowrap px-2 py-1.5 font-medium text-emerald-700">{pharmaTotal}</td></tr>
                       </>
                     )}
-                    <tr className="bg-gray-100"><td colSpan={2} className="px-2 py-1.5 text-right font-bold text-gray-700">合计</td><td className="whitespace-nowrap px-2 py-1.5 font-bold text-emerald-700">{grandTotal}</td></tr>
+                    <tr className="bg-gray-100"><td className="px-2 py-1.5" /><td className="whitespace-nowrap px-2 py-1.5 text-right font-bold text-gray-700">合计</td><td className="whitespace-nowrap px-2 py-1.5 font-bold text-emerald-700">{grandTotal}</td></tr>
                     {editMode && user.canAccessHR && (
                       <tr className="border-b last:border-0 bg-gray-50">
                         <td className="whitespace-nowrap px-2 py-1.5"><input type="text" value={newCode} onChange={(e) => setNewCode(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }} placeholder="如001" className="w-16 rounded border border-gray-300 px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none" /></td>
