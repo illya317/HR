@@ -71,23 +71,16 @@ async function getUserDepartmentIds(userId: number): Promise<number[]> {
   return [...new Set(eps.map((e) => e.departmentId))];
 }
 
-// Get resource ID + all ancestor IDs (granting parent implies child)
-async function getResourceWithAncestors(resourceKey: string): Promise<number[]> {
-  const resource = await prisma.resource.findUnique({
-    where: { key: resourceKey },
-    select: { id: true, parentId: true },
+// Get all descendant resource IDs (for batch granting)
+export async function getResourceDescendants(resourceId: number): Promise<number[]> {
+  const ids: number[] = [resourceId];
+  const children = await prisma.resource.findMany({
+    where: { parentId: resourceId },
+    select: { id: true },
   });
-  if (!resource) return [];
-  const ids = [resource.id];
-  let current = resource;
-  while (current.parentId) {
-    const parent = await prisma.resource.findUnique({
-      where: { id: current.parentId },
-      select: { id: true, parentId: true },
-    });
-    if (!parent) break;
-    ids.push(parent.id);
-    current = parent;
+  for (const child of children) {
+    const childDescendants = await getResourceDescendants(child.id);
+    ids.push(...childDescendants);
   }
   return ids;
 }
@@ -109,40 +102,43 @@ export async function checkPermission(
     if (isSysAdmin) return true;
   }
 
-  // 1. Resolve resource tree (self + ancestors)
-  const resourceIds = await getResourceWithAncestors(resourceKey);
-  if (resourceIds.length === 0) return false;
+  // 1. Resolve resource (exact match only)
+  const resource = await prisma.resource.findUnique({
+    where: { key: resourceKey },
+    select: { id: true },
+  });
+  if (!resource) return false;
 
-  // 2. UserResourceRole (direct grant)
+  // 2. UserResourceRole (direct grant, exact match)
   const userGrant = await prisma.userResourceRole.findFirst({
     where: {
       userId,
-      resourceId: { in: resourceIds },
+      resourceId: resource.id,
       role: { key: roleKey },
     },
   });
   if (userGrant) return true;
 
-  // 3. PositionResourceRole (position inheritance)
+  // 3. PositionResourceRole (exact match)
   const posIds = await getUserPositionIds(userId);
   if (posIds.length > 0) {
     const positionGrant = await prisma.positionResourceRole.findFirst({
       where: {
         positionId: { in: posIds },
-        resourceId: { in: resourceIds },
+        resourceId: resource.id,
         role: { key: roleKey },
       },
     });
     if (positionGrant) return true;
   }
 
-  // 4. DepartmentResourceRole (department inheritance)
+  // 4. DepartmentResourceRole (exact match)
   const deptIds = await getUserDepartmentIds(userId);
   if (deptIds.length > 0) {
     const deptGrant = await prisma.departmentResourceRole.findFirst({
       where: {
         departmentId: { in: deptIds },
-        resourceId: { in: resourceIds },
+        resourceId: resource.id,
         role: { key: roleKey },
       },
     });

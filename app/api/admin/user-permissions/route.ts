@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authenticate, checkPermission } from "@/lib/auth";
+import { authenticate, checkPermission, getResourceDescendants } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function PUT(request: Request) {
@@ -37,31 +37,34 @@ export async function PUT(request: Request) {
   }
 
   if (value) {
-    // Grant: create UserResourceRole with scopeId=null (global toggle) if not exists
-    const existing = await prisma.userResourceRole.findFirst({
-      where: {
-        userId,
-        resourceId: resource.id,
-        roleId: role.id,
-        scopeId: null,
-      },
-    });
-    if (!existing) {
-      await prisma.userResourceRole.create({
-        data: {
+    // Grant: create UserResourceRole for this resource + all descendants
+    const descendantIds = await getResourceDescendants(resource.id);
+    for (const rid of descendantIds) {
+      const existing = await prisma.userResourceRole.findFirst({
+        where: {
           userId,
-          resourceId: resource.id,
+          resourceId: rid,
           roleId: role.id,
           scopeId: null,
         },
       });
+      if (!existing) {
+        await prisma.userResourceRole.create({
+          data: {
+            userId,
+            resourceId: rid,
+            roleId: role.id,
+            scopeId: null,
+          },
+        });
+      }
     }
   } else {
     // 禁止取消自己的系统管理员权限
     if (resourceKey === "system" && roleKey === "admin" && userId === payload.userId) {
       return NextResponse.json({ error: "不能取消自己的系统管理员权限" }, { status: 403 });
     }
-    // Revoke: delete UserResourceRole if exists
+    // Revoke: delete only the exact resource (children remain independent)
     await prisma.userResourceRole.deleteMany({
       where: {
         userId,

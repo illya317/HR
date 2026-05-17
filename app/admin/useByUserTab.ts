@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { isTopLevelResource, userHasAccess, userHasDirectAccess } from "./lib";
+import { isTopLevelResource, userHasAccess } from "./lib";
 import { matchEmployee } from "@/lib/search";
 import type { ResourceItem, DeptItem, SearchResult, EmployeePerm, AdminUser } from "./types";
 
@@ -57,7 +57,6 @@ export interface ByUserTabState {
 
   // Helpers
   userHasAccess: (emp: EmployeePerm, resourceKey: string) => boolean;
-  userHasDirectAccess: (emp: EmployeePerm, resourceKey: string) => boolean;
   getAllAccessState: (emp: EmployeePerm) => boolean;
 
   // User ref
@@ -216,7 +215,7 @@ export function useByUserTab(
     loadEmpPerms, togglePermission, handleResetPassword,
     topLevelResources, childrenOfParent, selectedResource,
     companies, deptOptions, filteredEmpPerms,
-    userHasAccess, userHasDirectAccess, getAllAccessState,
+    userHasAccess, getAllAccessState,
     user,
     showToast,
   };

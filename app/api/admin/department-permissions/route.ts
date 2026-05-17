@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authenticate, checkPermission } from "@/lib/auth";
+import { authenticate, checkPermission, getResourceDescendants } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET - get all department-level permission grants
@@ -61,24 +61,29 @@ export async function PUT(request: Request) {
   }
 
   if (value) {
-    const existing = await prisma.departmentResourceRole.findFirst({
-      where: {
-        departmentId,
-        resourceId: resource.id,
-        roleId: role.id,
-        scopeId: null,
-      },
-    });
-    if (!existing) {
-      await prisma.departmentResourceRole.create({
-        data: {
+    // Grant: create for this resource + all descendants
+    const descendantIds = await getResourceDescendants(resource.id);
+    for (const rid of descendantIds) {
+      const existing = await prisma.departmentResourceRole.findFirst({
+        where: {
           departmentId,
-          resourceId: resource.id,
+          resourceId: rid,
           roleId: role.id,
+          scopeId: null,
         },
       });
+      if (!existing) {
+        await prisma.departmentResourceRole.create({
+          data: {
+            departmentId,
+            resourceId: rid,
+            roleId: role.id,
+          },
+        });
+      }
     }
   } else {
+    // Revoke: delete only the exact resource
     await prisma.departmentResourceRole.deleteMany({
       where: {
         departmentId,

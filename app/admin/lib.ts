@@ -15,21 +15,8 @@ export function flattenTree(resources: ResourceItem[]): ResourceItem[] {
   return result;
 }
 
-/** 检查员工是否对某资源有权限（包含继承：父级授权 ⇒ 子级也有权限） */
+/** 检查员工是否对某资源有直接授权（精确匹配，不再检查祖先） */
 export function userHasAccess(emp: EmployeePerm, resourceKey: string): boolean {
-  const parts = resourceKey.split(".");
-  const keys = [resourceKey];
-  while (parts.length > 1) {
-    parts.pop();
-    keys.push(parts.join("."));
-  }
-  return keys.some((k) =>
-    emp.resourceRoles.some((rr) => rr.resource?.key === k && rr.role?.key === "access")
-  );
-}
-
-/** 检查员工是否对某资源有直接授权（不含继承） */
-export function userHasDirectAccess(emp: EmployeePerm, resourceKey: string): boolean {
   return emp.resourceRoles.some(
     (rr) => rr.resource?.key === resourceKey && rr.role?.key === "access"
   );

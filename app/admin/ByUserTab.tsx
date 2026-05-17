@@ -238,10 +238,6 @@ function RosterRow({ emp, s }: { emp: EmployeePerm; s: ReturnType<typeof useByUs
   const hasAccess = isAllMode
     ? s.getAllAccessState(emp)
     : s.userHasAccess(emp, s.selectedResource);
-  const hasDirect = isAllMode
-    ? s.getAllAccessState(emp)  // "全部"模式下不区分继承
-    : s.userHasDirectAccess(emp, s.selectedResource);
-  const isInherited = hasAccess && !hasDirect && !isAllMode;
 
   // Deduplicate roles by company+dept+position
   const uniqueRoles = emp.roles.filter((r, i) =>
@@ -249,18 +245,6 @@ function RosterRow({ emp, s }: { emp: EmployeePerm; s: ReturnType<typeof useByUs
   );
 
   async function handleToggle() {
-    if (isInherited) {
-      const parts = s.selectedResource.split(".");
-      while (parts.length > 1) {
-        parts.pop();
-        const parentKey = parts.join(".");
-        if (s.userHasDirectAccess(emp, parentKey)) {
-          await s.togglePermission(emp.userId, parentKey, true);
-          return;
-        }
-      }
-      return;
-    }
     if (isAllMode) {
       const val = hasAccess;
       const targets = [s.selectedParent, ...s.childrenOfParent.map(c => c.key)];
@@ -279,11 +263,9 @@ function RosterRow({ emp, s }: { emp: EmployeePerm; s: ReturnType<typeof useByUs
   }
 
   const btnLabel = hasAccess ? "已授权" : "未授权";
-  const btnClass = isInherited
-    ? "bg-blue-100 text-blue-700 hover:bg-red-100 hover:text-red-600"
-    : hasAccess
-      ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-600"
-      : "bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600";
+  const btnClass = hasAccess
+    ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-600"
+    : "bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600";
 
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50">
@@ -311,7 +293,6 @@ function RosterRow({ emp, s }: { emp: EmployeePerm; s: ReturnType<typeof useByUs
       <td className="whitespace-nowrap py-2">
         <button
           onClick={handleToggle}
-          title={isInherited ? "该权限由父级继承，点击将取消父级权限" : undefined}
           className={`rounded px-3 py-1 text-xs font-medium transition-colors ${btnClass}`}>
           {btnLabel}
         </button>

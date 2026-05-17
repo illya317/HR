@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authenticate, checkPermission } from "@/lib/auth";
+import { authenticate, checkPermission, getResourceDescendants } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET - get all position-level permission grants
@@ -57,25 +57,28 @@ export async function PUT(request: Request) {
   }
 
   if (value) {
-    // Grant: create if not exists (RBAC v2: PositionResourceRole)
-    const existing = await prisma.positionResourceRole.findFirst({
-      where: {
-        positionId,
-        resourceId: resource.id,
-        roleId: role.id,
-      },
-    });
-    if (!existing) {
-      await prisma.positionResourceRole.create({
-        data: {
+    // Grant: create for this resource + all descendants
+    const descendantIds = await getResourceDescendants(resource.id);
+    for (const rid of descendantIds) {
+      const existing = await prisma.positionResourceRole.findFirst({
+        where: {
           positionId,
-          resourceId: resource.id,
+          resourceId: rid,
           roleId: role.id,
         },
       });
+      if (!existing) {
+        await prisma.positionResourceRole.create({
+          data: {
+            positionId,
+            resourceId: rid,
+            roleId: role.id,
+          },
+        });
+      }
     }
   } else {
-    // Revoke: delete if exists
+    // Revoke: delete only the exact resource
     await prisma.positionResourceRole.deleteMany({
       where: {
         positionId,
