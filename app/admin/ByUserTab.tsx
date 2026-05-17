@@ -43,7 +43,13 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
   const [companyFilter, setCompanyFilter] = useState("全部");
   const [deptFilter, setDeptFilter] = useState("全部");
   const [keywordFilter, setKeywordFilter] = useState("");
-  const [selectedResource, setSelectedResource] = useState("system");
+  const [selectedParent, setSelectedParent] = useState("system");
+  const [selectedChild, setSelectedChild] = useState("__all__");
+
+  // Derived: parent + children lists
+  const topLevelResources = resources.filter((r) => isTopLevelResource(r.key));
+  const childrenOfParent = resources.filter((r) => r.key.startsWith(selectedParent + ".") && r.key.split(".").length === selectedParent.split(".").length + 1);
+  const selectedResource = selectedChild === "__all__" ? selectedParent : selectedChild;
 
   const [pwdModal, setPwdModal] = useState<{
     open: boolean; userId: number | null; employeeId: string; name: string;
@@ -96,8 +102,15 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
   }
 
   function userHasAccess(emp: EmployeePerm, resourceKey: string): boolean {
-    return emp.resourceRoles.some(
-      (rr) => rr.resource?.key === resourceKey && rr.role?.key === "access"
+    // Check direct grant OR any ancestor grant (parent access implies child access)
+    const parts = resourceKey.split(".");
+    const keys = [resourceKey];
+    while (parts.length > 1) {
+      parts.pop();
+      keys.push(parts.join("."));
+    }
+    return keys.some((k) =>
+      emp.resourceRoles.some((rr) => rr.resource?.key === k && rr.role?.key === "access")
     );
   }
 
@@ -129,14 +142,13 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
     } catch { showToast("网络错误", "error"); }
   }
 
-  const topLevelResources = resources.filter((r) => isTopLevelResource(r.key));
   const companies = ["全部", ...Array.from(new Set(allDepts.map((d) => d.company).filter(Boolean)))];
   const deptOptions = ["全部", ...Array.from(new Set(
     (companyFilter === "全部" ? allDepts : allDepts.filter((d) => d.company === companyFilter))
       .map((d) => d.name)
   ))];
 
-  const filteredEmpPerms = empPerms.filter((emp) => {
+  const filtered = empPerms.filter((emp) => {
     if (companyFilter !== "全部" && !emp.roles.some((r) => r.company === companyFilter)) return false;
     if (deptFilter !== "全部" && !emp.roles.some((r) => r.dept1 === deptFilter)) return false;
     if (keywordFilter) {
@@ -146,6 +158,11 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
           !emp.username?.toLowerCase().includes(kw)) return false;
     }
     return true;
+  });
+  const filteredEmpPerms = [...filtered].sort((a, b) => {
+    const aAuth = userHasAccess(a, selectedResource) ? 0 : 1;
+    const bAuth = userHasAccess(b, selectedResource) ? 0 : 1;
+    return aAuth - bAuth;
   });
 
   function formatCsv(arr: (string | null)[], fallback = "-") {
@@ -276,14 +293,19 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
             value={keywordFilter} onChange={(e) => setKeywordFilter(e.target.value)}
             className="min-w-[160px] rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none"
           />
-          <select value={selectedResource}
-            onChange={(e) => setSelectedResource(e.target.value)}
+          <select value={selectedParent}
+            onChange={(e) => { setSelectedParent(e.target.value); setSelectedChild("__all__"); }}
             className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none">
-            {resources.map((r) => {
-              const depth = r.key.split(".").length - 1;
-              return <option key={r.key} value={r.key}>{"  ".repeat(depth)}{r.name}</option>;
-            })}
+            {topLevelResources.map((r) => <option key={r.key} value={r.key}>{r.name}</option>)}
           </select>
+          {childrenOfParent.length > 0 && (
+            <select value={selectedChild}
+              onChange={(e) => setSelectedChild(e.target.value)}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none">
+              <option value="__all__">全部</option>
+              {childrenOfParent.map((r) => <option key={r.key} value={r.key}>{r.name}</option>)}
+            </select>
+          )}
         </FilterBar>
 
         {empPermLoading ? (
@@ -336,13 +358,30 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
                       </td>
                       <td className="whitespace-nowrap py-2">
                         <button
-                          onClick={() => togglePermission(emp.userId, selectedResource, hasAccess)}
+                          onClick={async () => {
+                            if (selectedChild === "__all__") {
+                              // Batch: toggle all children of selected parent
+                              const val = userHasAccess(emp, selectedParent + "." + childrenOfParent[0]?.key?.split(".").pop());
+                              const targets = [selectedParent, ...childrenOfParent.map(c => c.key)];
+                              for (const key of targets) {
+                                await fetch("/api/admin/user-permissions", {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ userId: emp.userId, resourceKey: key, roleKey: "access", value: !val }),
+                                });
+                              }
+                              showToast(!val ? `已授权 ${selectedParent} 全部` : `已取消 ${selectedParent} 全部`, "success");
+                            } else {
+                              togglePermission(emp.userId, selectedResource, hasAccess);
+                            }
+                            loadEmpPerms();
+                          }}
                           className={`rounded px-2 py-1 text-xs transition-colors ${
                             hasAccess
                               ? "bg-red-50 text-red-600 hover:bg-red-100"
                               : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
                           }`}>
-                          {hasAccess ? "撤销" : "授权"}
+                          {hasAccess ? "取消" : "授权"}
                         </button>
                         {user.isWorkListAdmin && emp.userId && (
                           <button

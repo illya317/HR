@@ -20,7 +20,8 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
 
   const [systemAdmins, setSystemAdmins] = useState<Array<{ id: number; name: string; username: string }>>([]);
   const [deptData, setDeptData] = useState<Array<{ id: number; name: string; company: string; admins: Array<{ id: number; userId: number; user: { id: number; name: string; username: string } }> }>>([]);
-  const [loading, setLoading] = useState(true);
+  const [sysLoading, setSysLoading] = useState(true);
+  const [deptLoading, setDeptLoading] = useState(true);
   const [companyTab, setCompanyTab] = useState<"全部" | "丰华制药" | "丰华生物">("全部");
 
   // Search states
@@ -35,15 +36,25 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
   const [deptConfirm, setDeptConfirm] = useState<number | null>(null);
   const deptTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load data
-  async function loadAll() {
-    setLoading(true);
-    await Promise.all([loadSystemAdmins(), loadDeptAdmins()]);
-    setLoading(false);
-  }
+  // Load data — each section manages its own loading state independently
+  useEffect(() => {
+    (async () => {
+      if (user.isWorkListAdmin) {
+        setSysLoading(true);
+        await loadSystemAdmins();
+        setSysLoading(false);
+      } else {
+        setSysLoading(false);
+      }
+    })();
+    (async () => {
+      setDeptLoading(true);
+      await loadDeptAdmins();
+      setDeptLoading(false);
+    })();
+  }, []);
 
   async function loadSystemAdmins() {
-    if (!user.isWorkListAdmin) return;
     try {
       const res = await fetch("/api/admin/users");
       if (res.ok) {
@@ -71,8 +82,6 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
       }));
     } catch (e) { console.error(e); }
   }
-
-  useEffect(() => { loadAll(); }, []);
 
   // Debounced system admin search
   useEffect(() => {
@@ -104,12 +113,29 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
     return () => clearTimeout(timer);
   }, [deptSearchQ, deptAddOpen]);
 
-  // Confirm helpers
-  function confirmRemove(id: number, cur: number | null, set: (v: number | null) => void, timer: typeof sysTimer) {
-    if (cur === id) { set(null); if (timer.current) clearTimeout(timer.current); return true; }
-    set(id); if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => set(null), 3000);
-    return false;
+  // Confirm helpers — using ref to avoid stale closure issues
+  function handleRemoveSystemAdmin(adminId: number) {
+    if (sysConfirm === adminId) {
+      removeSystemAdmin(adminId);
+      setSysConfirm(null);
+      if (sysTimer.current) { clearTimeout(sysTimer.current); sysTimer.current = null; }
+    } else {
+      setSysConfirm(adminId);
+      if (sysTimer.current) clearTimeout(sysTimer.current);
+      sysTimer.current = setTimeout(() => setSysConfirm(null), 3000);
+    }
+  }
+
+  function handleRemoveDeptAdmin(adminId: number) {
+    if (deptConfirm === adminId) {
+      removeDeptAdmin(adminId);
+      setDeptConfirm(null);
+      if (deptTimer.current) { clearTimeout(deptTimer.current); deptTimer.current = null; }
+    } else {
+      setDeptConfirm(adminId);
+      if (deptTimer.current) clearTimeout(deptTimer.current);
+      deptTimer.current = setTimeout(() => setDeptConfirm(null), 3000);
+    }
   }
 
   async function addSystemAdmin(userId: number, name: string) {
@@ -175,7 +201,7 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
             <span className="text-sm text-gray-500">({systemAdmins.length} 人)</span>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            {loading ? <p className="py-4 text-center text-sm text-gray-500">加载中...</p> : (
+            {sysLoading ? <p className="py-4 text-center text-sm text-gray-500">加载中...</p> : (
               <>
                 {systemAdmins.length > 0 && (
                   <div className="mb-4 flex flex-wrap gap-2">
@@ -185,7 +211,7 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
                         <span key={a.id} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-800">
                           {a.name} <span className="text-xs text-gray-400">({a.username})</span>
                           <button type="button"
-                            onClick={() => { if (confirmRemove(a.id, sysConfirm, setSysConfirm, sysTimer)) removeSystemAdmin(a.id); }}
+                            onClick={() => handleRemoveSystemAdmin(a.id)}
                             className={`ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${confirming ? "bg-red-100 text-red-600" : "text-gray-400 hover:bg-red-50 hover:text-red-500"}`}
                           >{confirming ? "?" : "×"}</button>
                         </span>
@@ -227,7 +253,7 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
           ))}
         </div>
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm divide-y divide-gray-100">
-          {loading ? <p className="py-8 text-center text-sm text-gray-500">加载中...</p> :
+          {deptLoading ? <p className="py-8 text-center text-sm text-gray-500">加载中...</p> :
             filteredDepts.length === 0 ? <p className="py-8 text-center text-sm text-gray-400">暂无部门</p> :
             filteredDepts.map((dept) => (
               <div key={dept.id} className="px-4 py-3">
@@ -249,7 +275,7 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
                         <span key={a.id} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs text-emerald-700">
                           {a.user.name}
                           <button type="button"
-                            onClick={() => { if (confirmRemove(a.id, deptConfirm, setDeptConfirm, deptTimer)) removeDeptAdmin(a.id); }}
+                            onClick={() => handleRemoveDeptAdmin(a.id)}
                             className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-xs font-bold ${confirming ? "bg-red-100 text-red-600" : "text-gray-400 hover:bg-red-50 hover:text-red-500"}`}
                           >{confirming ? "?" : "×"}</button>
                         </span>

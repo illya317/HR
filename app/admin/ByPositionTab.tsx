@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import FilterBar from "@/app/components/FilterBar";
-import { isTopLevelResource } from "./page";
+import { flattenTree } from "./page";
 
 interface Props {
   user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };
@@ -117,7 +117,9 @@ export default function ByPositionTab({ user, resources, showToast }: Props) {
     return true;
   });
 
-  const topResources = resources.filter((r) => isTopLevelResource(r.key));
+  const allResources = flattenTree(resources).sort((a, b) =>
+    a.key.localeCompare(b.key)
+  );
 
   if (loading) {
     return <p className="text-sm text-gray-500">加载中...</p>;
@@ -184,12 +186,15 @@ export default function ByPositionTab({ user, resources, showToast }: Props) {
               <span className="text-xs text-gray-400">{pos.headcount}人</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {topResources.map((r) => {
+              {allResources.map((r) => {
                 const has = positionHasPerm(grants, pos.id, r.key, "access");
+                const depth = r.key.split(".").length - 1;
                 return (
                   <button
                     key={r.key}
                     onClick={() => togglePerm(pos.id, r.key, !has)}
+                    title={r.key}
+                    style={{ marginLeft: depth * 8 }}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       has
                         ? "border border-emerald-300 bg-emerald-100 text-emerald-700"

@@ -9,8 +9,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  const isSuperAdmin = await checkPermission(payload.userId, "system", "admin");
-  if (!isSuperAdmin) {
+  // Allow anyone with system.admin OR people.access to view dept grants
+  const canView = await checkPermission(payload.userId, "system", "admin")
+    || await checkPermission(payload.userId, "people", "access");
+  if (!canView) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
