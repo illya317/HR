@@ -96,8 +96,6 @@ async function main() {
     "report.member": "report_group",
     "report.viewer": "report_group",
     "dept.admin": "department",
-    "field.read": "field",
-    "field.edit": "field",
   })) {
     backupPermKeyToResource.set(old, res);
   }
@@ -113,8 +111,6 @@ async function main() {
     "report.write": "write",
     "report.read": "read",
     "dept.admin": "admin",
-    "field.read": "read",
-    "field.edit": "write",
   })) {
     backupPermKeyToRole.set(old, role);
   }
@@ -218,50 +214,6 @@ async function main() {
     }
   }
   console.log(`   ✓ ${rgCount} report group memberships`);
-
-  // ─── Step 7: FieldPermission → UserResourceRole ──────────
-  console.log("\n8. Migrating FieldPermission → UserResourceRole...");
-  const fieldResId = resourceMap.get("field")!;
-  let fpCount = 0;
-
-  if (backup.fieldPermissions) {
-    for (const fp of backup.fieldPermissions) {
-      const roleKey = fp.canEdit ? "write" : "read";
-      const roleId = roleMap.get(roleKey);
-      if (!roleId) continue;
-      try {
-        await prisma.userResourceRole.create({
-          data: {
-            userId: fp.userId,
-            resourceId: fieldResId,
-            roleId,
-            scopeId: fp.field,
-          },
-        });
-        fpCount++;
-      } catch { /* skip */ }
-    }
-  }
-
-  if (backup.globalFieldPermissions) {
-    for (const gfp of backup.globalFieldPermissions) {
-      const roleKey = gfp.canEdit ? "write" : "read";
-      const roleId = roleMap.get(roleKey);
-      if (!roleId) continue;
-      try {
-        await prisma.userResourceRole.create({
-          data: {
-            userId: 0, // global default
-            resourceId: fieldResId,
-            roleId,
-            scopeId: gfp.field,
-          },
-        });
-        fpCount++;
-      } catch { /* skip */ }
-    }
-  }
-  console.log(`   ✓ ${fpCount} field permissions`);
 
   // ─── Summary ────────────────────────────────────────────
   console.log("\n=== Migration Complete ===");
