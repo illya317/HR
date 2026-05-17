@@ -84,7 +84,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
   }, [editingCell]);
 
   function startEdit(row: PositionRow, field: string) {
-    if (!user.isWorkListAdmin || !editMode) return;
+    if (!user.canAccessHR || !editMode) return;
     const f = FIELDS.find((x) => x.key === field);
     if (!f?.editable) return;
     setEditingCell({ id: row.id, field });
@@ -142,7 +142,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
         >
           重置
         </button>
-        {user.isWorkListAdmin && (
+        {user.canAccessHR && (
           <div className="flex gap-2">
             {editMode && (
               <button
@@ -176,7 +176,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                     {f.label}
                   </th>
                 ))}
-                {editMode && user.isWorkListAdmin && <th className="whitespace-nowrap px-3 py-2" />}
+                {editMode && user.canAccessHR && <th className="whitespace-nowrap px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
@@ -239,13 +239,13 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                       <td
                         key={f.key}
                         onClick={() => startEdit(row, f.key)}
-                        className={`whitespace-nowrap px-3 py-2 text-gray-700 ${editMode && f.editable && user.isWorkListAdmin ? "cursor-pointer hover:bg-emerald-50" : ""}`}
+                        className={`whitespace-nowrap px-3 py-2 text-gray-700 ${editMode && f.editable && user.canAccessHR ? "cursor-pointer hover:bg-emerald-50" : ""}`}
                       >
                         {f.key === "isPrimary" ? (val ? "是" : "否") : (val || "-")}
                       </td>
                     );
                   })}
-                  {editMode && user.isWorkListAdmin && (
+                  {editMode && user.canAccessHR && (
                     <td className="whitespace-nowrap px-3 py-2">
                       <button
                         onClick={() => setConfirmModal({ open: true, row })}

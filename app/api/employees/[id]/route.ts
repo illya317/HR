@@ -36,16 +36,6 @@ export async function PUT(
     return NextResponse.json({ error: "非法字段" }, { status: 400 });
   }
 
-  // 非管理员校验编辑权限
-  if (!user.isWorkListAdmin) {
-    const perm = await prisma.fieldPermission.findFirst({
-      where: { field, userId: payload.userId },
-    });
-    if (!perm?.canEdit) {
-      return NextResponse.json({ error: "无编辑权限" }, { status: 403 });
-    }
-  }
-
   // 如果修改 employeeId，需要先记录旧值以便同步 User 表
   let oldEmployeeId: string | null = null;
   if (field === "employeeId") {

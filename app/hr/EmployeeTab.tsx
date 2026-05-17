@@ -105,7 +105,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
   }, [editingCell]);
 
   function startEdit(emp: Employee, field: string) {
-    if (!user.isWorkListAdmin || !editMode) return;
+    if (!user.canAccessHR || !editMode) return;
     setEditingCell({ id: emp.id, field });
     setEditValue((emp as any)[field] || "");
   }
@@ -168,7 +168,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
         >
           重置
         </button>
-        {user.isWorkListAdmin && (
+        {user.canAccessHR && (
           <div className="flex gap-2">
             {editMode && (
               <button
@@ -202,7 +202,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
                     {f.label}
                   </th>
                 ))}
-                {editMode && user.isWorkListAdmin && <th className="whitespace-nowrap px-3 py-2"></th>}
+                {editMode && user.canAccessHR && <th className="whitespace-nowrap px-3 py-2"></th>}
               </tr>
             </thead>
             <tbody>
@@ -215,7 +215,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
                       <td
                         key={f.key}
                         onClick={() => startEdit(emp, f.key)}
-                        className={`whitespace-nowrap px-3 py-2 text-gray-700 ${editMode && user.isWorkListAdmin ? "cursor-pointer hover:bg-emerald-50" : ""}`}
+                        className={`whitespace-nowrap px-3 py-2 text-gray-700 ${editMode && user.canAccessHR ? "cursor-pointer hover:bg-emerald-50" : ""}`}
                       >
                         {isEditing ? (
                           <input
@@ -233,7 +233,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
                       </td>
                     );
                   })}
-                  {editMode && user.isWorkListAdmin && (
+                  {editMode && user.canAccessHR && (
                     <td className="whitespace-nowrap px-3 py-2">
                       <button
                         onClick={() => setConfirmModal({ open: true, emp })}
