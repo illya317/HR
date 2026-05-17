@@ -76,12 +76,12 @@ export default function EditToolbar({
           >
             取消
           </button>
-          {versions && versions.length > 0 && onSelectVersion && (
+          {onSelectVersion && (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setShowVersions(!showVersions)}
                 className={`inline-flex items-center gap-1 rounded-md border px-3 py-2 text-sm ${
-                  currentVersion ? "border-emerald-400 text-emerald-700 bg-emerald-50" : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                  currentVersion && currentVersion > 0 ? "border-emerald-400 text-emerald-700 bg-emerald-50" : "border-gray-300 text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 版本
@@ -98,7 +98,10 @@ export default function EditToolbar({
                     >
                       当前版本
                     </button>
-                    {versions.map((v) => (
+                    {(!versions || versions.length === 0) && (
+                      <div className="px-3 py-2 text-xs text-gray-400">暂无编辑历史</div>
+                    )}
+                    {(versions || []).map((v) => (
                       <button
                         key={v.version}
                         onClick={() => { onSelectVersion(v.version); setShowVersions(false); }}

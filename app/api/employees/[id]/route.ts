@@ -51,7 +51,7 @@ export async function PUT(
     where: { id: parseInt(id) },
   });
   if (oldData) {
-    const entityId = oldData.employeeId;
+    const entityId = String(oldData.id);
     const maxVer = await prisma.editHistory.findFirst({
       where: { entityType: "employee", entityId },
       orderBy: { version: "desc" },

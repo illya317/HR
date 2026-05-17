@@ -188,7 +188,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
             editMode={editMode}
             onStartEdit={() => setEditMode(true)}
             onSave={handleSave}
-            onCancel={() => { setEditMode(false); setEditingCell(null); }}
+            onCancel={() => { setEditingCell(null); }}
             canEdit={user.canAccessHR}
             versions={versions}
             currentVersion={currentVersion}

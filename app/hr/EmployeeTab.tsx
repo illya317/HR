@@ -113,6 +113,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
     setEditingCell({ id: emp.id, field });
     setEditValue((emp as any)[field] || "");
     loadVersions(emp.id);
+    setCurrentVersion(undefined);
   }
 
   async function loadVersions(entityId: number) {
@@ -210,7 +211,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
             editMode={editMode}
             onStartEdit={() => setEditMode(true)}
             onSave={handleSave}
-            onCancel={() => { setEditMode(false); setEditingCell(null); }}
+            onCancel={() => { setEditingCell(null); }}
             canEdit={user.canAccessHR}
             versions={versions}
             currentVersion={currentVersion}

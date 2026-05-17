@@ -382,7 +382,7 @@ function CodeTab({
             editMode={editMode}
             onStartEdit={() => setEditMode(true)}
             onSave={handleSave}
-            onCancel={() => { setEditMode(false); setEditRow(null); }}
+            onCancel={() => { setEditRow(null); }}
             canEdit={user.canAccessHR}
             versions={versions}
             currentVersion={currentVersion}
