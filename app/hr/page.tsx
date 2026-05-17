@@ -805,6 +805,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
           <table className="w-full text-xs">
             <thead className="border-b bg-gray-50">
               <tr>
+                <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-600">序号</th>
                 {displayFields.map((f) => (
                   <th
                     key={f.key}
@@ -826,6 +827,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
                 const empMerge = mergeInfo.get(rowIndex) || {};
                 return (
                   <tr key={`${emp.employeeId}-${rowIndex}`} className={`border-b last:border-0 hover:bg-gray-50 ${emp.status === "离职" ? "bg-gray-100" : ""}`}>
+                    <td className="whitespace-nowrap px-3 py-2 text-gray-500">{rowIndex + 1}</td>
                     {displayFields.map((f) => {
                       const merge = empMerge[f.key];
                       if (merge?.skip) return null;
