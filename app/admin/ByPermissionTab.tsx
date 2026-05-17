@@ -6,6 +6,7 @@ import type { ResourceItem } from "./types";
 import FilterBar from "@/app/components/FilterBar";
 import { matchEmployee } from "@/lib/search";
 import { resolveCompanyFilter } from "@/lib/company";
+import { HIDDEN_RESOURCE_KEYS } from "./lib";
 
 interface Props {
   user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };
@@ -236,7 +237,10 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
 
   function getDirectChildren(parentKey: string): ResourceItem[] {
     return resources.filter(
-      (r) => r.key.startsWith(parentKey + ".") && r.key.split(".").length === parentKey.split(".").length + 1
+      (r) =>
+        !HIDDEN_RESOURCE_KEYS.has(r.key) &&
+        r.key.startsWith(parentKey + ".") &&
+        r.key.split(".").length === parentKey.split(".").length + 1
     );
   }
 

@@ -22,7 +22,7 @@ export function userHasAccess(emp: EmployeePerm, resourceKey: string): boolean {
   );
 }
 
-const HIDDEN_RESOURCE_KEYS = new Set(["finance"]);
+export const HIDDEN_RESOURCE_KEYS = new Set(["finance"]);
 
 export function groupByParent(
   resources: ResourceItem[]

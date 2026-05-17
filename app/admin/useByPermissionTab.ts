@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useSearch } from "@/lib/useSearch";
+import { HIDDEN_RESOURCE_KEYS } from "./lib";
 import type { ResourceItem } from "./types";
 
 interface Props {
@@ -27,7 +28,7 @@ interface SystemAdmin {
 }
 
 export function useByPermissionTab({ user, resources, showToast }: Props) {
-  const topResources = resources.filter((r) => !r.key.includes("."));
+  const topResources = resources.filter((r) => !r.key.includes(".") && !HIDDEN_RESOURCE_KEYS.has(r.key));
 
   const [systemAdmins, setSystemAdmins] = useState<SystemAdmin[]>([]);
   const [sysLoading, setSysLoading] = useState(true);
