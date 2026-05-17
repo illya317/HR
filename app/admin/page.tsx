@@ -78,7 +78,7 @@ export default function AdminPage() {
   const [allDepts, setAllDepts] = useState<Dept[]>([]);
   const [reportGroups, setReportGroups] = useState<ReportGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"depts" | "permission-table" | "codes" | "staffing">("depts");
+  const [activeTab, setActiveTab] = useState<"depts" | "permission-table">("depts");
 
   const [empPerms, setEmpPerms] = useState<
     Array<{
@@ -155,13 +155,6 @@ export default function AdminPage() {
   const [posCompany, setPosCompany] = useState("");
   const [posDept, setPosDept] = useState("");
   const [posSearch, setPosSearch] = useState("");
-
-  // 编制信息
-  const [companies, setCompanies] = useState<Array<{ name: string; createdAt: string; version: number }>>([]);
-  const [deptPositions, setDeptPositions] = useState<Array<{ id: number; departmentId: number; positionId: number; company: string | null; department: { name: string }; position: { name: string; code: string }; version: number }>>([]);
-  const [newCompany, setNewCompany] = useState("");
-  const [editingCompany, setEditingCompany] = useState<string | null>(null);
-  const [editCompanyName, setEditCompanyName] = useState("");
 
   function userHasPermission(u: User, resourceKey: string): boolean {
     return (u.resourceRoles || []).some(
@@ -254,15 +247,6 @@ export default function AdminPage() {
     }
   }, [user?.isWorkListAdmin]);
 
-  useEffect(() => {
-    if (activeTab === "codes") {
-      loadCompanies();
-    }
-    if (activeTab === "staffing") {
-      loadDeptPositions();
-    }
-  }, [activeTab]);
-
   async function loadData() {
     const [usersRes, groupsRes, deptsRes] = await Promise.all([
       fetch("/api/admin/users"),
@@ -337,32 +321,6 @@ export default function AdminPage() {
       const data = await grantsRes.json();
       setPositionGrants(data.grants || []);
     }
-  }
-
-  // 编制信息
-  async function loadCompanies() {
-    const res = await fetch("/api/companies");
-    if (res.ok) setCompanies(await res.json().then(d => d.companies));
-  }
-  async function loadDeptPositions() {
-    const res = await fetch("/api/department-positions");
-    if (res.ok) setDeptPositions(await res.json().then(d => d.positions));
-  }
-  async function addCompany() {
-    if (!newCompany.trim()) return;
-    await fetch("/api/companies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newCompany.trim() }) });
-    setNewCompany("");
-    loadCompanies();
-  }
-  async function updateCompany(oldName: string) {
-    if (!editCompanyName.trim()) return;
-    await fetch("/api/companies", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ oldName, newName: editCompanyName.trim() }) });
-    setEditingCompany(null);
-    loadCompanies();
-  }
-  async function deleteCompany(name: string) {
-    await fetch(`/api/companies?name=${encodeURIComponent(name)}`, { method: "DELETE" });
-    loadCompanies();
   }
 
   function positionHasPerm(positionId: number, resourceKey: string, roleKey: string): boolean {
@@ -799,20 +757,6 @@ export default function AdminPage() {
             className={`pb-2 text-sm font-medium ${activeTab === "permission-table" ? "border-b-2 border-emerald-500 text-emerald-600" : "text-gray-500 hover:text-gray-700"}`}
           >
             权限管理
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("codes")}
-            className={`pb-2 text-sm font-medium ${activeTab === "codes" ? "border-b-2 border-emerald-500 text-emerald-600" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            编码
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("staffing")}
-            className={`pb-2 text-sm font-medium ${activeTab === "staffing" ? "border-b-2 border-emerald-500 text-emerald-600" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            编制
           </button>
         </div>
 
@@ -1834,63 +1778,6 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {activeTab === "codes" && (
-          <div className="rounded-lg bg-white p-4 shadow-sm max-w-md">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">公司管理</h3>
-            <div className="mb-3 flex gap-2">
-              <input type="text" value={newCompany} onChange={(e) => setNewCompany(e.target.value)} placeholder="新公司名称" className="flex-1 rounded border border-gray-200 px-3 py-1.5 text-sm" />
-              <button type="button" onClick={addCompany} className="rounded bg-emerald-500 px-3 py-1.5 text-sm text-white hover:bg-emerald-600">添加</button>
-            </div>
-            <div className="space-y-1">
-              {companies.map(c => (
-                <div key={c.name} className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-gray-50">
-                  {editingCompany === c.name ? (
-                    <>
-                      <input type="text" value={editCompanyName} onChange={(e) => setEditCompanyName(e.target.value)} className="flex-1 rounded border border-gray-200 px-2 py-1 text-sm" />
-                      <button type="button" onClick={() => updateCompany(c.name)} className="text-xs text-emerald-600">保存</button>
-                      <button type="button" onClick={() => setEditingCompany(null)} className="text-xs text-gray-400">取消</button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="flex-1 text-sm">{c.name}</span>
-                      <button type="button" onClick={() => { setEditingCompany(c.name); setEditCompanyName(c.name); }} className="text-xs text-gray-400 hover:text-gray-600">编辑</button>
-                      <button type="button" onClick={() => deleteCompany(c.name)} className="text-xs text-red-400 hover:text-red-600">删除</button>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "staffing" && (
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">部门岗位编制</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b text-left text-gray-500">
-                    <th className="pb-2 pr-2">公司</th>
-                    <th className="pb-2 pr-2">部门</th>
-                    <th className="pb-2 pr-2">岗位编码</th>
-                    <th className="pb-2">岗位名称</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deptPositions.map(dp => (
-                    <tr key={dp.id} className="border-b last:border-0">
-                      <td className="py-1.5 pr-2 text-gray-500">{dp.company || "-"}</td>
-                      <td className="py-1.5 pr-2">{dp.department?.name || "-"}</td>
-                      <td className="py-1.5 pr-2 font-mono text-gray-400">{dp.position?.code || "-"}</td>
-                      <td className="py-1.5">{dp.position?.name || "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </div>
         )}
       </main>
