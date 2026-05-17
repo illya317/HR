@@ -43,9 +43,9 @@ interface ReportGroup {
 
 interface DepartmentAdmin {
   id: number;
-  dept1: string;
-  company: string;
+  departmentId: number;
   userId: number;
+  department?: { id: number; name: string; company: string };
   user: {
     id: number;
     name: string;
@@ -126,7 +126,7 @@ export default function AdminPage() {
   const [deptAdminSearchQuery, setDeptAdminSearchQuery] = useState("");
   const [deptAdminSearchResults, setDeptAdminSearchResults] = useState<Array<{ rowId: number; employeeId: string; name: string; dept1: string; position: string; userId: number | null }>>([]);
   const [deptAdminSearchTimer, setDeptAdminSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [addingDeptAdmin, setAddingDeptAdmin] = useState<{ name: string; company: string } | null>(null);
+  const [addingDeptAdmin, setAddingDeptAdmin] = useState<number | null>(null);
 
   // 权限面板视图
   const [permView, setPermView] = useState<"by-user" | "by-permission">("by-permission");
@@ -565,11 +565,11 @@ export default function AdminPage() {
     }
   }
 
-  async function addDeptAdmin(name: string, company: string, userId: number) {
+  async function addDeptAdmin(departmentId: number, userId: number) {
     const res = await fetch("/api/admin/department-admins", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dept1: name, company, userId }),
+      body: JSON.stringify({ departmentId, userId }),
     });
     if (res.ok) {
       await loadAdminData();
@@ -1530,7 +1530,7 @@ export default function AdminPage() {
                       .filter((d) => !deptAdminCompany || d.company === deptAdminCompany)
                       .map((dept) => {
                         const admins = deptAdmins.filter(
-                          (a) => a.dept1 === dept.name && a.company === dept.company
+                          (a) => a.departmentId === dept.id
                         );
                         return (
                           <div key={`${dept.company}|${dept.name}`} className="flex items-start gap-3 rounded-md border border-gray-200 p-3">
@@ -1568,7 +1568,7 @@ export default function AdminPage() {
                               )}
                             </div>
                             <div className="relative">
-                              {addingDeptAdmin?.name === dept.name && addingDeptAdmin?.company === dept.company ? (
+                              {addingDeptAdmin === dept.id ? (
                                 <div className="relative w-48">
                                   <input
                                     type="text"
@@ -1589,7 +1589,7 @@ export default function AdminPage() {
                                       {deptAdminSearchResults.map((emp) => (
                                         <div
                                           key={emp.rowId}
-                                          onClick={() => { if (emp.userId) addDeptAdmin(dept.name, dept.company, emp.userId); }}
+                                          onClick={() => { if (emp.userId) addDeptAdmin(dept.id, emp.userId); }}
                                           className="cursor-pointer px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
                                         >
                                           {emp.name}-{emp.dept1 || "未知部门"}-{emp.position || "未知职务"}
@@ -1610,7 +1610,7 @@ export default function AdminPage() {
                                 </div>
                               ) : (
                                 <button
-                                  onClick={() => setAddingDeptAdmin({ name: dept.name, company: dept.company })}
+                                  onClick={() => setAddingDeptAdmin(dept.id)}
                                   className="rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
                                 >
                                   添加管理员
