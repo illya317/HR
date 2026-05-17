@@ -67,12 +67,14 @@ export default function ReportPage() {
         const gData = await gRes.json();
         if (!gData.isAdmin && gData.submitGroups.length === 0) { router.push("/reports"); return; }
 
-        // Determine periodType from saved group
-        const savedRgId = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupId") : null;
-        const savedPeriodType = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupPeriodType") as PeriodType | null : null;
+        // Determine periodType: user preference > group default > "weekly"
         const allGroups = [...gData.submitGroups, ...(gData.viewGroups || [])];
-        if (savedRgId && savedPeriodType) {
+        const savedPeriodType = typeof window !== "undefined" ? localStorage.getItem("selectedPeriodType") as PeriodType | null : null;
+        const groupPeriodType = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupPeriodType") as PeriodType | null : null;
+        if (savedPeriodType) {
           setPeriodType(savedPeriodType);
+        } else if (groupPeriodType) {
+          setPeriodType(groupPeriodType);
         } else if (allGroups.length > 0) {
           setPeriodType((allGroups[0].periodType as PeriodType) || "weekly");
         }
@@ -295,6 +297,23 @@ export default function ReportPage() {
       <main className="mx-auto max-w-5xl px-4 py-8">
         {/* Header */}
         <div className="mb-6 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-700 p-4 text-center text-white">
+          {/* Period type switcher */}
+          <div className="mb-3 flex items-center justify-center gap-1">
+            {(["daily", "weekly", "monthly", "quarterly", "yearly"] as const).map((pt) => (
+              <button key={pt} type="button" onClick={() => {
+                if (pt === periodType) return;
+                setPeriodType(pt);
+                localStorage.setItem("selectedPeriodType", pt);
+                const info = getCurrentPeriod(pt);
+                setSelectedYear(info.year);
+                setSelectedPeriodIndex(info.periodIndex);
+                setLoading(true);
+                loadReport(user!, info.year, info.periodIndex);
+              }}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${periodType === pt ? "bg-white text-emerald-700" : "text-white/70 hover:bg-white/10 hover:text-white"}`}
+              >{getPeriodTypeName(pt)}</button>
+            ))}
+          </div>
           <div className="mb-2 flex items-center justify-center gap-3">
             {periodType === "yearly" ? (
               <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setLoading(true); loadReport(user!, parseInt(e.target.value), 1); }}
