@@ -43,6 +43,7 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
   const [companyFilter, setCompanyFilter] = useState("全部");
   const [deptFilter, setDeptFilter] = useState("全部");
   const [keywordFilter, setKeywordFilter] = useState("");
+  const [authFilter, setAuthFilter] = useState<"全部" | "已授权" | "未授权">("全部");
   const [selectedParent, setSelectedParent] = useState("system");
   const [selectedChild, setSelectedChild] = useState("__all__");
 
@@ -156,6 +157,11 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
       if (!emp.name.toLowerCase().includes(kw) &&
           !emp.employeeId.toLowerCase().includes(kw) &&
           !emp.username?.toLowerCase().includes(kw)) return false;
+    }
+    if (authFilter !== "全部") {
+      const has = userHasAccess(emp, selectedResource);
+      if (authFilter === "已授权" && !has) return false;
+      if (authFilter === "未授权" && has) return false;
     }
     return true;
   });
@@ -306,6 +312,13 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
               {childrenOfParent.map((r) => <option key={r.key} value={r.key}>{r.name}</option>)}
             </select>
           )}
+          <select value={authFilter}
+            onChange={(e) => setAuthFilter(e.target.value as "全部" | "已授权" | "未授权")}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none">
+            <option value="全部">全部状态</option>
+            <option value="已授权">已授权</option>
+            <option value="未授权">未授权</option>
+          </select>
         </FilterBar>
 
         {empPermLoading ? (
