@@ -254,8 +254,7 @@ model Department {
   employeePositions EmployeePosition[]
   reportGroups      ReportGroup[]
   resourceRoles     DepartmentResourceRole[]
-  companyCode       String?            // → CompanyCode
-  company           CompanyCode?       @relation(fields: [companyCode], references: [code])
+  company           String?            // 公司编码（如 01/02/03）
   createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime? // 更新时间
   editedBy          Int? // 编辑人用户ID
@@ -268,8 +267,7 @@ model Position {
   id                Int                @id @default(autoincrement()) // 主键
   code              String             @unique // 编码
   name              String // 名称
-  companyCode       String?            // → CompanyCode
-  company           CompanyCode?       @relation(fields: [companyCode], references: [code])
+  company           String?            // 公司编码（如 01/02/03）
   departments       DepartmentPosition[]
   employeePositions EmployeePosition[]
   resourceRoles     PositionResourceRole[]
@@ -289,8 +287,7 @@ model EmployeePosition {
   department   Department @relation(fields: [departmentId], references: [id])
   positionId   Int // 岗位ID
   position     Position   @relation(fields: [positionId], references: [id])
-  companyCode  String?    // → CompanyCode
-  company      CompanyCode? @relation(fields: [companyCode], references: [code])
+  company      String?     // 公司编码（如 01/02/03）
   center       String? // 中心
   isPrimary    Boolean    @default(false) // 是否主岗
   sortOrder    Int        @default(0) // 排序序号
@@ -308,8 +305,7 @@ model DepartmentPosition {
   id           Int          @id @default(autoincrement()) // 主键
   departmentId Int // 部门ID
   positionId   Int // 岗位ID
-  companyCode  String?      // → CompanyCode
-  company      CompanyCode? @relation(fields: [companyCode], references: [code])
+  company      String?      // 公司编码（如 01/02/03）
   department   Department   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   position     Position     @relation(fields: [positionId], references: [id], onDelete: Cascade)
   createdAt    DateTime     @default(now()) // 创建时间
@@ -320,17 +316,6 @@ model DepartmentPosition {
   version      Int          @default(1) // 版本号
 
   @@unique([departmentId, positionId])
-}
-
-// ─── 字典 ─────────────────────────────────────────────────
-
-model CompanyCode {
-  code                String               @id // 编码
-  name                String               @unique // 名称
-  departments         Department[]
-  positions           Position[]
-  employeePositions   EmployeePosition[]
-  departmentPositions DepartmentPosition[]
 }
 
 // ─── 编辑历史 ─────────────────────────────────────────────
