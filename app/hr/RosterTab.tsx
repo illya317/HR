@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import FilterBar from "@/app/components/FilterBar";
+import SearchBox from "@/app/components/SearchBox";
 import Toast from "@/app/components/Toast";
 import { useToast } from "@/app/hooks/useToast";
 
@@ -63,11 +64,8 @@ export default function RosterTab({ user, selectedCompany }: { user: User; selec
   const [sortField, setSortField] = useState<string>("employeeId");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const { toast, showToast, closeToast } = useToast();
-  const [deptQuery, setDeptQuery] = useState("");
-  const [deptSuggestions, setDeptSuggestions] = useState<string[]>([]);
-  const [showDeptSuggestions, setShowDeptSuggestions] = useState(false);
-  const deptBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [rosterFilter, setRosterFilter] = useState<"在职" | "离职">("在职");
+  const [resetKey, setResetKey] = useState(0);
 
   async function loadRoster(deptOverride?: string) {
     setLoading(true);
@@ -91,24 +89,6 @@ export default function RosterTab({ user, selectedCompany }: { user: User; selec
   useEffect(() => {
     loadRoster();
   }, [selectedCompany, filterDept, rosterFilter, keyword]);
-
-  useEffect(() => {
-    if (filterDept && !deptQuery) {
-      setDeptQuery(filterDept);
-    }
-  }, [filterDept]);
-
-  async function fetchDeptSuggestions(query: string) {
-    if (!query.trim()) {
-      setDeptSuggestions([]);
-      return;
-    }
-    const res = await fetch(`/api/employees/autocomplete?type=dept&q=${encodeURIComponent(query)}`);
-    if (res.ok) {
-      const data = await res.json();
-      setDeptSuggestions(data.items || []);
-    }
-  }
 
   function downloadExcel() {
     const params = new URLSearchParams();
@@ -188,47 +168,16 @@ export default function RosterTab({ user, selectedCompany }: { user: User; selec
             离职
           </button>
         </div>
-        <div className="relative">
-          <input
-            type="text"
-            value={deptQuery}
-            onChange={(e) => {
-              setDeptQuery(e.target.value);
-              fetchDeptSuggestions(e.target.value);
-              setShowDeptSuggestions(true);
-            }}
-            onFocus={() => {
-              if (deptQuery) {
-                fetchDeptSuggestions(deptQuery);
-                setShowDeptSuggestions(true);
-              }
-            }}
-            onBlur={() => {
-              deptBlurTimer.current = setTimeout(() => setShowDeptSuggestions(false), 200);
-            }}
-            onKeyDown={(e) => { if (e.key === "Enter") loadRoster(deptQuery); }}
+        <div className="w-48">
+          <SearchBox
+            key={resetKey}
+            config={{ target: "department" }}
             placeholder="部门筛选"
-            className="w-48 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
+            onSelect={(item: { name: string }) => {
+              setFilterDept(item.name);
+            }}
+            renderItem={(item: { name: string }) => <span>{item.name}</span>}
           />
-          {showDeptSuggestions && deptSuggestions.length > 0 && (
-            <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 text-sm shadow-lg">
-              {deptSuggestions.map((s) => (
-                <li
-                  key={s}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    if (deptBlurTimer.current) clearTimeout(deptBlurTimer.current);
-                    setFilterDept(s);
-                    setDeptQuery(s);
-                    setShowDeptSuggestions(false);
-                  }}
-                  className="cursor-pointer px-3 py-1.5 hover:bg-emerald-50"
-                >
-                  {s}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
         <input
           type="text"
@@ -239,7 +188,7 @@ export default function RosterTab({ user, selectedCompany }: { user: User; selec
           className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-emerald-400 focus:outline-none"
         />
         <button
-          onClick={() => { setFilterDept(""); setDeptQuery(""); setKeyword(""); setRosterFilter("在职"); loadRoster(); }}
+          onClick={() => { setFilterDept(""); setKeyword(""); setRosterFilter("在职"); setResetKey((k) => k + 1); loadRoster(); }}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
         >
           重置

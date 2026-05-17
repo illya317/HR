@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useSearch } from "@/lib/useSearch";
 import type { ResourceItem } from "./types";
 
 interface Props {
@@ -26,14 +27,13 @@ interface SystemAdmin {
 }
 
 export function useByPermissionTab({ user, resources, showToast }: Props) {
-  // 显示所有一级资源（parentId === null），不只过滤 isTopLevelResource 的4个
   const topResources = resources.filter((r) => !r.key.includes("."));
 
   const [systemAdmins, setSystemAdmins] = useState<SystemAdmin[]>([]);
   const [sysLoading, setSysLoading] = useState(true);
 
-  const [sysSearchQ, setSysSearchQ] = useState("");
-  const [sysResults, setSysResults] = useState<EmployeeResult[]>([]);
+  const { query: sysSearchQ, setQuery: setSysSearchQ, results: sysRawResults, loading: sysSearchLoading } = useSearch<EmployeeResult>({ target: "employee" });
+  const sysResults = sysRawResults.filter((item) => item.userId != null);
   const [sysConfirm, setSysConfirm] = useState<number | null>(null);
   const sysTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -66,25 +66,6 @@ export function useByPermissionTab({ user, resources, showToast }: Props) {
       }
     })();
   }, []);
-
-  useEffect(() => {
-    if (!sysSearchQ.trim()) {
-      setSysResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/employees/search?q=${encodeURIComponent(sysSearchQ.trim())}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSysResults((data.items || []).filter((item: EmployeeResult) => item.userId != null));
-        }
-      } catch {
-        /* ignore */
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [sysSearchQ]);
 
   function handleRemoveSystemAdmin(adminId: number) {
     if (sysConfirm === adminId) {

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import { isTopLevelResource, userHasAccess } from "./lib";
 import { matchEmployee } from "@/lib/search";
+import { useSearch } from "@/lib/useSearch";
 import type { ResourceItem, DeptItem, SearchResult, EmployeePerm, AdminUser } from "./types";
 
 export interface ByUserTabState {
@@ -75,12 +76,8 @@ export function useByUserTab(
   const [empPerms, setEmpPerms] = useState<EmployeePerm[]>([]);
   const [empPermLoading, setEmpPermLoading] = useState(true);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const { query: searchQuery, setQuery: setSearchQuery, results: searchResults, loading: searchLoading, showDropdown, setShowDropdown } = useSearch<SearchResult>({ target: "employee" });
   const [selectedUser, setSelectedUser] = useState<SearchResult | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const [companyFilter, setCompanyFilter] = useState("全部");
   const [deptFilter, setDeptFilter] = useState("全部");
@@ -118,26 +115,10 @@ export function useByUserTab(
     }
   }
 
-  const doSearch = useCallback((q: string) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!q.trim()) { setSearchResults([]); setShowDropdown(false); return; }
-    debounceRef.current = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const res = await fetch(`/api/employees/search?q=${encodeURIComponent(q.trim())}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data.items || []);
-          setShowDropdown(true);
-        }
-      } catch { /* ignore */ } finally { setSearchLoading(false); }
-    }, 300);
-  }, []);
-
-  function handleSearchChange(value: string) { setSearchQuery(value); doSearch(value); }
+  function handleSearchChange(value: string) { setSearchQuery(value); }
 
   function handleSelectUser(r: SearchResult) {
-    setSelectedUser(r); setSearchQuery(""); setSearchResults([]); setShowDropdown(false);
+    setSelectedUser(r); setSearchQuery(""); setShowDropdown(false);
   }
 
   function getSelectedUserPerms(): EmployeePerm | null {
