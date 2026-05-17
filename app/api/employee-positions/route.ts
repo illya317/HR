@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
   const epWhere: any = { employeeId: { in: employeeIds } };
   if (targetCompany) {
-    epWhere.companyCode = { in: resolveCompanyFilter(targetCompany) };
+    epWhere.company = { in: resolveCompanyFilter(targetCompany) };
   }
 
   const eps = await prisma.employeePosition.findMany({
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
       id: ep.id,
       employeeId: emp?.employeeId || "",
       name: emp?.name || "",
-      company: ep.companyCode || "",
+      company: ep.company || "",
       center: ep.center || "",
       dept1: ep.department?.name || "",
       position: ep.position?.name || "",

@@ -48,50 +48,7 @@ async function main() {
     console.log(`   ✓ ${r.key} (id=${created.id})`);
   }
 
-  // ─── Step 3: companyCode migration ──────────────────────
-  console.log("\n3. Migrating company → companyCode...");
-
-  const depts = await prisma.department.findMany();
-  let deptCount = 0;
-  for (const d of depts) {
-    const code = await prisma.companyCode.findFirst({ where: { name: (d as any).company || d.name } });
-    // Fallback: use first 2 chars of department code as company code
-    const fallbackCode = d.code?.slice(0, 2) || "01";
-    await prisma.department.update({
-      where: { id: d.id },
-      data: { companyCode: code?.code || fallbackCode },
-    });
-    deptCount++;
-  }
-  console.log(`   ✓ ${deptCount} departments`);
-
-  const positions = await prisma.position.findMany();
-  let posCount = 0;
-  for (const p of positions) {
-    const fallbackCode = p.code?.slice(0, 2) || "01";
-    await prisma.position.update({
-      where: { id: p.id },
-      data: { companyCode: fallbackCode },
-    });
-    posCount++;
-  }
-  console.log(`   ✓ ${posCount} positions`);
-
-  // EmployeePosition: copy company string → companyCode via CompanyCode lookup
-  const eps = await prisma.employeePosition.findMany();
-  let epCount = 0;
-  for (const ep of eps) {
-    const companyName = (ep as any).company as string | null;
-    const code = companyName ? await prisma.companyCode.findFirst({ where: { name: companyName } }) : null;
-    await prisma.employeePosition.update({
-      where: { id: ep.id },
-      data: { companyCode: code?.code || null },
-    });
-    epCount++;
-  }
-  console.log(`   ✓ ${epCount} employee positions`);
-
-  // ─── Step 4: WorkItem migration ──────────────────────────
+  // ─── Step 3: WorkItem migration ──────────────────────────
   console.log("\n4. Migrating WorkItem departmentId → scopeType/scopeId...");
   const workItems = await prisma.workItem.findMany();
   let wiCount = 0;
@@ -108,7 +65,7 @@ async function main() {
   }
   console.log(`   ✓ ${wiCount} work items`);
 
-  // ─── Step 5: UserPermission → UserResourceRole ──────────
+  // ─── Step 4: UserPermission → UserResourceRole ──────────
   console.log("\n5. Migrating User booleans → UserResourceRole (scopeId=null)...");
   const backupPath = require("path").join(__dirname, ".rbac-migration-backup.json");
   let backup: any;
@@ -216,7 +173,7 @@ async function main() {
   }
   console.log(`   ✓ ${urrCount} UserResourceRole grants`);
 
-  // ─── Step 6: DepartmentAdmin → UserResourceRole ──────────
+  // ─── Step 5: DepartmentAdmin → UserResourceRole ──────────
   console.log("\n6. Migrating DepartmentAdmin → UserResourceRole...");
   const deptResId = resourceMap.get("department")!;
   const adminRoleId = roleMap.get("admin")!;
@@ -239,7 +196,7 @@ async function main() {
   }
   console.log(`   ✓ ${daCount} department admins`);
 
-  // ─── Step 7: ReportGroupMembership → UserResourceRole ────
+  // ─── Step 6: ReportGroupMembership → UserResourceRole ────
   console.log("\n7. Migrating ReportGroupMembership → UserResourceRole...");
   const rgResId = resourceMap.get("report_group")!;
   let rgCount = 0;
@@ -264,7 +221,7 @@ async function main() {
   }
   console.log(`   ✓ ${rgCount} report group memberships`);
 
-  // ─── Step 8: FieldPermission → UserResourceRole ──────────
+  // ─── Step 7: FieldPermission → UserResourceRole ──────────
   console.log("\n8. Migrating FieldPermission → UserResourceRole...");
   const fieldResId = resourceMap.get("field")!;
   let fpCount = 0;

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     groups = await prisma.reportGroup.findMany({
       orderBy: { sortOrder: "asc" },
       include: {
-        department: { select: { id: true, name: true, companyCode: true } },
+        department: { select: { id: true, name: true, company: true } },
         _count: { select: { reports: true } },
       },
     });
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       where: { id: { in: groupIds } },
       orderBy: { sortOrder: "asc" },
       include: {
-        department: { select: { id: true, name: true, companyCode: true } },
+        department: { select: { id: true, name: true, company: true } },
         _count: { select: { reports: true } },
       },
     });
@@ -73,11 +73,11 @@ export async function GET(request: Request) {
     }));
   }
 
-  // Normalize department.companyCode -> company for backward compat
+  // Normalize department.company -> company for backward compat
   groups = groups.map((g: any) => ({
     ...g,
     department: g.department
-      ? { ...g.department, company: g.department.companyCode || "" }
+      ? { ...g.department, company: g.department.company || "" }
       : null,
   }));
 

@@ -3,13 +3,13 @@ import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SHARED_GROUP_CODES, getCompanyFromCode } from "@/lib/company";
 
-function normalizeCompanyCode(companyCode: string): string {
-  if (SHARED_GROUP_CODES.includes(companyCode)) return "01";
-  return companyCode;
+function normalizeCompanyCode(company: string): string {
+  if (SHARED_GROUP_CODES.includes(company)) return "01";
+  return company;
 }
 
-function buildFullCode(code: string, companyCode: string): string {
-  const normalized = normalizeCompanyCode(companyCode);
+function buildFullCode(code: string, company: string): string {
+  const normalized = normalizeCompanyCode(company);
   if (code.length <= 3) {
     return normalized + code.padStart(3, "0");
   }
@@ -26,13 +26,13 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const companyCodesParam = searchParams.get("companyCodes");
-  const companyCode = searchParams.get("companyCode");
+  const companysParam = searchParams.get("companys");
+  const company = searchParams.get("company");
 
-  const codes = companyCodesParam
-    ? companyCodesParam.split(",")
-    : companyCode
-      ? [companyCode]
+  const codes = companysParam
+    ? companysParam.split(",")
+    : company
+      ? [company]
       : [];
 
   const where: any = {};
@@ -53,10 +53,10 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json();
-  const { code, name, companyCode, originalCode } = body;
+  const { code, name, company, originalCode } = body;
   if (!code || !name) return NextResponse.json({ error: "缺少参数" }, { status: 400 });
 
-  const finalCode = buildFullCode(code, companyCode || "");
+  const finalCode = buildFullCode(code, company || "");
 
   if (originalCode && originalCode !== finalCode) {
     const existing = await prisma.position.findUnique({ where: { code: finalCode } });
@@ -105,7 +105,7 @@ export async function PUT(request: Request) {
     await prisma.position.upsert({
       where: { code: finalCode },
       update: { name, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
-      create: { code: finalCode, name, companyCode: getCompanyFromCode(finalCode) },
+      create: { code: finalCode, name, company: getCompanyFromCode(finalCode) },
     });
   }
 

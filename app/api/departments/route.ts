@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const company = searchParams.get("company") || "";
 
   const where: any = {};
-  if (company) where.companyCode = company;
+  if (company) where.company = company;
 
   const depts = await prisma.department.findMany({
     where,
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
       id: d.id,
       code: d.code,
       name: d.name,
-      company: d.companyCode,
+      company: d.company,
       level: d.level,
       parentId: d.parentId,
       parentName: d.parent?.name || null,
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       data: {
         code,
         name,
-        companyCode: company,
+        company: company,
         level: level || 1,
         parentId: parentId || null,
         managerUserId: managerUserId || null,
@@ -95,7 +95,7 @@ export async function PUT(request: Request) {
   const data: any = {};
   if (code !== undefined) data.code = code;
   if (name !== undefined) data.name = name;
-  if (company !== undefined) data.companyCode = company;
+  if (company !== undefined) data.company = company;
   if (level !== undefined) data.level = level;
   if (parentId !== undefined) data.parentId = parentId || null;
   if (managerUserId !== undefined) data.managerUserId = managerUserId || null;

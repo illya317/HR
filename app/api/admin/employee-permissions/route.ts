@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     include: {
       positions: {
         include: {
-          department: { select: { name: true, companyCode: true } },
+          department: { select: { name: true, company: true } },
           position: { select: { name: true } },
         },
       },
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     } else {
       for (const pos of emp.positions) {
         item.roles.push({
-          company: pos.department?.companyCode || null,
+          company: pos.department?.company || null,
           dept1: pos.department?.name || null,
           position: pos.position?.name || null,
         });
