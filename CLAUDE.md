@@ -123,7 +123,7 @@ pm2 restart weekly
 
 - 复杂任务、多文件修改优先拆 Sub Agent 并行执行
 - 主 Agent 负责任务拆分和结果验收
-- **分配子 Agent 时必须在 prompt 中告知 `@CLAUDE.md` 或 `@AGENTS.md`**，确保子 Agent 了解项目规范、共享模块和避坑指南
+- **分配子 Agent 时必须在 prompt 中告知 `@SUBAGENT.md`**，子 Agent 专用精简版（只有规则+共享模块，无架构细节）
 
 ---
 
