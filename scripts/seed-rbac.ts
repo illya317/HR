@@ -1,0 +1,324 @@
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log("=== RBAC Migration Seed ===\n");
+
+  // ─── Step 1: Resource ───────────────────────────────────
+  console.log("1. Seeding Resource...");
+  const resources = [
+    { key: "system", name: "系统功能", description: "登录、补填周报等系统级功能" },
+    { key: "module.hr", name: "人事行政", description: "访问人事行政管理 /hr" },
+    { key: "module.works", name: "工作清单", description: "访问工作清单 /works" },
+    { key: "department", name: "部门", description: "部门管理权限" },
+    { key: "report_group", name: "周报分组", description: "周报分组管理权限" },
+    { key: "field", name: "字段", description: "字段级读写权限" },
+  ];
+  const resourceMap = new Map<string, number>();
+  for (const r of resources) {
+    const created = await prisma.resource.upsert({
+      where: { key: r.key },
+      update: r,
+      create: r,
+    });
+    resourceMap.set(r.key, created.id);
+    console.log(`   ✓ ${r.key} (id=${created.id})`);
+  }
+
+  // ─── Step 2: Role ───────────────────────────────────────
+  console.log("\n2. Seeding Role...");
+  const roles = [
+    { key: "access", name: "可进入", description: "系统/模块级别开关" },
+    { key: "admin", name: "管理", description: "编辑数据 + 分配该资源权限给他人" },
+    { key: "write", name: "编辑", description: "可修改数据" },
+    { key: "read", name: "只读", description: "可查看数据" },
+    { key: "member", name: "参与", description: "可提交周报" },
+    { key: "viewer", name: "查看", description: "可查看周报" },
+  ];
+  const roleMap = new Map<string, number>();
+  for (const r of roles) {
+    const created = await prisma.role.upsert({
+      where: { key: r.key },
+      update: r,
+      create: r,
+    });
+    roleMap.set(r.key, created.id);
+    console.log(`   ✓ ${r.key} (id=${created.id})`);
+  }
+
+  // ─── Step 3: companyCode migration ──────────────────────
+  console.log("\n3. Migrating company → companyCode...");
+
+  const depts = await prisma.department.findMany();
+  let deptCount = 0;
+  for (const d of depts) {
+    const code = await prisma.companyCode.findFirst({ where: { name: (d as any).company || d.name } });
+    // Fallback: use first 2 chars of department code as company code
+    const fallbackCode = d.code?.slice(0, 2) || "01";
+    await prisma.department.update({
+      where: { id: d.id },
+      data: { companyCode: code?.code || fallbackCode },
+    });
+    deptCount++;
+  }
+  console.log(`   ✓ ${deptCount} departments`);
+
+  const positions = await prisma.position.findMany();
+  let posCount = 0;
+  for (const p of positions) {
+    const fallbackCode = p.code?.slice(0, 2) || "01";
+    await prisma.position.update({
+      where: { id: p.id },
+      data: { companyCode: fallbackCode },
+    });
+    posCount++;
+  }
+  console.log(`   ✓ ${posCount} positions`);
+
+  // EmployeePosition: copy company string → companyCode via CompanyCode lookup
+  const eps = await prisma.employeePosition.findMany();
+  let epCount = 0;
+  for (const ep of eps) {
+    const companyName = (ep as any).company as string | null;
+    const code = companyName ? await prisma.companyCode.findFirst({ where: { name: companyName } }) : null;
+    await prisma.employeePosition.update({
+      where: { id: ep.id },
+      data: { companyCode: code?.code || null },
+    });
+    epCount++;
+  }
+  console.log(`   ✓ ${epCount} employee positions`);
+
+  // ─── Step 4: WorkItem migration ──────────────────────────
+  console.log("\n4. Migrating WorkItem departmentId → scopeType/scopeId...");
+  const workItems = await prisma.workItem.findMany();
+  let wiCount = 0;
+  for (const wi of workItems) {
+    const oldDeptId = (wi as any).departmentId as number | undefined;
+    await prisma.workItem.update({
+      where: { id: wi.id },
+      data: {
+        scopeType: oldDeptId ? "department" : "personal",
+        scopeId: oldDeptId || undefined,
+      },
+    });
+    wiCount++;
+  }
+  console.log(`   ✓ ${wiCount} work items`);
+
+  // ─── Step 5: UserPermission → UserResourceRole ──────────
+  console.log("\n5. Migrating User booleans → UserResourceRole (scopeId=null)...");
+  const backupPath = require("path").join(__dirname, ".rbac-migration-backup.json");
+  let backup: any;
+  try {
+    backup = JSON.parse(require("fs").readFileSync(backupPath, "utf-8"));
+  } catch {
+    console.log("   ⚠ No backup file, skipping boolean migration");
+    backup = { users: [] };
+  }
+
+  const userIdToPerms = new Map<number, string[]>();
+  const fieldMap: Record<string, string> = {
+    isWorkListAdmin: "system",
+    canLogin: "system",
+    canSelectAnyWeek: "system",
+    canAccessHR: "module.hr",
+    canAccessWorks: "module.works",
+  };
+
+  // Also load from backup's userPermissions
+  const backupPermKeyToResource = new Map<string, string>();
+  // Map old Permission keys → new Resource keys
+  for (const [old, res] of Object.entries({
+    "system.login": "system",
+    "system.admin": "system",
+    "system.any_week": "system",
+    "module.hr": "module.hr",
+    "module.works": "module.works",
+    "report.admin": "report_group",
+    "report.member": "report_group",
+    "report.viewer": "report_group",
+    "dept.admin": "department",
+    "field.read": "field",
+    "field.edit": "field",
+  })) {
+    backupPermKeyToResource.set(old, res);
+  }
+
+  const backupPermKeyToRole = new Map<string, string>();
+  for (const [old, role] of Object.entries({
+    "system.login": "access",
+    "system.admin": "access",  // admin means both access + admin on system
+    "system.any_week": "access",
+    "module.hr": "access",
+    "module.works": "access",
+    "report.admin": "admin",
+    "report.member": "member",
+    "report.viewer": "viewer",
+    "dept.admin": "admin",
+    "field.read": "read",
+    "field.edit": "write",
+  })) {
+    backupPermKeyToRole.set(old, role);
+  }
+
+  let urrCount = 0;
+
+  // Migrate from User booleans
+  for (const user of backup.users || []) {
+    for (const [boolField, resourceKey] of Object.entries(fieldMap)) {
+      if ((user as any)[boolField] === true) {
+        const resId = resourceMap.get(resourceKey);
+        const roleId = roleMap.get(boolField === "isWorkListAdmin" ? "access" : "access");
+        if (!resId || !roleId) continue;
+        try {
+          await prisma.userResourceRole.create({
+            data: { userId: user.id, resourceId: resId, roleId, scopeId: null },
+          });
+          urrCount++;
+        } catch { /* skip duplicates */ }
+        // For isWorkListAdmin, also grant admin role on department
+        if (boolField === "isWorkListAdmin") {
+          const deptResId = resourceMap.get("department");
+          const adminRoleId = roleMap.get("admin");
+          if (deptResId && adminRoleId) {
+            try {
+              await prisma.userResourceRole.create({
+                data: { userId: user.id, resourceId: deptResId, roleId: adminRoleId, scopeId: null },
+              });
+              urrCount++;
+            } catch { /* skip */ }
+          }
+        }
+      }
+    }
+  }
+
+  // Also migrate old UserPermission records from backup
+  if (backup.userPermissions) {
+    for (const up of backup.userPermissions) {
+      const oldPerm = backup.permissions?.find((p: any) => p.id === up.permissionId);
+      const permKey = oldPerm?.key;
+      if (!permKey) continue;
+
+      const resourceKey = backupPermKeyToResource.get(permKey);
+      const roleKey = backupPermKeyToRole.get(permKey);
+      if (!resourceKey || !roleKey) continue;
+
+      const resId = resourceMap.get(resourceKey);
+      const roleId = roleMap.get(roleKey);
+      if (!resId || !roleId) continue;
+
+      try {
+        await prisma.userResourceRole.create({
+          data: { userId: up.userId, resourceId: resId, roleId, scopeId: null },
+        });
+        urrCount++;
+      } catch { /* skip duplicates */ }
+    }
+  }
+  console.log(`   ✓ ${urrCount} UserResourceRole grants`);
+
+  // ─── Step 6: DepartmentAdmin → UserResourceRole ──────────
+  console.log("\n6. Migrating DepartmentAdmin → UserResourceRole...");
+  const deptResId = resourceMap.get("department")!;
+  const adminRoleId = roleMap.get("admin")!;
+  let daCount = 0;
+
+  if (backup.departmentAdmins) {
+    for (const da of backup.departmentAdmins) {
+      try {
+        await prisma.userResourceRole.create({
+          data: {
+            userId: da.userId,
+            resourceId: deptResId,
+            roleId: adminRoleId,
+            scopeId: String(da.departmentId || da.id),
+          },
+        });
+        daCount++;
+      } catch { /* skip */ }
+    }
+  }
+  console.log(`   ✓ ${daCount} department admins`);
+
+  // ─── Step 7: ReportGroupMembership → UserResourceRole ────
+  console.log("\n7. Migrating ReportGroupMembership → UserResourceRole...");
+  const rgResId = resourceMap.get("report_group")!;
+  let rgCount = 0;
+
+  if (backup.reportGroupMemberships) {
+    for (const rm of backup.reportGroupMemberships) {
+      const roleKey = rm.role || "member";
+      const roleId = roleMap.get(roleKey);
+      if (!roleId) continue;
+      try {
+        await prisma.userResourceRole.create({
+          data: {
+            userId: rm.userId,
+            resourceId: rgResId,
+            roleId,
+            scopeId: String(rm.reportGroupId),
+          },
+        });
+        rgCount++;
+      } catch { /* skip */ }
+    }
+  }
+  console.log(`   ✓ ${rgCount} report group memberships`);
+
+  // ─── Step 8: FieldPermission → UserResourceRole ──────────
+  console.log("\n8. Migrating FieldPermission → UserResourceRole...");
+  const fieldResId = resourceMap.get("field")!;
+  let fpCount = 0;
+
+  if (backup.fieldPermissions) {
+    for (const fp of backup.fieldPermissions) {
+      const roleKey = fp.canEdit ? "write" : "read";
+      const roleId = roleMap.get(roleKey);
+      if (!roleId) continue;
+      try {
+        await prisma.userResourceRole.create({
+          data: {
+            userId: fp.userId,
+            resourceId: fieldResId,
+            roleId,
+            scopeId: fp.field,
+          },
+        });
+        fpCount++;
+      } catch { /* skip */ }
+    }
+  }
+
+  if (backup.globalFieldPermissions) {
+    for (const gfp of backup.globalFieldPermissions) {
+      const roleKey = gfp.canEdit ? "write" : "read";
+      const roleId = roleMap.get(roleKey);
+      if (!roleId) continue;
+      try {
+        await prisma.userResourceRole.create({
+          data: {
+            userId: 0, // global default
+            resourceId: fieldResId,
+            roleId,
+            scopeId: gfp.field,
+          },
+        });
+        fpCount++;
+      } catch { /* skip */ }
+    }
+  }
+  console.log(`   ✓ ${fpCount} field permissions`);
+
+  // ─── Summary ────────────────────────────────────────────
+  console.log("\n=== Migration Complete ===");
+  console.log(`   Resources: ${await prisma.resource.count()}`);
+  console.log(`   Roles: ${await prisma.role.count()}`);
+  console.log(`   UserResourceRoles: ${await prisma.userResourceRole.count()}`);
+}
+
+main()
+  .catch((e) => { console.error("Migration failed:", e); process.exit(1); })
+  .finally(() => prisma.$disconnect());
