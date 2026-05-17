@@ -16,20 +16,21 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **部署**: 本地 `npm run build` → standalone → rsync 到服务器 → PM2 (`weekly`)
 - **Excel**: `xlsx` 库读写
 
-## 数据库模型（24 张表，详见 `docs/tables.md`）
+## 数据库模型（18 张表，详见 `docs/tables.md`，权限模型详见 `docs/rbac.md`）
 
 | 模块 | 模型 | 说明 |
 |------|------|------|
-| 用户 | `User` | 系统登录用户，保留旧 boolean 权限字段过渡 |
+| 用户 | `User` | 系统登录用户（boolean 权限字段待清理） |
 | 周报 | `ReportGroup`, `WeeklyReport`, `ReportItem`, `ReportHistory` | 周报填报、版本快照 |
-| 周报成员 | `ReportGroupAdmin/Member/Viewer` (旧), `ReportGroupMembership` (新) | 分组权限，旧三表逐步迁移到 Membership |
+| 周报成员 | `ReportGroupMembership` | 分组权限（已替代旧 Admin/Member/Viewer 三表） |
 | 工作 | `WorkItem`, `WorkParticipant` | 部门工作清单 |
 | 员工 | `Employee` | 花名册，editedBy/editedAt/version 追踪 |
 | 组织 | `Department`, `Position`, `EmployeePosition`, `DepartmentPosition` | 部门岗位体系 |
-| 权限 | `PermissionCategory`, `Permission`, `UserPermission` | 权限注册表，新增权限只需 INSERT |
-| 权限 | `DepartmentAdmin`, `FieldPermission`, `GlobalFieldPermission` | 部门管理/字段级权限 |
+| RBAC | `Resource`, `Role`, `UserResourceRole` | 替代旧 7 张权限表（详见 docs/rbac.md） |
 | 字典 | `CompanyCode` | 公司编码 |
-| 历史 | `EditHistory` | 通用编辑快照（Employee/EmployeePosition/Department/Position） |
+| 历史 | `EditHistory` | 通用编辑快照 |
+
+**待清理**（迁移后删除）：`PermissionCategory`, `Permission`, `UserPermission`, `DepartmentAdmin`, `FieldPermission`, `GlobalFieldPermission`, `ReportGroupAdmin`, `ReportGroupMember`, `ReportGroupViewer`
 
 **关联**: `Employee.userId` → `User.id`（单向，通过姓名初始化匹配）
 

@@ -130,10 +130,11 @@
 |------|------|
 | code | 部门编码（5位，如 01001），唯一 |
 | name | 部门名称 |
-| company | 所属公司 |
+| companyCode | 所属公司编码 → `CompanyCode` |
 | level | 层级（1=一级 2=二级 3=三级） |
 | parentId | 上级部门 |
-| managerId | 负责人 employeeId |
+| managerId | 负责人 employeeId（兼容无 User 账号的情况） |
+| managerUserId | 负责人 User.id（有账号时关联） |
 
 ### Position
 岗位表。
@@ -142,7 +143,7 @@
 |------|------|
 | code | 岗位编码（5位），唯一 |
 | name | 岗位名称 |
-| company | 所属公司 |
+| companyCode | 所属公司编码 → `CompanyCode` |
 
 ### EmployeePosition
 员工岗位关联表。一人可多岗。
@@ -152,12 +153,14 @@
 | employeeId | 员工 |
 | departmentId | 部门 |
 | positionId | 岗位 |
-| company | 该岗位上的业务公司 |
+| companyCode | 该岗位上的业务公司编码 → `CompanyCode` |
 | center | 中心 |
 | isPrimary | 是否主岗 |
+| startDate | 该岗位任职开始日期 |
+| endDate | 该岗位任职结束日期（null=至今） |
 
 ### DepartmentPosition
-部门-岗位配置表。定义哪些岗位属于哪个部门。
+部门-岗位编制配置表。定义该部门有哪些编制岗位（不同于 EmployeePosition 的任职关系）。
 
 | 字段 | 说明 |
 |------|------|
