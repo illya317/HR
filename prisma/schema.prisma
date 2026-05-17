@@ -201,13 +201,7 @@ model Employee {
   title         String? // 职称
   school        String? // 毕业院校
   major         String? // 专业
-  majorRelevant String? // 是否相关专业
   phone         String? // 电话
-  office1       String? // 办公区1
-  office2       String? // 办公区2
-  office3       String? // 办公区3
-  attendance1   String? // 考勤信息1
-  attendance2   String? // 考勤信息2
   joinDate      String? // 进司时间
   nature        String? // 性质（全职/兼职等）
   createdAt     DateTime           @default(now()) // 创建时间

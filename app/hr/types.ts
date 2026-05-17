@@ -25,13 +25,7 @@ export interface RosterEmployee {
   title: string | null;
   school: string | null;
   major: string | null;
-  majorRelevant: string | null;
   phone: string | null;
-  office1: string | null;
-  office2: string | null;
-  office3: string | null;
-  attendance1: string | null;
-  attendance2: string | null;
   joinDate: string | null;
   nature: string | null;
   status?: string | null;

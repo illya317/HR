@@ -22,13 +22,7 @@ interface Employee {
   title?: string | null;
   school?: string | null;
   major?: string | null;
-  majorRelevant?: string | null;
   phone?: string | null;
-  office1?: string | null;
-  office2?: string | null;
-  office3?: string | null;
-  attendance1?: string | null;
-  attendance2?: string | null;
   joinDate?: string | null;
   nature?: string | null;
   status?: string | null;
@@ -47,13 +41,7 @@ const BASIC_FIELDS = [
   { key: "title", label: "职称" },
   { key: "school", label: "毕业院校" },
   { key: "major", label: "专业" },
-  { key: "majorRelevant", label: "是否相关专业" },
   { key: "phone", label: "电话" },
-  { key: "office1", label: "办公区1" },
-  { key: "office2", label: "办公区2" },
-  { key: "office3", label: "办公区3" },
-  { key: "attendance1", label: "考勤1" },
-  { key: "attendance2", label: "考勤2" },
   { key: "joinDate", label: "进司时间" },
   { key: "nature", label: "性质" },
   { key: "status", label: "状态" },
@@ -123,7 +111,8 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
   }
 
   async function handleSelectVersion(version: number) {
-    if (!editingCell) return;
+    if (version === 0) { setCurrentVersion(undefined); return; }
+    if (!editingCell) { setCurrentVersion(version); return; }
     const res = await fetch(`/api/admin/edit-history?entityType=employee&entityId=${editingCell.id}&version=${version}`);
     if (res.ok) {
       const data = await res.json();
