@@ -239,7 +239,7 @@ function CompanyCodeTab({ user }: { user: User }) {
             editMode={editMode}
             onStartEdit={() => setEditMode(true)}
             onSave={handleSave}
-            onCancel={() => { setEditRow(null); }}
+            onCancel={() => { setEditRow(null); setEditMode(false); }}
             canEdit={user.canAccessHR}
             versions={versions}
             currentVersion={currentVersion}
@@ -650,7 +650,7 @@ function CodeTab({
             editMode={editMode}
             onStartEdit={() => setEditMode(true)}
             onSave={handleSave}
-            onCancel={() => { setEditRow(null); }}
+            onCancel={() => { setEditRow(null); setEditMode(false); }}
             canEdit={user.canAccessHR}
             versions={versions}
             currentVersion={currentVersion}
