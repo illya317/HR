@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
+import ConfirmModal from "@/app/components/ConfirmModal";
 
 interface User {
   id: number;
@@ -177,32 +178,14 @@ function MyApiKeyPanel() {
         </button>
       )}
 
-      {/* Confirm Modal */}
-      {confirmModal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
-          <div className="relative z-10 w-full max-w-sm rounded-lg bg-white p-6 shadow-lg">
-            <h3 className="mb-2 text-lg font-semibold text-gray-800">确认覆盖</h3>
-            <p className="mb-4 text-sm text-gray-600">申请新的 API Key 将覆盖旧的 Key，确定继续？</p>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeConfirm}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={() => confirmModal.onConfirm?.()}
-                className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700"
-              >
-                确定
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={confirmModal.show}
+        title="确认覆盖"
+        message="申请新的 API Key 将覆盖旧的 Key，确定继续？"
+        onConfirm={() => confirmModal.onConfirm?.()}
+        onCancel={closeConfirm}
+        confirmDanger={false}
+      />
     </div>
   );
 }

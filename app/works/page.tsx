@@ -7,6 +7,9 @@ import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
 import NavLink from "@/app/components/NavLink";
 import DepartmentSwitcher from "@/app/components/DepartmentSwitcher";
+import ConfirmModal from "@/app/components/ConfirmModal";
+import Toast from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 
 interface WorkParticipant {
   id: number;
@@ -307,15 +310,7 @@ export default function WorksPage() {
   const [nonRoutineExpanded, setNonRoutineExpanded] = useState(true);
   const [archivedExpanded, setArchivedExpanded] = useState(false);
 
-  const [toast, setToast] = useState<{ show: boolean; message: string }>({
-    show: false,
-    message: "",
-  });
-
-  function showToast(message: string) {
-    setToast({ show: true, message });
-    setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 3000);
-  }
+  const { toast, showToast, closeToast } = useToast();
 
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean;
@@ -380,7 +375,7 @@ export default function WorksPage() {
       fetchWorks();
     } else {
       const err = await res.json();
-      showToast(err.error || "添加失败");
+      showToast(err.error || "添加失败", "error");
     }
   }
 
@@ -403,7 +398,7 @@ export default function WorksPage() {
       fetchWorks();
     } else {
       const err = await res.json();
-      showToast(err.error || "更新失败");
+      showToast(err.error || "更新失败", "error");
     }
   }
 
@@ -416,7 +411,7 @@ export default function WorksPage() {
         fetchWorks();
       } else {
         const err = await res.json();
-        showToast(err.error || "删除失败");
+        showToast(err.error || "删除失败", "error");
       }
       closeConfirm();
     });
@@ -432,7 +427,7 @@ export default function WorksPage() {
       fetchWorks();
     } else {
       const err = await res.json();
-      showToast(err.error || "归档失败");
+      showToast(err.error || "归档失败", "error");
     }
   }
 
@@ -446,7 +441,7 @@ export default function WorksPage() {
       fetchWorks();
     } else {
       const err = await res.json();
-      showToast(err.error || "恢复失败");
+      showToast(err.error || "恢复失败", "error");
     }
   }
 
@@ -670,42 +665,20 @@ export default function WorksPage() {
         )}
       </main>
 
-      {/* Toast */}
-      {toast.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/20" />
-          <div className="relative z-10 rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-800 shadow-lg">
-            {toast.message}
-          </div>
-        </div>
-      )}
+      <Toast
+        message={toast?.message || ""}
+        type={toast?.type}
+        show={!!toast}
+        onClose={closeToast}
+      />
 
-      {/* Confirm Modal */}
-      {confirmModal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
-          <div className="relative z-10 w-full max-w-sm rounded-lg bg-white p-6 shadow-lg">
-            <h3 className="mb-2 text-lg font-semibold text-gray-800">{confirmModal.title}</h3>
-            <p className="mb-4 text-sm text-gray-600">{confirmModal.message}</p>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeConfirm}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={() => confirmModal.onConfirm?.()}
-                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-              >
-                确定
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={confirmModal.show}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={() => confirmModal.onConfirm?.()}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 }

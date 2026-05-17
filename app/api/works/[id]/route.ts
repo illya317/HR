@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { authenticate, isAnyGroupAdmin } from "@/lib/auth";
+import { authenticate, isAnyGroupAdmin, isAdmin } from "@/lib/auth";
 
+// requireAdmin checks both isWorkListAdmin + same department, OR groupAdmin + same department
 async function requireAdmin(userId: number, departmentId: number) {
   const user = await prisma.user.findUnique({
     where: { id: userId },

@@ -1,14 +1,6 @@
 import { NextResponse } from "next/server";
-import { authenticate } from "@/lib/auth";
+import { authenticate, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireAdmin(userId: number) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isWorkListAdmin: true },
-  });
-  return user?.isWorkListAdmin === true;
-}
 
 export async function PUT(
   request: Request,
@@ -19,7 +11,7 @@ export async function PUT(
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  if (!(await requireAdmin(payload.userId))) {
+  if (!(await isAdmin(request))) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
@@ -72,7 +64,7 @@ export async function POST(
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  if (!(await requireAdmin(payload.userId))) {
+  if (!(await isAdmin(request))) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 

@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
+import FilterBar from "@/app/components/FilterBar";
 import { matchEmployee } from "@/lib/search";
+import ConfirmModal from "@/app/components/ConfirmModal";
+import Toast from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 
 interface User {
   id: number;
@@ -84,7 +88,7 @@ export default function AdminPage() {
   const [selectedPermCat, setSelectedPermCat] = useState("");
   const [resetResult, setResetResult] = useState<{ name: string; password: string } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({ open: false, title: "", message: "", onConfirm: () => {} });
-  const [toast, setToast] = useState<{ show: boolean; message: string; type: "error" | "success" }>({ show: false, message: "", type: "error" });
+  const { toast, showToast, closeToast } = useToast();
 
   // 筛选
   const [filterCompany, setFilterCompany] = useState("");
@@ -254,7 +258,7 @@ export default function AdminPage() {
   ) {
     const oldField = NEW_PERM_TO_OLD_FIELD[permKey];
     if (!oldField) {
-      showToast("不支持的权限类型");
+      showToast("不支持的权限类型", "error");
       return;
     }
     const currentValue = (emp as any)[oldField] === true;
@@ -288,13 +292,8 @@ export default function AdminPage() {
         loadPermissionCategories();
       }
     } else {
-      showToast("更新失败");
+      showToast("更新失败", "error");
     }
-  }
-
-  function showToast(message: string, type: "error" | "success" = "error") {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 3000);
   }
 
   async function toggleUserPerm(userId: number, permKey: string, currentValue: boolean) {
@@ -322,7 +321,7 @@ export default function AdminPage() {
       }
       loadPermissionCategories();
     } else {
-      showToast("更新失败");
+      showToast("更新失败", "error");
     }
   }
 
@@ -347,7 +346,7 @@ export default function AdminPage() {
   }
 
   async function createGroup() {
-    if (!editName.trim()) return showToast("名称不能为空");
+    if (!editName.trim()) return showToast("名称不能为空", "error");
     const res = await fetch("/api/report-groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -357,12 +356,12 @@ export default function AdminPage() {
       setEditName("");
       loadData();
     } else {
-      showToast("创建失败");
+      showToast("创建失败", "error");
     }
   }
 
   async function updateGroup(id: number) {
-    if (!editName.trim()) return showToast("名称不能为空");
+    if (!editName.trim()) return showToast("名称不能为空", "error");
     const res = await fetch(`/api/report-groups/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -372,7 +371,7 @@ export default function AdminPage() {
       await loadData();
       await selectGroup(id);
     } else {
-      showToast("更新失败");
+      showToast("更新失败", "error");
     }
   }
 
@@ -395,7 +394,7 @@ export default function AdminPage() {
     if (res.ok) {
       setReportGroups(newGroups);
     } else {
-      showToast("排序保存失败");
+      showToast("排序保存失败", "error");
     }
   }
 
@@ -404,7 +403,7 @@ export default function AdminPage() {
     if (res.ok) {
       loadData();
     } else {
-      showToast("删除失败");
+      showToast("删除失败", "error");
     }
   }
 
@@ -451,11 +450,9 @@ export default function AdminPage() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: "保存填写人员失败" }));
-      setToast({ show: true, message: data.error || "保存填写人员失败", type: "error" });
-      setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 3000);
+      showToast(data.error || "保存填写人员失败", "error");
     } else {
-      setToast({ show: true, message: "保存成功", type: "success" });
-      setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 2000);
+      showToast("保存成功", "success");
     }
   }
 
@@ -514,7 +511,7 @@ export default function AdminPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userIds: adminUserIds }),
     });
-    if (!res.ok) showToast("保存周报管理员失败");
+    if (!res.ok) showToast("保存周报管理员失败", "error");
   }
 
   async function removeSysAdmin(userId: number) {
@@ -528,7 +525,7 @@ export default function AdminPage() {
       setUsers(users.map((u) => (u.id === userId ? { ...u, isWorkListAdmin: false } : u)));
       showToast("已移除系统管理员", "success");
     } else {
-      showToast("移除失败");
+      showToast("移除失败", "error");
     }
   }
 
@@ -544,7 +541,7 @@ export default function AdminPage() {
       setSysAdminSearchResults([]);
       showToast("已添加系统管理员", "success");
     } else {
-      showToast("添加失败");
+      showToast("添加失败", "error");
     }
   }
 
@@ -564,7 +561,7 @@ export default function AdminPage() {
       setDeptAdmins(deptAdmins.filter((a) => a.id !== adminId));
       showToast("已移除部门管理员", "success");
     } else {
-      showToast("移除失败");
+      showToast("移除失败", "error");
     }
   }
 
@@ -582,7 +579,7 @@ export default function AdminPage() {
       showToast("已添加部门管理员", "success");
     } else {
       const data = await res.json().catch(() => ({ error: "添加失败" }));
-      showToast(data.error || "添加失败");
+      showToast(data.error || "添加失败", "error");
     }
   }
 
@@ -607,7 +604,7 @@ export default function AdminPage() {
         if (res.ok) {
           setResetResult({ name: targetUser.name, password: data.password });
         } else {
-          showToast(data.error || "重置失败");
+          showToast(data.error || "重置失败", "error");
         }
         setConfirmModal((prev) => ({ ...prev, open: false }));
       },
@@ -1155,7 +1152,7 @@ export default function AdminPage() {
                   )}
 
                   {/* 筛选 */}
-                  <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
+                  <FilterBar>
                     <select
                       value={filterCompany}
                       onChange={(e) => { setFilterCompany(e.target.value); setFilterDept(""); }}
@@ -1222,7 +1219,7 @@ export default function AdminPage() {
                     >
                       重置
                     </button>
-                  </div>
+                  </FilterBar>
 
                   <div className="rounded-lg bg-white shadow-sm">
                     {empPermLoading ? (
@@ -1298,7 +1295,7 @@ export default function AdminPage() {
                                               if (res.ok) {
                                                 setResetResult({ name: e.name, password: data.password });
                                               } else {
-                                                showToast(data.error || "重置失败");
+                                                showToast(data.error || "重置失败", "error");
                                               }
                                               setConfirmModal((prev) => ({ ...prev, open: false }));
                                             },
@@ -1597,42 +1594,20 @@ export default function AdminPage() {
         )}
       </main>
 
-      {/* 确认框 */}
-      {confirmModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-2 text-lg font-semibold text-gray-800">{confirmModal.title}</h3>
-            <p className="mb-6 text-sm text-gray-600">{confirmModal.message}</p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={confirmModal.onConfirm}
-                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-              >
-                确定
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+      />
 
-      {/* Toast */}
-      {toast.show && (
-        <div className="fixed top-6 left-1/2 z-50 -translate-x-1/2">
-          <div
-            className={`rounded-md px-4 py-2 text-sm text-white shadow-lg ${
-              toast.type === "error" ? "bg-red-500" : "bg-emerald-600"
-            }`}
-          >
-            {toast.message}
-          </div>
-        </div>
-      )}
+      <Toast
+        message={toast?.message || ""}
+        type={toast?.type}
+        show={!!toast}
+        onClose={closeToast}
+      />
     </div>
   );
 }

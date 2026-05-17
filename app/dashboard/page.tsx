@@ -8,6 +8,8 @@ import UserMenu from "@/app/components/UserMenu";
 import NavLink from "@/app/components/NavLink";
 import ReportGroupSwitcher from "@/app/components/ReportGroupSwitcher";
 import { getCurrentWeekInfo, getWeekRange } from "@/lib/week";
+import Toast from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 
 
 interface User {
@@ -102,12 +104,7 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<{ show: boolean; message: string; type: "error" | "success" }>({ show: false, message: "", type: "error" });
-
-  function showToast(message: string, type: "error" | "success" = "error") {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 3000);
-  }
+  const { toast, showToast, closeToast } = useToast();
 
   const currentInfo = getCurrentWeekInfo();
   const [selectedYear, setSelectedYear] = useState(currentInfo.year);
@@ -465,7 +462,7 @@ export default function DashboardPage() {
     setSaving(true);
 
     if (!reportGroupId && !report) {
-      showToast("请先选择周报部门");
+      showToast("请先选择周报部门", "error");
       setSaving(false);
       return;
     }
@@ -525,7 +522,7 @@ export default function DashboardPage() {
       }
     } else {
       const err = await res.json();
-      showToast(err.error || "操作失败");
+      showToast(err.error || "操作失败", "error");
     }
 
     setSaving(false);
@@ -891,21 +888,12 @@ export default function DashboardPage() {
         </form>
       </main>
 
-      {/* Toast */}
-      {toast.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/20" />
-          <div
-            className={`relative z-10 rounded-lg px-6 py-3 text-sm font-medium shadow-lg ${
-              toast.type === "success"
-                ? "bg-emerald-600 text-white"
-                : "bg-white text-gray-800"
-            }`}
-          >
-            {toast.message}
-          </div>
-        </div>
-      )}
+      <Toast
+        message={toast?.message || ""}
+        type={toast?.type}
+        show={!!toast}
+        onClose={closeToast}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { FENGHUA_BIO_GROUP, resolveCompanyFilter } from "@/lib/company";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -21,14 +22,6 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") || "dept";
   const q = searchParams.get("q") || "";
 
-  const SHARED_COMPANIES = ["丰华生物", "丰华天力通", "丰华悦通", "加拿大"];
-  function resolveCompanyFilter(companyName: string): any {
-    if (SHARED_COMPANIES.includes(companyName)) {
-      return { in: SHARED_COMPANIES };
-    }
-    return companyName;
-  }
-
   const caller = await prisma.user.findUnique({
     where: { id: payload.userId },
     select: { isWorkListAdmin: true, company: true },
@@ -37,7 +30,7 @@ export async function GET(request: Request) {
   if (type === "dept") {
     const where: any = q ? { name: { contains: q } } : {};
     if (!caller?.isWorkListAdmin && caller?.company) {
-      where.company = resolveCompanyFilter(caller.company);
+      where.company = { in: resolveCompanyFilter(caller.company) };
     }
     const depts = await prisma.department.findMany({
       where,
@@ -51,7 +44,7 @@ export async function GET(request: Request) {
   if (type === "position") {
     const where: any = q ? { name: { contains: q } } : {};
     if (!caller?.isWorkListAdmin && caller?.company) {
-      where.company = resolveCompanyFilter(caller.company);
+      where.company = { in: resolveCompanyFilter(caller.company) };
     }
     const positions = await prisma.position.findMany({
       where,

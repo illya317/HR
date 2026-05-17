@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Toast from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 
 interface User {
   id: number;
@@ -15,12 +17,7 @@ export default function PortalPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<{ show: boolean; message: string }>({ show: false, message: "" });
-
-  function showToast(message: string) {
-    setToast({ show: true, message });
-    setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 3000);
-  }
+  const { toast, showToast, closeToast } = useToast();
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -81,7 +78,7 @@ export default function PortalPage() {
             if (user?.canAccessHR) {
               router.push("/hr");
             } else {
-              showToast("暂无权限，请联系管理员开通");
+              showToast("暂无权限，请联系管理员开通", "error");
             }
           }}
           className="group flex flex-col items-center rounded-xl bg-white p-8 shadow-sm transition-all hover:shadow-md hover:ring-2 hover:ring-blue-400"
@@ -96,14 +93,12 @@ export default function PortalPage() {
         </button>
       </div>
 
-      {/* Toast */}
-      {toast.show && (
-        <div className="fixed top-6 left-1/2 z-50 -translate-x-1/2">
-          <div className="rounded-md bg-red-500 px-4 py-2 text-sm text-white shadow-lg">
-            {toast.message}
-          </div>
-        </div>
-      )}
+      <Toast
+        message={toast?.message || ""}
+        type={toast?.type}
+        show={!!toast}
+        onClose={closeToast}
+      />
     </div>
   );
 }

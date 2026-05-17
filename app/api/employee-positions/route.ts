@@ -2,15 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { matchEmployee } from "@/lib/search";
-
-const SHARED_COMPANIES = ["丰华生物", "丰华天力通", "丰华悦通", "加拿大"];
-
-function resolveCompanyFilter(companyName: string): any {
-  if (SHARED_COMPANIES.includes(companyName)) {
-    return { in: SHARED_COMPANIES };
-  }
-  return companyName;
-}
+import { FENGHUA_BIO_GROUP, resolveCompanyFilter } from "@/lib/company";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -33,7 +25,7 @@ export async function GET(request: Request) {
   const statusFilter = searchParams.get("status") || "在职";
 
   const targetCompany = !user?.isWorkListAdmin && user?.company
-    ? resolveCompanyFilter(user.company)
+    ? user.company
     : company || "";
 
   const employeeWhere: any = {};
@@ -55,7 +47,7 @@ export async function GET(request: Request) {
 
   const epWhere: any = { employeeId: { in: employeeIds } };
   if (targetCompany) {
-    epWhere.company = resolveCompanyFilter(targetCompany);
+    epWhere.company = { in: resolveCompanyFilter(targetCompany) };
   }
 
   const eps = await prisma.employeePosition.findMany({

@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { authenticate, isAnyGroupAdmin, requireGroupAccess } from "@/lib/auth";
+import { authenticate, isAnyGroupAdmin, requireGroupAccess, isAdmin } from "@/lib/auth";
 
-async function requireAdminUser(userId: number) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isWorkListAdmin: true },
-  });
-  return user?.isWorkListAdmin === true;
-}
-
+// requireAdmin checks both isWorkListAdmin + same department, OR groupAdmin + same department
 async function requireAdmin(userId: number, departmentId: number) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -42,8 +35,8 @@ export async function GET(request: Request) {
 
   let departmentId = payload.departmentId;
   if (deptIdParam) {
-    const isAdmin = await requireAdminUser(payload.userId);
-    if (!isAdmin) {
+    const isUserAdmin = await isAdmin(request);
+    if (!isUserAdmin) {
       return NextResponse.json({ error: "无权限" }, { status: 403 });
     }
     departmentId = parseInt(deptIdParam);
@@ -104,8 +97,8 @@ export async function POST(request: Request) {
 
   let targetDeptId = payload.departmentId;
   if (deptId !== undefined && deptId !== payload.departmentId) {
-    const isAdmin = await requireAdminUser(payload.userId);
-    if (!isAdmin) {
+    const isUserAdmin = await isAdmin(request);
+    if (!isUserAdmin) {
       return NextResponse.json({ error: "无权限编辑其他部门" }, { status: 403 });
     }
     targetDeptId = deptId;

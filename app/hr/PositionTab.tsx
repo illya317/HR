@@ -2,6 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import EditToolbar from "@/app/components/EditToolbar";
+import FilterBar from "@/app/components/FilterBar";
+import ConfirmModal from "@/app/components/ConfirmModal";
+import Toast from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 
 interface User {
   id: number;
@@ -43,9 +47,9 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
   const [editValue, setEditValue] = useState("");
   const [editBool, setEditBool] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [saveTip, setSaveTip] = useState("");
+  const { toast, showToast, closeToast } = useToast();
   const [editMode, setEditMode] = useState(false);
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; row: PositionRow | null }>({ open: false, row: null });
+  const [deleteRow, setDeleteRow] = useState<PositionRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<Array<{ version: number; createdAt: string }>>([]);
   const [currentVersion, setCurrentVersion] = useState<number | undefined>(undefined);
@@ -149,12 +153,10 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
       setPositions((prev) =>
         prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
       );
-      setSaveTip("保存成功");
-      setTimeout(() => setSaveTip(""), 1500);
+      showToast("保存成功");
     } else {
       const err = await res.json().catch(() => ({ error: "保存失败" }));
-      setSaveTip(err.error || "保存失败");
-      setTimeout(() => setSaveTip(""), 3000);
+      showToast(err.error || "保存失败", "error");
     }
     setEditingCell(null);
   }
@@ -168,7 +170,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
+      <FilterBar>
         <input
           type="text"
           value={keyword}
@@ -196,7 +198,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
             saving={saving}
           />
         )}
-      </div>
+      </FilterBar>
 
       <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
         {loading ? (
@@ -280,7 +282,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
                           <span className="inline-flex items-center gap-1">
                             {val || "-"}
                             <button
-                              onClick={(e) => { e.stopPropagation(); setConfirmModal({ open: true, row }); }}
+                              onClick={(e) => { e.stopPropagation(); setDeleteRow(row); }}
                               className="ml-1 text-red-500 hover:text-red-700 font-bold"
                               title="移除此人岗位"
                             >
@@ -298,43 +300,25 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
         )}
       </div>
 
-      {/* 删除确认弹窗 */}
-      {confirmModal.open && confirmModal.row && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-2 text-lg font-semibold text-gray-800">移除岗位确认</h3>
-            <p className="mb-6 text-sm text-gray-600">
-              确定移除 {confirmModal.row.name}（{confirmModal.row.employeeId}）的该岗位信息？
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setConfirmModal({ open: false, row: null })}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={async () => {
-                  const row = confirmModal.row!;
-                  const res = await fetch(`/api/employee-positions/${row.id}`, { method: "DELETE" });
-                  if (res.ok) {
-                    setPositions((prev) => prev.filter((p) => p.id !== row.id));
-                    setSaveTip("删除成功");
-                    setTimeout(() => setSaveTip(""), 1500);
-                  } else {
-                    setSaveTip("删除失败");
-                    setTimeout(() => setSaveTip(""), 2000);
-                  }
-                  setConfirmModal({ open: false, row: null });
-                }}
-                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-              >
-                确认移除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!deleteRow}
+        title="移除岗位确认"
+        message={deleteRow ? `确定移除 ${deleteRow.name}（${deleteRow.employeeId}）的该岗位信息？` : ""}
+        confirmLabel="确认移除"
+        onConfirm={async () => {
+          const row = deleteRow!;
+          const res = await fetch(`/api/employee-positions/${row.id}`, { method: "DELETE" });
+          if (res.ok) {
+            setPositions((prev) => prev.filter((p) => p.id !== row.id));
+            showToast("删除成功");
+          } else {
+            showToast("删除失败", "error");
+          }
+          setDeleteRow(null);
+        }}
+        onCancel={() => setDeleteRow(null)}
+      />
+      <Toast message={toast?.message || ""} type={toast?.type as any} show={!!toast} onClose={closeToast} />
     </div>
   );
 }

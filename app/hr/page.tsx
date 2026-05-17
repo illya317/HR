@@ -5,9 +5,14 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
 import { matchEmployee } from "@/lib/search";
+import { NAME_TO_CODE, SHARED_GROUP_CODES, resolveCompanyFilter } from "@/lib/company";
 import EmployeeTab from "./EmployeeTab";
 import PositionTab from "./PositionTab";
 import EditToolbar from "@/app/components/EditToolbar";
+import FilterBar from "@/app/components/FilterBar";
+import ConfirmModal from "@/app/components/ConfirmModal";
+import Toast from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 
 interface User {
   id: number;
@@ -17,26 +22,7 @@ interface User {
   company?: string | null;
 }
 
-const COMPANY_MAP: Record<string, string> = {
-  "丰华生物": "01",
-  "丰华天力通": "02",
-  "丰华悦通": "03",
-  "丰华制药": "04",
-  "加拿大": "05",
-};
-
 const HR_COMPANIES = ["丰华生物", "丰华制药"];
-
-// 01/02/03 共享存储，05 加拿大独立但查询时同属丰华集团
-const SHARED_GROUP = ["01", "02", "03"];
-const FENGHUA_ALL = ["01", "02", "03", "05"];
-
-function getCompanyCodes(companyCode: string): string {
-  if (FENGHUA_ALL.includes(companyCode)) {
-    return FENGHUA_ALL.join(",");
-  }
-  return companyCode;
-}
 
 interface Employee {
   id: number;
@@ -95,7 +81,7 @@ interface CodeItem {
 }
 
 function CodesTab({ user, selectedCompany }: { user: User; selectedCompany: string }) {
-  const companyCode = COMPANY_MAP[selectedCompany] || "";
+  const companyCode = NAME_TO_CODE[selectedCompany] || "";
   return (
     <div className="flex flex-wrap gap-6">
       <CodeTab user={user} type="department" apiPath="/api/admin/department-codes" title="部门编码" companyCode={companyCode} selectedCompany={selectedCompany} />
@@ -123,10 +109,10 @@ function CodeTab({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
-  const [saveTip, setSaveTip] = useState("");
+  const { toast, showToast, closeToast } = useToast();
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; code: string }>({ open: false, code: "" });
+  const [deleteCode, setDeleteCode] = useState<string | null>(null);
   const [sortField, setSortField] = useState<"code" | "name" | "count">("code");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [editMode, setEditMode] = useState(false);
@@ -142,7 +128,7 @@ function CodeTab({
 
   async function load() {
     setLoading(true);
-    const codesParam = companyCode ? getCompanyCodes(companyCode) : "";
+    const codesParam = selectedCompany ? resolveCompanyFilter(selectedCompany).map((n) => NAME_TO_CODE[n] || "").filter(Boolean).join(",") : "";
     const url = codesParam ? `${apiPath}?companyCodes=${codesParam}` : apiPath;
     const [codesRes, empRes] = await Promise.all([
       fetch(url),
@@ -223,7 +209,7 @@ function CodeTab({
 
   // 本地计算完整编码（用于状态更新）
   function buildFullCode(shortCode: string): string {
-    const normalized = companyCode ? (SHARED_GROUP.includes(companyCode) ? "01" : companyCode) : "";
+    const normalized = companyCode ? (SHARED_GROUP_CODES.includes(companyCode) ? "01" : companyCode) : "";
     return normalized ? normalized + shortCode : shortCode;
   }
 
@@ -243,15 +229,15 @@ function CodeTab({
 
   async function saveEditRow(originalCode: string) {
     if (!/^\d{3}$/.test(editCodeValue)) {
-      setSaveTip("编号必须为3位数字");
-      setTimeout(() => setSaveTip(""), 2000);
+      showToast("编号必须为3位数字", "error");
+
       return;
     }
     const newFullCode = buildFullCode(editCodeValue);
 
     if (newFullCode !== originalCode && codes.some((c) => c.code === newFullCode)) {
-      setSaveTip("编号已存在");
-      setTimeout(() => setSaveTip(""), 2000);
+      showToast("编号已存在", "error");
+
       return;
     }
 
@@ -267,8 +253,8 @@ function CodeTab({
     });
     if (!putRes.ok) {
       const err = await putRes.json().catch(() => ({ error: "保存失败" }));
-      setSaveTip(err.error || "保存失败");
-      setTimeout(() => setSaveTip(""), 2000);
+      showToast(err.error || "保存失败", "error");
+
       setEditRow(null);
       return;
     }
@@ -278,8 +264,7 @@ function CodeTab({
         .concat({ code: newFullCode, name: editNameValue.trim() })
         .sort((a, b) => a.code.localeCompare(b.code))
     );
-    setSaveTip("保存成功");
-    setTimeout(() => setSaveTip(""), 1500);
+    showToast("保存成功");
     setEditRow(null);
   }
 
@@ -287,30 +272,30 @@ function CodeTab({
     const res = await fetch(`${apiPath}?code=${encodeURIComponent(code)}`, { method: "DELETE" });
     if (res.ok) {
       setCodes((prev) => prev.filter((c) => c.code !== code));
-      setSaveTip("删除成功");
-      setTimeout(() => setSaveTip(""), 1500);
+      showToast("删除成功");
+
     } else {
       const err = await res.json().catch(() => ({ error: "删除失败" }));
-      setSaveTip(err.error || "删除失败");
-      setTimeout(() => setSaveTip(""), 3000);
+      showToast(err.error || "删除失败", "error");
+
     }
   }
 
   async function handleAdd() {
     if (!/^\d{3}$/.test(newCode)) {
-      setSaveTip("编号必须为3位数字");
-      setTimeout(() => setSaveTip(""), 2000);
+      showToast("编号必须为3位数字", "error");
+
       return;
     }
     if (!newName.trim()) {
-      setSaveTip("名称不能为空");
-      setTimeout(() => setSaveTip(""), 2000);
+      showToast("名称不能为空", "error");
+
       return;
     }
     const fullCode = buildFullCode(newCode);
     if (codes.some((c) => c.code === fullCode)) {
-      setSaveTip("编号已存在");
-      setTimeout(() => setSaveTip(""), 2000);
+      showToast("编号已存在", "error");
+
       return;
     }
     const res = await fetch(apiPath, {
@@ -326,11 +311,11 @@ function CodeTab({
       );
       setNewCode("");
       setNewName("");
-      setSaveTip("添加成功");
-      setTimeout(() => setSaveTip(""), 1500);
+      showToast("添加成功");
+
     } else {
-      setSaveTip("添加失败");
-      setTimeout(() => setSaveTip(""), 2000);
+      showToast("添加失败", "error");
+
     }
   }
 
@@ -452,7 +437,7 @@ function CodeTab({
                           {item.code}
                           {editMode && user.canAccessHR && (
                             <button
-                              onClick={() => setConfirmModal({ open: true, code: item.code })}
+                              onClick={() => setDeleteCode(item.code)}
                               className="ml-1 text-red-500 hover:text-red-700"
                               title="删除"
                             >
@@ -531,32 +516,20 @@ function CodeTab({
         )}
       </div>
 
-      {/* 确认框 */}
-      {confirmModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-2 text-lg font-semibold text-gray-800">删除确认</h3>
-            <p className="mb-6 text-sm text-gray-600">确定删除该编码？</p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setConfirmModal({ open: false, code: "" })}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={() => {
-                  doDelete(confirmModal.code);
-                  setConfirmModal({ open: false, code: "" });
-                }}
-                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-              >
-                确定
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!deleteCode}
+        title="删除确认"
+        message="确定删除该编码？"
+        confirmLabel="确定"
+        onConfirm={() => {
+          if (deleteCode) {
+            doDelete(deleteCode);
+            setDeleteCode(null);
+          }
+        }}
+        onCancel={() => setDeleteCode(null)}
+      />
+      <Toast message={toast?.message || ""} type={toast?.type as any} show={!!toast} onClose={closeToast} />
 
       {/* 人员详情弹窗 */}
       {detailModal?.open && (
@@ -616,7 +589,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
   const [keyword, setKeyword] = useState("");
   const [sortField, setSortField] = useState<string>("employeeId");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [saveTip, setSaveTip] = useState("");
+  const { toast, showToast, closeToast } = useToast();
   const [deptQuery, setDeptQuery] = useState("");
   const [deptSuggestions, setDeptSuggestions] = useState<string[]>([]);
   const [showDeptSuggestions, setShowDeptSuggestions] = useState(false);
@@ -730,7 +703,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
   return (
     <div className="space-y-4">
       {/* 筛选 */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
+      <FilterBar>
         <div className="flex rounded-md border border-gray-200 overflow-hidden">
           <button
             onClick={() => { setRosterFilter("在职"); }}
@@ -807,14 +780,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
         >
           下载Excel
         </button>
-      </div>
-
-      {/* 保存提示 */}
-      {saveTip && (
-        <div className={`rounded-md px-4 py-2 text-sm text-center ${saveTip === "保存成功" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-          {saveTip}
-        </div>
-      )}
+      </FilterBar>
 
       {/* 表格 */}
       <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
@@ -879,6 +845,7 @@ function RosterTab({ user, selectedCompany }: { user: User; selectedCompany: str
           </table>
         )}
       </div>
+      <Toast message={toast?.message || ""} type={toast?.type as any} show={!!toast} onClose={closeToast} />
     </div>
   );
 }

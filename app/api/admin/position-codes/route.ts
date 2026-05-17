@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
-import { authenticate, requireAdmin } from "@/lib/auth";
+import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-const SHARED_GROUP = ["01", "02", "03", "05"];
+import { SHARED_GROUP_CODES, getCompanyFromCode } from "@/lib/company";
 
 function normalizeCompanyCode(companyCode: string): string {
-  if (SHARED_GROUP.includes(companyCode)) return "01";
+  if (SHARED_GROUP_CODES.includes(companyCode)) return "01";
   return companyCode;
-}
-
-function getCompanyFromCode(code: string): string {
-  const prefix = code.slice(0, 2);
-  if (prefix === "04") return "丰华制药";
-  if (prefix === "05") return "加拿大";
-  return "丰华生物";
 }
 
 function buildFullCode(code: string, companyCode: string): string {

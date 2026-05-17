@@ -2,6 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import EditToolbar from "@/app/components/EditToolbar";
+import FilterBar from "@/app/components/FilterBar";
+import ConfirmModal from "@/app/components/ConfirmModal";
+import Toast from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 
 interface User {
   id: number;
@@ -69,10 +73,10 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
   const [editingCell, setEditingCell] = useState<{ id: number; field: string } | null>(null);
   const [editValue, setEditValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const [saveTip, setSaveTip] = useState("");
+  const { toast, showToast, closeToast } = useToast();
   const [rosterFilter, setRosterFilter] = useState<"在职" | "离职">("在职");
   const [editMode, setEditMode] = useState(false);
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; emp: Employee | null }>({ open: false, emp: null });
+  const [leaveEmp, setLeaveEmp] = useState<Employee | null>(null);
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<Array<{ version: number; createdAt: string }>>([]);
   const [currentVersion, setCurrentVersion] = useState<number | undefined>(undefined);
@@ -158,12 +162,10 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
     });
     if (res.ok) {
       setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, [field]: editValue || null } : e)));
-      setSaveTip("保存成功");
-      setTimeout(() => setSaveTip(""), 1500);
+      showToast("保存成功");
     } else {
       const err = await res.json().catch(() => ({ error: "保存失败" }));
-      setSaveTip(err.error || "保存失败");
-      setTimeout(() => setSaveTip(""), 2000);
+      showToast(err.error || "保存失败", "error");
     }
     setEditingCell(null);
   }
@@ -177,7 +179,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
+      <FilterBar>
         <div className="flex rounded-md border border-gray-200 overflow-hidden">
           <button
             onClick={() => setRosterFilter("在职")}
@@ -219,7 +221,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
             saving={saving}
           />
         )}
-      </div>
+      </FilterBar>
 
       <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
         {loading ? (
@@ -263,7 +265,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
                           <span className="inline-flex items-center gap-1">
                             {val || "-"}
                             <button
-                              onClick={(e) => { e.stopPropagation(); setConfirmModal({ open: true, emp }); }}
+                              onClick={(e) => { e.stopPropagation(); setLeaveEmp(emp); }}
                               className="ml-1 text-red-500 hover:text-red-700 font-bold"
                               title="标记离职"
                             >
@@ -283,49 +285,31 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
         )}
       </div>
 
-      {/* 离职确认弹窗 */}
-      {confirmModal.open && confirmModal.emp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-2 text-lg font-semibold text-gray-800">确认离职</h3>
-            <p className="mb-6 text-sm text-gray-600">
-              确定将 {confirmModal.emp.name}（{confirmModal.emp.employeeId}）标记为离职？
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setConfirmModal({ open: false, emp: null })}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={async () => {
-                  const emp = confirmModal.emp!;
-                  const res = await fetch(`/api/employees/${emp.id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ field: "status", value: "离职" }),
-                  });
-                  if (res.ok) {
-                    setEmployees((prev) =>
-                      prev.map((e) => (e.id === emp.id ? { ...e, status: "离职" } : e))
-                    );
-                    setSaveTip("已标记离职");
-                    setTimeout(() => setSaveTip(""), 1500);
-                  } else {
-                    setSaveTip("操作失败");
-                    setTimeout(() => setSaveTip(""), 2000);
-                  }
-                  setConfirmModal({ open: false, emp: null });
-                }}
-                className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-              >
-                确认离职
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!leaveEmp}
+        title="确认离职"
+        message={leaveEmp ? `确定将 ${leaveEmp.name}（${leaveEmp.employeeId}）标记为离职？` : ""}
+        confirmLabel="确认离职"
+        onConfirm={async () => {
+          const emp = leaveEmp!;
+          const res = await fetch(`/api/employees/${emp.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ field: "status", value: "离职" }),
+          });
+          if (res.ok) {
+            setEmployees((prev) =>
+              prev.map((e) => (e.id === emp.id ? { ...e, status: "离职" } : e))
+            );
+            showToast("已标记离职");
+          } else {
+            showToast("操作失败", "error");
+          }
+          setLeaveEmp(null);
+        }}
+        onCancel={() => setLeaveEmp(null)}
+      />
+      <Toast message={toast?.message || ""} type={toast?.type as any} show={!!toast} onClose={closeToast} />
     </div>
   );
 }

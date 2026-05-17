@@ -282,6 +282,18 @@ export async function getUserDepartmentAdmins(userId: number) {
   });
 }
 
+// Check if the request is from a system admin (isWorkListAdmin)
+// Convenience wrapper that handles authenticate + isWorkListAdmin check
+export async function isAdmin(request: Request): Promise<boolean> {
+  const payload = await authenticate(request);
+  if (!payload) return false;
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { isWorkListAdmin: true },
+  });
+  return user?.isWorkListAdmin === true;
+}
+
 // Backward compat: check if user is super admin
 export async function isSuperAdmin(userId: number): Promise<boolean> {
   // Check both old boolean AND new UserPermission
