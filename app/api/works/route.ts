@@ -2,19 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authenticate, isAnyGroupAdmin, requireGroupAccess, isAdmin, checkPermission } from "@/lib/auth";
 
-// requireAdmin checks both isWorkListAdmin AND UserResourceRole (system.access) + same department,
-// OR groupAdmin + same department
+// requireAdmin checks both isWorkListAdmin AND UserResourceRole (system.access),
+// OR groupAdmin
 async function requireAdmin(userId: number, departmentId: number) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { isWorkListAdmin: true, departmentId: true },
+    select: { isWorkListAdmin: true },
   });
-  if (user?.isWorkListAdmin === true && user?.departmentId === departmentId) return true;
+  if (user?.isWorkListAdmin === true) return true;
   // Also check UserResourceRole system.access
   const hasSystemAccess = await checkPermission(userId, "system.access");
-  if (hasSystemAccess && user?.departmentId === departmentId) return true;
-  const groupAdmin = await isAnyGroupAdmin(userId);
-  return groupAdmin && user?.departmentId === departmentId;
+  if (hasSystemAccess) return true;
+  return isAnyGroupAdmin(userId);
 }
 
 function parseParticipants(input?: string): string[] {

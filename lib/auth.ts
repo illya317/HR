@@ -211,7 +211,7 @@ export async function authenticate(
         userId: user.id,
         wxUserId: user.wxUserId ?? "",
         name: user.name,
-        departmentId: user.departmentId,
+        departmentId: 0,
       };
     }
   }

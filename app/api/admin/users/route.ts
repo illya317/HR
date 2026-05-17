@@ -23,7 +23,6 @@ export async function GET(request: Request) {
       id: true,
       username: true,
       name: true,
-      departmentId: true,
       isWorkListAdmin: true,
       canLogin: true,
       canSelectAnyWeek: true,

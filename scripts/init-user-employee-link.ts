@@ -20,9 +20,9 @@ async function initLink() {
   for (const user of users) {
     const emp = uniqueEmployees.get(user.name);
     if (emp) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { employeeId: emp.employeeId },
+      await prisma.employee.update({
+        where: { employeeId: emp.employeeId },
+        data: { userId: user.id },
       });
       matched++;
     } else {

@@ -53,28 +53,12 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "缺少 departmentId" }, { status: 400 });
   }
 
-  const usersInDept = await prisma.user.findMany({
-    where: { departmentId },
-    select: { id: true },
-  });
-
-  if (usersInDept.length === 0) {
-    return NextResponse.json({ error: "部门不存在" }, { status: 404 });
+  try {
+    await prisma.department.delete({
+      where: { id: departmentId },
+    });
+    return NextResponse.json({ success: true, message: "部门已删除" });
+  } catch {
+    return NextResponse.json({ error: "删除失败，部门可能不存在或有关联数据" }, { status: 400 });
   }
-
-  const company = ""; // User.company removed from schema
-  const newDeptName = "其他";
-  const newDeptId = hashString(`${company}-${newDeptName}`);
-
-  await prisma.user.updateMany({
-    where: { departmentId },
-    data: {
-      departmentId: newDeptId,
-    },
-  });
-
-  return NextResponse.json({
-    success: true,
-    message: `已将 ${usersInDept.length} 人移至"其他"部门`,
-  });
 }

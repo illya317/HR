@@ -104,8 +104,6 @@ async function importUsers() {
         data: {
           name: row.name,
           password: row.password,
-          departmentId,
-          departmentName: row.department,
           wxUserId,
           isWorkListAdmin: row.isAdmin,
           canSelectAnyWeek: row.canTest,
@@ -119,8 +117,6 @@ async function importUsers() {
           username,
           password: row.password,
           name: row.name,
-          departmentId,
-          departmentName: row.department,
           isWorkListAdmin: row.isAdmin,
           canSelectAnyWeek: row.canTest,
         },
@@ -140,8 +136,7 @@ async function importUsers() {
       data: {
         name: CONFIG.admin.name,
         password: CONFIG.admin.password,
-        departmentId: adminDeptId,
-        departmentName: CONFIG.admin.departmentName,
+        // departmentId removed from User model
         isWorkListAdmin: true,
         canSelectAnyWeek: true,
       },
@@ -153,8 +148,7 @@ async function importUsers() {
         username: CONFIG.admin.username,
         password: CONFIG.admin.password,
         name: CONFIG.admin.name,
-        departmentId: adminDeptId,
-        departmentName: CONFIG.admin.departmentName,
+        // departmentId removed from User model
         isWorkListAdmin: true,
         canSelectAnyWeek: true,
       },
@@ -164,14 +158,7 @@ async function importUsers() {
 
   console.log(`导入完成：新建 ${created} 人，更新 ${updated} 人`);
 
-  const depts = await prisma.user.groupBy({
-    by: ["departmentName", "departmentId"],
-    _count: { id: true },
-  });
-  console.log("\n部门分布：");
-  for (const d of depts.sort((a, b) => (a.departmentId ?? 0) - (b.departmentId ?? 0))) {
-    console.log(`  ${d.departmentName} (id=${d.departmentId}): ${d._count.id}人`);
-  }
+  console.log("\n（User 模型已移除 departmentId 字段，部门分布统计不再可用）");
 }
 
 importUsers()

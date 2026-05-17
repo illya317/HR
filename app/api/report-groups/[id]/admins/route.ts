@@ -28,14 +28,22 @@ export async function GET(
 
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, name: true, username: true, employeeId: true },
+    select: { id: true, name: true, username: true },
   });
 
-  const employeeIds = users.map((u) => u.employeeId).filter(Boolean) as string[];
+  // Get employeeId from Employee table via userId
+  const employees = await prisma.employee.findMany({
+    where: { userId: { in: userIds } },
+    select: { employeeId: true, userId: true },
+  });
+  const employeeIdByUserId = new Map(
+    employees.filter((e) => e.userId).map((e) => [e.userId!, e.employeeId])
+  );
+  const employeeIds = [...employeeIdByUserId.values()];
 
   let employeeMap = new Map<string, { dept1: string | null; position: string | null }>();
   if (employeeIds.length > 0) {
-    const employees = await prisma.employee.findMany({
+    const empsWithPos = await prisma.employee.findMany({
       where: { employeeId: { in: employeeIds } },
       include: {
         positions: {
@@ -46,7 +54,7 @@ export async function GET(
         },
       },
     });
-    for (const e of employees) {
+    for (const e of empsWithPos) {
       const primary = e.positions.find((p) => p.isPrimary) || e.positions[0];
       employeeMap.set(e.employeeId, {
         dept1: primary?.department?.name || null,
@@ -55,13 +63,16 @@ export async function GET(
     }
   }
 
-  const result = users.map((u) => ({
-    id: u.id,
-    name: u.name,
-    username: u.username,
-    dept1: employeeMap.get(u.employeeId || "")?.dept1 || "",
-    position: employeeMap.get(u.employeeId || "")?.position || "",
-  }));
+  const result = users.map((u) => {
+    const eid = employeeIdByUserId.get(u.id) || "";
+    return {
+      id: u.id,
+      name: u.name,
+      username: u.username,
+      dept1: employeeMap.get(eid)?.dept1 || "",
+      position: employeeMap.get(eid)?.position || "",
+    };
+  });
 
   return NextResponse.json({ admins: result });
 }

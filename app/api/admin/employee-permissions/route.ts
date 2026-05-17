@@ -65,7 +65,6 @@ export async function GET(request: Request) {
   const users = await prisma.user.findMany({
     select: {
       id: true,
-      employeeId: true,
       name: true,
       username: true,
       canSelectAnyWeek: true,
@@ -84,8 +83,17 @@ export async function GET(request: Request) {
     },
   });
 
+  // Get employeeId from Employee table via userId
+  const employeesForLink = await prisma.employee.findMany({
+    where: { userId: { not: null } },
+    select: { employeeId: true, userId: true },
+  });
+  const employeeIdByUserId = new Map(
+    employeesForLink.filter((e) => e.userId).map((e) => [e.userId!, e.employeeId])
+  );
+
   const userByEmployeeId = new Map(
-    users.filter((u) => u.employeeId).map((u) => [u.employeeId, u])
+    users.filter((u) => employeeIdByUserId.has(u.id)).map((u) => [employeeIdByUserId.get(u.id)!, u])
   );
   const userByName = new Map(users.map((u) => [u.name, u]));
 
@@ -137,21 +145,25 @@ export async function PUT(request: Request) {
     canAccessHR?: boolean;
   };
 
-  // 查找关联用户
-  let user = await prisma.user.findFirst({
+  // 查找关联用户：通过 Employee 表的 userId 关联
+  const employee = await prisma.employee.findUnique({
     where: { employeeId },
+    select: { userId: true },
   });
+  let user = employee?.userId
+    ? await prisma.user.findUnique({ where: { id: employee.userId } })
+    : null;
 
   // 如果没有按 employeeId 找到，尝试按 name 匹配
   if (!user) {
     user = await prisma.user.findFirst({
       where: { name },
     });
-    // 如果匹配到了，设置 employeeId
+    // 如果匹配到了，关联 Employee 到 User
     if (user) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { employeeId },
+      await prisma.employee.update({
+        where: { employeeId },
+        data: { userId: user.id },
       });
     }
   }
