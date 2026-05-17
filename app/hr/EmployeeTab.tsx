@@ -128,7 +128,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
     const cellId = editingCell.id;
     try {
       await saveEdit();
-      setEditMode(false);
+      setEditingCell(null);
       loadVersions(cellId);
     } finally {
       setSaving(false);
