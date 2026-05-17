@@ -341,7 +341,7 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
                         )}
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3 text-gray-600">
-                        {formatCsv(emp.roles.map((r) => r.company))}
+                        {emp.roles[0]?.company || "-"}
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3 text-gray-600">
                         {formatCsv(emp.roles.map((r) => r.dept1))}
