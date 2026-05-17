@@ -3,23 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import FilterBar from "@/app/components/FilterBar";
 import ConfirmModal from "@/app/components/ConfirmModal";
-import { isTopLevelResource } from "./page";
-import type { ResourceItem, DeptItem } from "./page";
-
-interface SearchResult {
-  rowId: number; employeeId: string; name: string; alias: string;
-  dept1: string; position: string; userId: number | null;
-}
-
-interface EmployeePerm {
-  employeeId: string; name: string; canLogin: boolean; hasApiKey: boolean;
-  userId: number | null; username: string | null; permissions: string[];
-  roles: { company: string | null; dept1: string | null; position: string | null }[];
-  resourceRoles: Array<{
-    resource: { key: string; name: string } | null;
-    role: { key: string; name: string } | null;
-  }>;
-}
+import { isTopLevelResource, userHasAccess } from "./lib";
+import type { ResourceItem, DeptItem, SearchResult, EmployeePerm } from "./types";
 
 interface Props {
   user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };
@@ -100,19 +85,6 @@ export default function ByUserTab({ user, resources, allDepts, showToast }: Prop
   function getSelectedUserPerms(): EmployeePerm | null {
     if (!selectedUser) return null;
     return empPerms.find((e) => e.employeeId === selectedUser.employeeId) || null;
-  }
-
-  function userHasAccess(emp: EmployeePerm, resourceKey: string): boolean {
-    // Check direct grant OR any ancestor grant (parent access implies child access)
-    const parts = resourceKey.split(".");
-    const keys = [resourceKey];
-    while (parts.length > 1) {
-      parts.pop();
-      keys.push(parts.join("."));
-    }
-    return keys.some((k) =>
-      emp.resourceRoles.some((rr) => rr.resource?.key === k && rr.role?.key === "access")
-    );
   }
 
   async function togglePermission(userId: number | null, resourceKey: string, currentVal: boolean) {

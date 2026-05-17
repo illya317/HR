@@ -20,7 +20,7 @@ export async function PUT(
 
   if (!existing) {
     return NextResponse.json(
-      { error: "无权修改此周报" },
+      { error: "无权修改此报告" },
       { status: 403 }
     );
   }
@@ -61,7 +61,7 @@ export async function PUT(
   const editable = await canEdit(existing);
   if (!editable) {
     return NextResponse.json(
-      { error: "无权修改此周报" },
+      { error: "无权修改此报告" },
       { status: 403 }
     );
   }

@@ -115,7 +115,7 @@ model ReportGroup {
   name        String // 名称
   description String? // 说明
   sortOrder   Int      @default(0) // 排序序号
-  periodType  String   @default("weekly") // "daily" | "weekly" | "monthly"
+  periodType  String   @default("weekly") // "daily" | "weekly" | "monthly" | "quarterly" | "yearly"
   targetType  String   @default("department") // "project" | "department" | "position"
   targetId    Int      @default(0) // 多态 FK
   createdAt   DateTime @default(now()) // 创建时间

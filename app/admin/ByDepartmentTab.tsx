@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import FilterBar from "@/app/components/FilterBar";
-import { isTopLevelResource } from "./page";
+import { isTopLevelResource } from "./lib";
 
 interface Props {
   user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };

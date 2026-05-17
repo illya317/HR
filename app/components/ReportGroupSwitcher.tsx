@@ -7,6 +7,7 @@ interface ReportGroup {
   name: string;
   description: string | null;
   sortOrder: number;
+  periodType: string;
 }
 
 interface Props {

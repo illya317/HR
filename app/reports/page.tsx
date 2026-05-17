@@ -6,7 +6,8 @@ import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
 import NavLink from "@/app/components/NavLink";
 import ReportGroupSwitcher from "@/app/components/ReportGroupSwitcher";
-import { getCurrentWeekInfo, getWeekRange } from "@/lib/week";
+import { getCurrentPeriod, getPeriodRange, getPreviousPeriod, getPeriodOptions, getYearOptions, getPeriodTypeName } from "@/lib/period";
+import type { PeriodType } from "@/lib/period";
 import Toast from "@/app/components/Toast";
 import { useToast } from "@/app/hooks/useToast";
 import WorkSection, { type ItemRow } from "./WorkSection";
@@ -35,6 +36,7 @@ export default function ReportPage() {
   const [notes, setNotes] = useState("");
   const [reportGroupId, setReportGroupId] = useState<number | null>(null);
   const [reportGroupName, setReportGroupName] = useState("");
+  const [periodType, setPeriodType] = useState<PeriodType>("weekly");
 
   const [routineItems, setRoutineItems] = useState<ItemRow[]>([]);
   const [nonRoutineItems, setNonRoutineItems] = useState<ItemRow[]>([]);
@@ -42,14 +44,14 @@ export default function ReportPage() {
   const [showNonRoutineSelect, setShowNonRoutineSelect] = useState(false);
   const [workList, setWorkList] = useState<Array<{ id: number; category: string; content: string }>>([]);
 
-  const [weekInfo, setWeekInfo] = useState<{ label: string; dateRange: string } | null>(null);
+  const [periodInfo, setPeriodInfo] = useState<{ label: string; dateRange: string } | null>(null);
   const [versions, setVersions] = useState<Array<{ version: number; createdAt: string }>>([]);
-  const ci = getCurrentWeekInfo();
+  const ci = getCurrentPeriod(periodType);
   const [selectedYear, setSelectedYear] = useState(ci.year);
-  const [selectedWeek, setSelectedWeek] = useState(ci.weekNumber);
+  const [selectedPeriodIndex, setSelectedPeriodIndex] = useState(ci.periodIndex);
 
-  const yearOptions = [ci.year];
-  const weekOptions = ci.weekNumber > 1 ? [ci.weekNumber, ci.weekNumber - 1] : [1];
+  const yearOptions = getYearOptions(periodType, ci.year);
+  const periodOptions = getPeriodOptions(periodType, selectedYear);
 
   useEffect(() => { fetchUser(); }, []);
 
@@ -64,18 +66,28 @@ export default function ReportPage() {
       if (gRes.ok) {
         const gData = await gRes.json();
         if (!gData.isAdmin && gData.submitGroups.length === 0) { router.push("/reports"); return; }
+
+        // Determine periodType from saved group
+        const savedRgId = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupId") : null;
+        const savedPeriodType = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupPeriodType") as PeriodType | null : null;
+        const allGroups = [...gData.submitGroups, ...(gData.viewGroups || [])];
+        if (savedRgId && savedPeriodType) {
+          setPeriodType(savedPeriodType);
+        } else if (allGroups.length > 0) {
+          setPeriodType((allGroups[0].periodType as PeriodType) || "weekly");
+        }
       }
 
-      const info = getCurrentWeekInfo();
+      const info = getCurrentPeriod(periodType);
       setSelectedYear(info.year);
-      setSelectedWeek(info.weekNumber);
-      await loadReport(data.user, info.year, info.weekNumber);
+      setSelectedPeriodIndex(info.periodIndex);
+      await loadReport(data.user, info.year, info.periodIndex);
     } catch { router.push("/login"); }
   }
 
-  async function loadReport(u: { id: number; name: string; departmentId: number }, year: number, weekNumber: number) {
-    const range = getWeekRange(year, weekNumber);
-    setWeekInfo({ label: range.label, dateRange: range.dateRange });
+  async function loadReport(u: { id: number; name: string; departmentId: number }, year: number, periodIndex: number) {
+    const range = getPeriodRange(periodType, year, periodIndex);
+    setPeriodInfo({ label: range.label, dateRange: range.dateRange });
 
     const savedRgId = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupId") : null;
     const savedRgName = typeof window !== "undefined" ? localStorage.getItem("selectedReportGroupName") : null;
@@ -84,10 +96,9 @@ export default function ReportPage() {
     if (savedRgName) setReportGroupName(savedRgName);
     const rgParam = rgId ? `&reportGroupId=${rgId}` : "";
 
-    const date = range.weekStart.toISOString().slice(0, 10);
-    const prevWeek = weekNumber - 1;
-    const prevYear = prevWeek < 1 ? year - 1 : year;
-    const prevDate = getWeekRange(prevYear, prevWeek < 1 ? 52 : prevWeek).weekStart.toISOString().slice(0, 10);
+    const date = range.date;
+    const prev = getPreviousPeriod(periodType, year, periodIndex);
+    const prevDate = prev.date;
 
     const [reportsRes, prevRes, worksRes] = await Promise.all([
       fetch(`/api/reports?date=${date}${rgParam}`),
@@ -152,7 +163,7 @@ export default function ReportPage() {
   async function loadVersion(version: number) {
     if (!report) return;
     setViewingVersion(version);
-    if (version === 0) { await loadReport(user!, selectedYear, selectedWeek); return; }
+    if (version === 0) { await loadReport(user!, selectedYear, selectedPeriodIndex); return; }
     const res = await fetch(`/api/reports/${report.id}/versions/${version}`);
     const data = await res.json();
     if (data.report) {
@@ -177,10 +188,11 @@ export default function ReportPage() {
       ...nonRoutineItems.map((it, i) => ({ category: "non-routine" as const, plan: it.completion || it.plan, completion: it.completion, nextGoal: it.nextGoal, sortOrder: i, workId: it.workId })),
     ];
 
-    const autoTaskName = reportGroupName ? `${reportGroupName}第${selectedWeek}周周报` : taskName;
+    const pInfo = getPeriodRange(periodType, selectedYear, selectedPeriodIndex);
+    const autoTaskName = reportGroupName ? `${reportGroupName}${pInfo.label}${getPeriodTypeName(periodType)}` : taskName;
     const body = report
       ? { taskName: autoTaskName, notes, items }
-      : { taskName: autoTaskName, notes, items, date: getWeekRange(selectedYear, selectedWeek).weekStart.toISOString().slice(0, 10), reportGroupId };
+      : { taskName: autoTaskName, notes, items, date: pInfo.date, reportGroupId };
 
     const res = await fetch(report ? `/api/reports/${report.id}` : "/api/reports", {
       method: report ? "PUT" : "POST",
@@ -241,6 +253,8 @@ export default function ReportPage() {
     return <div className="flex min-h-screen items-center justify-center"><p className="text-gray-500">加载中...</p></div>;
   }
 
+  const periodTypeName = getPeriodTypeName(periodType);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
@@ -253,11 +267,13 @@ export default function ReportPage() {
                 if (group) {
                   localStorage.setItem("selectedReportGroupId", String(group.id));
                   localStorage.setItem("selectedReportGroupName", group.name);
+                  localStorage.setItem("selectedReportGroupPeriodType", group.periodType);
                   setReportGroupName(group.name);
                   setTaskName(group.name);
                 } else {
                   localStorage.removeItem("selectedReportGroupId");
                   localStorage.removeItem("selectedReportGroupName");
+                  localStorage.removeItem("selectedReportGroupPeriodType");
                   setReportGroupName("");
                   setTaskName("");
                 }
@@ -280,19 +296,28 @@ export default function ReportPage() {
         {/* Header */}
         <div className="mb-6 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-700 p-4 text-center text-white">
           <div className="mb-2 flex items-center justify-center gap-3">
-            <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setLoading(true); loadReport(user!, parseInt(e.target.value), selectedWeek); }}
-              className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
-              {yearOptions.map((y) => <option key={y} value={y} className="text-gray-800">{y} 年</option>)}
-            </select>
-            <select value={selectedWeek} onChange={(e) => { setSelectedWeek(parseInt(e.target.value)); setLoading(true); loadReport(user!, selectedYear, parseInt(e.target.value)); }}
-              className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
-              {weekOptions.map((w) => <option key={w} value={w} className="text-gray-800">第 {w} 周</option>)}
-            </select>
+            {periodType === "yearly" ? (
+              <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setLoading(true); loadReport(user!, parseInt(e.target.value), 1); }}
+                className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
+                {yearOptions.map((y) => <option key={y} value={y} className="text-gray-800">{y} 年</option>)}
+              </select>
+            ) : (
+              <>
+                <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setLoading(true); loadReport(user!, parseInt(e.target.value), selectedPeriodIndex); }}
+                  className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
+                  {yearOptions.map((y) => <option key={y} value={y} className="text-gray-800">{y} 年</option>)}
+                </select>
+                <select value={selectedPeriodIndex} onChange={(e) => { setSelectedPeriodIndex(parseInt(e.target.value)); setLoading(true); loadReport(user!, selectedYear, parseInt(e.target.value)); }}
+                  className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
+                  {periodOptions.map((p) => <option key={p.value} value={p.value} className="text-gray-800">{p.label}</option>)}
+                </select>
+              </>
+            )}
           </div>
           <h2 className="mb-1 text-lg font-bold">
-            {reportGroupName ? `${reportGroupName}第${selectedWeek}周周报` : "工作汇报"}
+            {reportGroupName ? `${reportGroupName}${periodInfo?.label || ""}${periodTypeName}` : "工作汇报"}
           </h2>
-          <p className="text-sm opacity-90">{weekInfo?.dateRange}</p>
+          <p className="text-sm opacity-90">{periodInfo?.dateRange}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -319,7 +344,7 @@ export default function ReportPage() {
           )}
 
           {/* Work sections */}
-          <WorkSection title="日常工作" subtitle="每周固定工作，自动从工作清单带入" items={routineItems} disabled={viewingVersion !== 0}
+          <WorkSection title="日常工作" subtitle="固定工作，自动从工作清单带入" items={routineItems} disabled={viewingVersion !== 0}
             workList={workList} category="routine" showImport={showRoutineSelect} onShowImport={setShowRoutineSelect}
             onImportWork={itemOps.import(routineItems, setRoutineItems, setShowRoutineSelect)}
             onUpdate={itemOps.update(routineItems, setRoutineItems)} onRemove={itemOps.remove(routineItems, setRoutineItems)}

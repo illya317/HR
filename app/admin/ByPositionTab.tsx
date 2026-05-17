@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import FilterBar from "@/app/components/FilterBar";
-import { flattenTree } from "./page";
+import { flattenTree } from "./lib";
 
 interface Props {
   user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };

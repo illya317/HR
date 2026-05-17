@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authenticate, requireGroupAccess, requireGroupSubmit } from "@/lib/auth";
-import { getCurrentWeekInfo } from "@/lib/week";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -58,7 +57,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
 
-  // 权限校验：提交周报时验证是否有权限
+  // 权限校验：提交报告时验证是否有权限
   if (body.reportGroupId) {
     const { error, status } = await requireGroupSubmit(request, body.reportGroupId);
     if (error) return NextResponse.json({ error }, { status });
@@ -91,7 +90,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const reportDate = date ?? getCurrentWeekInfo().weekStart.toISOString().slice(0, 10);
+  const reportDate = date ?? new Date().toISOString().slice(0, 10);
 
   // 如果有 reportGroupId，查出名称作为 taskName
   let finalTaskName = taskName;
@@ -170,7 +169,7 @@ export async function POST(request: Request) {
       error.code === "P2002"
     ) {
       return NextResponse.json(
-        { error: "本周已提交过周报，请使用更新功能" },
+        { error: "该时段已提交过报告，请使用更新功能" },
         { status: 409 }
       );
     }

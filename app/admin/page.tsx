@@ -11,37 +11,8 @@ import ByUserTab from "./ByUserTab";
 import ByPositionTab from "./ByPositionTab";
 import ByDepartmentTab from "./ByDepartmentTab";
 import ByPermissionTab from "./ByPermissionTab";
-
-export interface ResourceItem {
-  id: number;
-  key: string;
-  name: string;
-  description: string | null;
-  userCount?: number;
-  children?: ResourceItem[];
-}
-
-export interface DeptItem {
-  id: number;
-  name: string;
-  company: string;
-  count: number;
-}
-
-export function isTopLevelResource(key: string): boolean {
-  return ["system", "people", "work", "docs"].includes(key);
-}
-
-export function flattenTree(resources: ResourceItem[]): ResourceItem[] {
-  const result: ResourceItem[] = [];
-  for (const r of resources) {
-    result.push(r);
-    if (r.children && r.children.length > 0) {
-      result.push(...flattenTree(r.children));
-    }
-  }
-  return result;
-}
+import type { ResourceItem, DeptItem } from "./types";
+import { flattenTree } from "./lib";
 
 export default function AdminPage() {
   const router = useRouter();

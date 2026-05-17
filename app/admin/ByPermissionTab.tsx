@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { isTopLevelResource } from "./page";
+import { isTopLevelResource } from "./lib";
 import { FENGHUA_BIO_GROUP } from "@/lib/company";
 
 interface Props {
