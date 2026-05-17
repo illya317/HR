@@ -39,13 +39,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # 业务规则
 
-## 公司分组（统一从 `lib/company.ts` 导入）
+## 公司分组
 
-- **丰华生物组**: `FENGHUA_BIO_GROUP` = 丰华生物、丰华天力通、丰华悦通、加拿大（共享数据）
-- **丰华制药**: 独立
-- **编码前缀**: 01 丰华生物, 02 丰华天力通, 03 丰华悦通, 04 丰华制药, 05 加拿大
-- `SHARED_GROUP_CODES` = ["01","02","03"]（共享存储）
-- 公司名清洗: `制药` → `丰华制药`, `江苏制药` → `丰华制药`
+- 筛选按一级（丰华生物体系/丰华制药），显示按二级公司名
+- 所有常量从 `lib/company.ts` 导入
 
 ---
 
