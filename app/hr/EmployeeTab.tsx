@@ -123,15 +123,14 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
   }
 
   async function handleSave() {
-    if (!editingCell) return;
+    if (!editingCell) { setEditMode(false); return; }
     setSaving(true);
-    const cellId = editingCell.id;
     try {
       await saveEdit();
-      setEditingCell(null);
-      setEditMode(false);
     } finally {
       setSaving(false);
+      setEditingCell(null);
+      setEditMode(false);
     }
   }
 
