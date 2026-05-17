@@ -81,12 +81,13 @@ export default function ReportPage() {
       const info = getCurrentPeriod(periodType);
       setSelectedYear(info.year);
       setSelectedPeriodIndex(info.periodIndex);
-      await loadReport(data.user, info.year, info.periodIndex);
+      await loadReport(data.user, info.year, info.periodIndex, undefined, periodType);
     } catch { router.push("/login"); }
   }
 
-  async function loadReport(u: { id: number; name: string; departmentId: number }, year: number, periodIndex: number, overrideTarget?: { targetType: string; targetId: number }) {
-    const range = getPeriodRange(periodType, year, periodIndex);
+  async function loadReport(u: { id: number; name: string; departmentId: number }, year: number, periodIndex: number, overrideTarget?: { targetType: string; targetId: number }, overridePeriodType?: PeriodType) {
+    const pt = overridePeriodType || periodType;
+    const range = getPeriodRange(pt, year, periodIndex);
     setPeriodInfo({ label: range.label, dateRange: range.dateRange });
 
     const tt = overrideTarget?.targetType || targetType || "department";
@@ -94,7 +95,7 @@ export default function ReportPage() {
     const targetParam = tt && ti ? `&targetType=${tt}&targetIds=${ti}` : "";
 
     const date = range.date;
-    const prev = getPreviousPeriod(periodType, year, periodIndex);
+    const prev = getPreviousPeriod(pt, year, periodIndex);
     const prevDate = prev.date;
 
     const [reportsRes, prevRes, worksRes] = await Promise.all([
@@ -160,7 +161,7 @@ export default function ReportPage() {
   async function loadVersion(version: number) {
     if (!report) return;
     setViewingVersion(version);
-    if (version === 0) { await loadReport(user!, selectedYear, selectedPeriodIndex); return; }
+    if (version === 0) { await loadReport(user!, selectedYear, selectedPeriodIndex, undefined, periodType); return; }
     const res = await fetch(`/api/reports/${report.id}/versions/${version}`);
     const data = await res.json();
     if (data.report) {
@@ -277,7 +278,7 @@ export default function ReportPage() {
                   setTaskName("");
                 }
                 if (user) loadReport(user, selectedYear, selectedPeriodIndex,
-                  target ? { targetType: target.targetType, targetId: target.targetId } : undefined);
+                  target ? { targetType: target.targetType, targetId: target.targetId } : undefined, periodType);
               }}
             />
           </div>
@@ -304,7 +305,7 @@ export default function ReportPage() {
                 const info = getCurrentPeriod(pt);
                 setSelectedYear(info.year);
                 setSelectedPeriodIndex(info.periodIndex);
-                if (user) loadReport(user, info.year, info.periodIndex);
+                if (user) loadReport(user, info.year, info.periodIndex, undefined, pt);
               }}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${periodType === pt ? "bg-white text-emerald-700" : "text-white/70 hover:bg-white/10 hover:text-white"}`}
               >{getPeriodTypeName(pt)}</button>
@@ -312,17 +313,17 @@ export default function ReportPage() {
           </div>
           <div className="mb-2 flex items-center justify-center gap-3">
             {periodType === "yearly" ? (
-              <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); if (user) loadReport(user, parseInt(e.target.value), 1); }}
+              <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); if (user) loadReport(user, parseInt(e.target.value), 1, undefined, periodType); }}
                 className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
                 {yearOptions.map((y) => <option key={y} value={y} className="text-gray-800">{y} 年</option>)}
               </select>
             ) : (
               <>
-                <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); if (user) loadReport(user, parseInt(e.target.value), selectedPeriodIndex); }}
+                <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); if (user) loadReport(user, parseInt(e.target.value), selectedPeriodIndex, undefined, periodType); }}
                   className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
                   {yearOptions.map((y) => <option key={y} value={y} className="text-gray-800">{y} 年</option>)}
                 </select>
-                <select value={selectedPeriodIndex} onChange={(e) => { setSelectedPeriodIndex(parseInt(e.target.value)); if (user) loadReport(user, selectedYear, parseInt(e.target.value)); }}
+                <select value={selectedPeriodIndex} onChange={(e) => { setSelectedPeriodIndex(parseInt(e.target.value)); if (user) loadReport(user, selectedYear, parseInt(e.target.value), undefined, periodType); }}
                   className="rounded-md border-0 bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm focus:ring-2 focus:ring-white/50">
                   {periodOptions.map((p) => <option key={p.value} value={p.value} className="text-gray-800">{p.label}</option>)}
                 </select>
