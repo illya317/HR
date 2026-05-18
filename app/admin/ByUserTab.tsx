@@ -320,7 +320,7 @@ function PasswordResetModal({ s }: { s: ReturnType<typeof useByUserTab> }) {
           ? `${s.pwdModal.name} 的新密码已生成，请复制并妥善保管：\n\n${s.resetResult}`
           : `确定要重置 ${s.pwdModal.name} (${s.pwdModal.employeeId}) 的密码吗？重置后将生成随机密码。`
       }
-      confirmLabel={s.resetResult ? "已复制" : "确定重置"}
+      confirmLabel={s.resetResult ? "关闭" : "确定重置"}
       cancelLabel={s.resetResult ? "关闭" : "取消"}
       confirmDanger={!s.resetResult}
       onConfirm={() => {

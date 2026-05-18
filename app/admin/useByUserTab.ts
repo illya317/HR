@@ -147,7 +147,9 @@ export function useByUserTab(
     try {
       const res = await fetch(`/api/admin/users/${userId}`, { method: "POST" });
       if (res.ok) {
-        setResetResult((await res.json()).password);
+        const pwd = (await res.json()).password;
+        setResetResult(pwd);
+        try { await navigator.clipboard.writeText(pwd); } catch { /* ignore */ }
       } else {
         showToast("密码重置失败", "error");
       }

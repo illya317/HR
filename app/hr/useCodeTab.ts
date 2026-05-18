@@ -93,7 +93,7 @@ export function useCodeTab({
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<
-    Array<{ version: number; createdAt: string }>
+    Array<{ version: number; createdAt: string; editor?: { name: string } }>
   >([]);
   const [currentVersion, setCurrentVersion] = useState<number | undefined>(
     undefined

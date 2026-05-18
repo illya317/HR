@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   const versions = await prisma.editHistory.findMany({
     where: { entityType, entityId },
     orderBy: { version: "desc" },
-    select: { version: true, createdAt: true, editedBy: true },
+    select: { version: true, createdAt: true, editor: { select: { name: true } } },
     take: 50,
   });
 

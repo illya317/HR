@@ -44,7 +44,7 @@ export default function PositionTab({ user, selectedCompany }: { user: User; sel
   const [editMode, setEditMode] = useState(false);
   const [deleteRow, setDeleteRow] = useState<PositionRow | null>(null);
   const [saving, setSaving] = useState(false);
-  const [versions, setVersions] = useState<Array<{ version: number; createdAt: string }>>([]);
+  const [versions, setVersions] = useState<Array<{ version: number; createdAt: string; editor?: { name: string } }>>([]);
   const [currentVersion, setCurrentVersion] = useState<number | undefined>(undefined);
 
   async function load() {

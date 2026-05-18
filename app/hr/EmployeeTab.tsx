@@ -59,7 +59,7 @@ export default function EmployeeTab({ user, selectedCompany }: { user: User; sel
   const [editMode, setEditMode] = useState(false);
   const [leaveEmp, setLeaveEmp] = useState<Employee | null>(null);
   const [saving, setSaving] = useState(false);
-  const [versions, setVersions] = useState<Array<{ version: number; createdAt: string }>>([]);
+  const [versions, setVersions] = useState<Array<{ version: number; createdAt: string; editor?: { name: string } }>>([]);
   const [currentVersion, setCurrentVersion] = useState<number | undefined>(undefined);
 
   async function load() {

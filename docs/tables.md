@@ -1,4 +1,4 @@
-# HR Database Schema (21 tables)
+# HR Database Schema (22 tables)
 
 ## 1. System
 
@@ -17,7 +17,7 @@
 | `apiKey` | String |  |  | API密钥 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 
-← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-3 Department](#department), [5-3 Department](#department), [5-4 Position](#position), [5-5 EmployeePosition](#employeeposition), [5-6 DepartmentPosition](#departmentposition), [5-7 Project](#project), [5-8 EmployeeProject](#employeeproject), [6-1 EditHistory](#edithistory)
+← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-3 Department](#department), [5-3 Department](#department), [5-4 Position](#position), [5-5 EmployeePosition](#employeeposition), [5-6 DepartmentPosition](#departmentposition), [5-7 Project](#project), [5-9 EmployeeProject](#employeeproject), [6-1 EditHistory](#edithistory)
 
 ### 1-2 SystemConfig
 
@@ -91,7 +91,7 @@
 
 → Depends on: [5-3 Department](#department), [2-1 Resource](#resource), [2-2 Role](#role)
 
-## 报告模块
+## 3. Reports
 
 ### 3-1 Report
 
@@ -192,13 +192,7 @@
 | `title` | String |  |  | 职称 |
 | `school` | String |  |  | 毕业院校 |
 | `major` | String |  |  | 专业 |
-| `majorRelevant` | String |  |  | 是否相关专业 |
 | `phone` | String |  |  | 电话 |
-| `office1` | String |  |  | 办公区1 |
-| `office2` | String |  |  | 办公区2 |
-| `office3` | String |  |  | 办公区3 |
-| `attendance1` | String |  |  | 考勤信息1 |
-| `attendance2` | String |  |  | 考勤信息2 |
 | `joinDate` | String |  |  | 进司时间 |
 | `nature` | String |  |  | 性质（全职/兼职等） |
 | `createdAt` | DateTime | * |  | 创建时间 |
@@ -215,7 +209,7 @@
 
 → Depends on: [1-1 User](#user), [1-1 User](#user)
 
-← Referenced by: [5-5 EmployeePosition](#employeeposition), [5-8 EmployeeProject](#employeeproject)
+← Referenced by: [5-5 EmployeePosition](#employeeposition), [5-9 EmployeeProject](#employeeproject)
 
 ### 5-2 Company
 
@@ -253,7 +247,7 @@
 
 → Depends on: [5-3 Department](#department), [1-1 User](#user), [1-1 User](#user)
 
-← Referenced by: [2-5 DepartmentResourceRole](#departmentresourcerole), [5-5 EmployeePosition](#employeeposition), [5-6 DepartmentPosition](#departmentposition), [5-7 Project](#project)
+← Referenced by: [2-5 DepartmentResourceRole](#departmentresourcerole), [5-5 EmployeePosition](#employeeposition), [5-6 DepartmentPosition](#departmentposition), [5-8 ProjectDepartment](#projectdepartment)
 
 ### 5-4 Position
 
@@ -318,7 +312,6 @@
 | `id` | Int | * | REF | 主键 |
 | `name` | String | * |  | 项目名称 |
 | `type` | String | * |  | "department" | "project" |
-| `departmentId` | Int |  | FK | type=department 时关联部门 |
 | `description` | String |  |  | 说明 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime |  |  | 更新时间 |
@@ -326,11 +319,20 @@
 | `editedAt` | DateTime |  |  | 编辑时间 |
 | `version` | Int | * |  | 版本号 |
 
-→ Depends on: [5-3 Department](#department), [1-1 User](#user)
+→ Depends on: [1-1 User](#user)
 
-← Referenced by: [5-8 EmployeeProject](#employeeproject)
+← Referenced by: [5-8 ProjectDepartment](#projectdepartment), [5-9 EmployeeProject](#employeeproject)
 
-### 5-8 EmployeeProject
+### 5-8 ProjectDepartment
+
+| Field | Type | Required | FK | Note |
+|-------|------|----------|----|------|
+| `projectId` | Int | * | FK | → Project.id |
+| `departmentId` | Int | * | FK | → Department.id |
+
+→ Depends on: [5-7 Project](#project), [5-3 Department](#department)
+
+### 5-9 EmployeeProject
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
