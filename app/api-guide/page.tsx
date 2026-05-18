@@ -15,7 +15,7 @@ interface User {
 }
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "工作台";
-const API_BASE = "http://your-server:3000";
+const API_BASE = "http://49.235.213.225:3000";
 
 const markdownContent = `# ${APP_NAME} API 接入指南
 
