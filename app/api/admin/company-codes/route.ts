@@ -11,8 +11,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
-  const codes = await prisma.company.findMany({ orderBy: { sortOrder: "asc" } });
-  return NextResponse.json({ codes: codes.map((r) => ({ id: r.id, code: r.code, name: r.name, parentId: r.parentId })) });
+  const companies = await prisma.company.findMany({ orderBy: { sortOrder: "asc" } });
+  return NextResponse.json({
+    companies: companies.map((r) => ({
+      id: r.id,
+      code: r.code,
+      name: r.name,
+      fullName: r.fullName,
+      registeredCapital: r.registeredCapital,
+      unifiedCode: r.unifiedCode,
+      bankName: r.bankName,
+      registeredAddress: r.registeredAddress,
+      registeredDate: r.registeredDate,
+      legalPerson: r.legalPerson,
+      sortOrder: r.sortOrder,
+    })),
+  });
 }
 
 export async function PUT(request: Request) {
@@ -23,14 +37,25 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json();
-  const { code, name, parentId, id } = body;
-  if (!code || !name) return NextResponse.json({ error: "缺少参数" }, { status: 400 });
+  const { id, code, name, fullName, registeredCapital, unifiedCode, bankName, registeredAddress, registeredDate, legalPerson, sortOrder } = body;
+  if (!code || !name) return NextResponse.json({ error: "缺少 code/name" }, { status: 400 });
+
+  const dataFields = {
+    fullName: fullName ?? null,
+    registeredCapital: registeredCapital ?? null,
+    unifiedCode: unifiedCode ?? null,
+    bankName: bankName ?? null,
+    registeredAddress: registeredAddress ?? null,
+    registeredDate: registeredDate ?? null,
+    legalPerson: legalPerson ?? null,
+    sortOrder: sortOrder ?? 0,
+  };
 
   if (id) {
-    // Update existing
-    const existing = await prisma.company.findFirst({ where: { code, parentId: parentId ?? null } });
+    // Update
+    const existing = await prisma.company.findFirst({ where: { code } });
     if (existing && existing.id !== id) {
-      return NextResponse.json({ error: "同级别下编码已存在" }, { status: 400 });
+      return NextResponse.json({ error: "编码已存在" }, { status: 400 });
     }
     const old = await prisma.company.findUnique({ where: { id } });
     if (old) {
@@ -51,17 +76,15 @@ export async function PUT(request: Request) {
     }
     await prisma.company.update({
       where: { id },
-      data: { code, name, parentId: parentId ?? null, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
+      data: { code, name, ...dataFields, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
     });
   } else {
-    // Create new
-    const existing = await prisma.company.findFirst({ where: { code, parentId: parentId ?? null } });
+    // Create
+    const existing = await prisma.company.findFirst({ where: { code } });
     if (existing) {
-      return NextResponse.json({ error: "同级别下编码已存在" }, { status: 400 });
+      return NextResponse.json({ error: "编码已存在" }, { status: 400 });
     }
-    await prisma.company.create({
-      data: { code, name, parentId: parentId ?? null, sortOrder: 0 },
-    });
+    await prisma.company.create({ data: { code, name, ...dataFields } });
   }
 
   return NextResponse.json({ success: true });
@@ -82,6 +105,8 @@ export async function DELETE(request: Request) {
   const company = await prisma.company.findUnique({ where: { id } });
   if (!company) return NextResponse.json({ error: "公司不存在" }, { status: 404 });
 
+  // 清理持股关系
+  await prisma.companyRelation.deleteMany({ where: { OR: [{ parentId: id }, { childId: id }] } });
   await prisma.company.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

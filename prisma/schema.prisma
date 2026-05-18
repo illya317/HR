@@ -223,22 +223,38 @@ model Employee {
 }
 
 model Company {
-  id        Int       @id @default(autoincrement()) // 主键
-  code      String    // 本级编码（一级: 0,1; 二级: 0,1,2,3...）
-  name      String // 公司名称（父级内唯一）
-  parentId  Int? // 上级公司ID（null=一级公司）
-  parent    Company?  @relation("CompanyHierarchy", fields: [parentId], references: [id])
-  children  Company[] @relation("CompanyHierarchy")
-  sortOrder Int       @default(0) // 排序
-  createdAt DateTime  @default(now()) // 创建时间
-  updatedAt DateTime? // 更新时间
-  editedBy  Int? // 编辑人用户ID
-  editor    User?     @relation("CompanyEditor", fields: [editedBy], references: [id])
-  editedAt  DateTime? // 编辑时间
-  version   Int       @default(1) // 版本号
+  id                 Int                @id @default(autoincrement()) // 主键
+  code               String             @unique // 编码
+  name               String             @unique // 名称
+  fullName           String?            // 全称
+  registeredCapital  String?            // 注册资本
+  unifiedCode        String?            // 统一社会信用代码
+  bankName           String?            // 开户行
+  registeredAddress  String?            // 注册地址
+  registeredDate     String?            // 注册时间
+  legalPerson        String?            // 法人
+  sortOrder          Int                @default(0) // 排序
+  createdAt          DateTime           @default(now()) // 创建时间
+  updatedAt          DateTime?          // 更新时间
+  editedBy           Int?               // 编辑人用户ID
+  editor             User?              @relation("CompanyEditor", fields: [editedBy], references: [id])
+  editedAt           DateTime?          // 编辑时间
+  version            Int                @default(1) // 版本号
 
-  @@unique([parentId, code])
-  @@unique([parentId, name])
+  parentOfRelations  CompanyRelation[]  @relation("ParentCompany")
+  childOfRelations   CompanyRelation[]  @relation("ChildCompany")
+}
+
+model CompanyRelation {
+  id             Int      @id @default(autoincrement())
+  parentId       Int      // 持股方
+  childId        Int      // 被持股方
+  parent         Company  @relation("ParentCompany", fields: [parentId], references: [id], onDelete: Cascade)
+  child          Company  @relation("ChildCompany", fields: [childId], references: [id], onDelete: Cascade)
+  shareRatio     Float?   // 持股比例
+  isConsolidated Boolean  @default(false) // 是否并表
+
+  @@unique([parentId, childId])
 }
 
 model Department {

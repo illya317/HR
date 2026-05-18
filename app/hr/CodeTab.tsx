@@ -5,7 +5,7 @@ import EditToolbar from "@/app/components/EditToolbar";
 import ConfirmModal from "@/app/components/ConfirmModal";
 import DetailModal from "@/app/components/DetailModal";
 import Toast from "@/app/components/Toast";
-import { NAME_TO_CODE, BIO_GROUP_CODES, PHARMA_CODE, SHARED_GROUP_CODES, resolveCompanyFilter } from "@/lib/company";
+import { NAME_TO_CODE, isBio, isPharma, SHARED_GROUP_CODES, resolveCompanyFilter } from "@/lib/company";
 import { useCodeTab } from "@/app/hr/useCodeTab";
 
 import type { HRUser as User } from "./types";
@@ -227,12 +227,8 @@ export default function CodeTab({
             </thead>
             <tbody>
               {(() => {
-                const bioCodes = sortedCodes.filter((c) =>
-                  BIO_GROUP_CODES.includes(c.code.slice(0, 2))
-                );
-                const pharmaCodes = sortedCodes.filter(
-                  (c) => c.code.slice(0, 2) === PHARMA_CODE
-                );
+                const bioCodes = sortedCodes.filter((c) => isBio(c.code));
+                const pharmaCodes = sortedCodes.filter((c) => isPharma(c.code));
                 const bioTotal = bioCodes.reduce(
                   (sum, c) => sum + (stats[c.code] || 0),
                   0
