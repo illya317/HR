@@ -67,77 +67,46 @@ export default function ByDepartmentTab({ user, resources, allDepts, showToast }
             <span className="text-xs text-gray-400">{dept.count}人</span>
           </div>
           <div className="space-y-1.5">
-            {(() => {
-              const grouped = resourceGroups.filter((g) => g.children.length > 0);
-              const standalone = resourceGroups.filter((g) => g.children.length === 0);
-              return (
-                <>
-                  {grouped.map(({ parent, children }) => (
-                    <div key={parent.key} className="flex items-center gap-2">
-                      <button
-                        onClick={() =>
-                          togglePerm(
-                            dept.id,
-                            parent.key,
-                            !deptHasPerm(grants, dept.id, parent.key, "access")
-                          )
-                        }
-                        className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                          deptHasPerm(grants, dept.id, parent.key, "access")
-                            ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100"
-                        }`}
-                      >
-                        {parent.name}
-                      </button>
-                      <div className="flex flex-wrap gap-1.5">
-                        {children.map((child) => {
-                          const has = deptHasPerm(grants, dept.id, child.key, "access");
-                          return (
-                            <button
-                              key={child.key}
-                              onClick={() => togglePerm(dept.id, child.key, !has)}
-                              className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
-                                has
-                                  ? "border border-emerald-200 bg-emerald-100 text-emerald-700"
-                                  : "border border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100"
-                              }`}
-                            >
-                              {child.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                  {standalone.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="shrink-0 rounded-lg border border-gray-100 bg-gray-50 px-3 py-1.5 text-sm font-semibold text-gray-400">
-                        其他
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {standalone.map(({ parent }) => {
-                          const has = deptHasPerm(grants, dept.id, parent.key, "access");
-                          return (
-                            <button
-                              key={parent.key}
-                              onClick={() => togglePerm(dept.id, parent.key, !has)}
-                              className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
-                                has
-                                  ? "border border-emerald-200 bg-emerald-100 text-emerald-700"
-                                  : "border border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100"
-                              }`}
-                            >
-                              {parent.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
+            {resourceGroups.map(({ parent, children }) => (
+              <div key={parent.key} className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    togglePerm(
+                      dept.id,
+                      parent.key,
+                      !deptHasPerm(grants, dept.id, parent.key, "access")
+                    )
+                  }
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    deptHasPerm(grants, dept.id, parent.key, "access")
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100"
+                  }`}
+                >
+                  {parent.name}
+                </button>
+                {children.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {children.map((child) => {
+                      const has = deptHasPerm(grants, dept.id, child.key, "access");
+                      return (
+                        <button
+                          key={child.key}
+                          onClick={() => togglePerm(dept.id, child.key, !has)}
+                          className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
+                            has
+                              ? "border border-emerald-200 bg-emerald-100 text-emerald-700"
+                              : "border border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100"
+                          }`}
+                        >
+                          {child.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       ))}
