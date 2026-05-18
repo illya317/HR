@@ -1,7 +1,7 @@
 import type { ResourceItem, EmployeePerm } from "./types";
 
 export function isTopLevelResource(key: string): boolean {
-  return ["system", "people", "work", "docs"].includes(key);
+  return ["system", "people", "work", "docs", "finance"].includes(key);
 }
 
 export function flattenTree(resources: ResourceItem[]): ResourceItem[] {
