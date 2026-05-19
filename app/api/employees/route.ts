@@ -80,10 +80,12 @@ export async function GET(request: Request) {
     epWhere.department = { name: { contains: dept } };
   }
 
-  // 公司隔离：通过 EmployeePosition.company（二级公司名）筛选
+  // 公司筛选：通过 Department.managementGroup
   const targetCompany = company || "";
   if (targetCompany) {
-    epWhere.company = { in: resolveCompanyFilter(targetCompany) };
+    const mgmtNames = resolveCompanyFilter(targetCompany);
+    if (!epWhere.department) epWhere.department = {};
+    epWhere.department.managementGroup = { name: { in: mgmtNames } };
   }
 
   const eps = await prisma.employeeDepartmentPosition.findMany({
@@ -99,7 +101,7 @@ export async function GET(request: Request) {
       employeeId: emp.employeeId,
       name: emp.name,
       alias: emp.alias,
-      company: ep?.department?.managementGroup?.name ?? ep?.company ?? "",
+      company: ep?.department?.managementGroup?.name ?? "",
       center: ep?.center ?? "",
       dept1: ep?.department?.name ?? "",
       dept2: "",
@@ -195,7 +197,8 @@ export async function GET(request: Request) {
 
   // 所有公司和部门（不随筛选变化，用于下拉框）
   const deptWhere: any = {};
-  const allCompanies = [...new Set((await prisma.department.findMany({ where: deptWhere, select: { managementGroup: { select: { name: true } } } })).map((d: any) => d.managementGroup?.name).filter(Boolean))];
+  const allCompaniesRaw = await prisma.department.findMany({ where: deptWhere, select: { managementGroup: { select: { name: true } } }, distinct: ["managementGroupId"] });
+  const allCompanies = allCompaniesRaw.map((d: any) => d.managementGroup?.name === "GMP" ? "丰华制药" : "丰华生物").filter(Boolean);
   const allDepts = [...new Set((await prisma.department.findMany({ where: deptWhere, select: { name: true } })).map((d: any) => d.name).filter(Boolean))];
 
   return NextResponse.json({ employees: rows, fields: FIELDS, visibleFields, allCompanies, allDepts });
