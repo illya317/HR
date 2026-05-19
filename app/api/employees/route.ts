@@ -14,7 +14,9 @@ const FIELDS = [
   { key: "center", label: "中心" },
   { key: "dept1", label: "一级部门" },
   { key: "dept2", label: "二级部门" },
-  { key: "position", label: "职务岗位" },
+  { key: "position", label: "行政职务" },
+  { key: "gmpDept", label: "GMP部门" },
+  { key: "gmpPosition", label: "GMP岗位" },
   { key: "gender", label: "性别" },
   { key: "ethnicity", label: "民族" },
   { key: "hometown", label: "籍贯" },
@@ -90,84 +92,43 @@ export async function GET(request: Request) {
 
   const eps = await prisma.employeeDepartmentPosition.findMany({
     where: epWhere,
-    include: { department: true, position: true },
+    include: { department: { include: { managementGroup: true } }, position: true },
     orderBy: [{ employeeId: "asc" }, { sortOrder: "asc" }],
   });
 
-  // 3. 扁平化为前端兼容格式
-  function flattenRow(emp: any, ep: any) {
-    return {
-      id: emp.id,
-      employeeId: emp.employeeId,
-      name: emp.name,
-      alias: emp.alias,
-      company: ep?.department?.managementGroup?.name ?? "",
-      center: ep?.center ?? "",
-      dept1: ep?.department?.name ?? "",
-      dept2: "",
-      position: ep?.position?.name ?? "",
-      gender: emp.gender,
-      ethnicity: emp.ethnicity,
-      hometown: emp.hometown,
-      politics: emp.politics,
-      education: emp.education,
-      title: emp.title,
-      school: emp.school,
-      major: emp.major,
-      phone: emp.phone,
-      joinDate: emp.joinDate,
-      nature: emp.nature,
-      status: emp.status,
-      leaveDate: emp.leaveDate,
-      deleted: emp.deleted,
-      deletedTime: emp.deletedTime,
-      deletedBy: emp.deletedBy,
-      userId: emp.userId,
-      employeeDepartmentPositionId: ep?.id ?? null,
-    };
+  // 3. 常规体系 + GMP 合并为一行
+  const epByEmp = new Map<number, any[]>();
+  for (const ep of eps) {
+    if (!epByEmp.has(ep.employeeId)) epByEmp.set(ep.employeeId, []);
+    epByEmp.get(ep.employeeId)!.push(ep);
   }
 
   const rows: any[] = [];
-  const epEmpIds = new Set(eps.map((ep) => ep.employeeId));
-
-  for (const ep of eps) {
-    const emp = empMap.get(ep.employeeId);
-    if (emp) rows.push(flattenRow(emp, ep));
+  for (const emp of baseEmployees) {
+    const epsForEmp = epByEmp.get(emp.id) || [];
+    const defEP = epsForEmp.find((e: any) => e.system !== "GMP") || epsForEmp[0];
+    const gmpEP = epsForEmp.find((e: any) => e.system === "GMP");
+    const mgmt = defEP?.department?.managementGroup?.name;
+    rows.push({
+      id: emp.id, employeeId: emp.employeeId, name: emp.name, alias: emp.alias,
+      company: mgmt === "GMP" ? "丰华制药" : mgmt === "常规体系" ? "丰华生物" : "",
+      center: defEP?.center ?? "",
+      dept1: defEP?.department?.name ?? "",
+      dept2: "",
+      position: defEP?.position?.name ?? "",
+      gmpDept: gmpEP?.department?.name ?? "",
+      gmpPosition: gmpEP?.position?.name ?? "",
+      gender: emp.gender, ethnicity: emp.ethnicity, hometown: emp.hometown,
+      politics: emp.politics, education: emp.education, title: emp.title,
+      school: emp.school, major: emp.major, phone: emp.phone,
+      joinDate: emp.joinDate, nature: emp.nature, status: emp.status,
+      leaveDate: emp.leaveDate, deleted: emp.deleted, deletedTime: emp.deletedTime,
+      deletedBy: emp.deletedBy, userId: emp.userId,
+      employeeDepartmentPositionId: defEP?.id ?? null,
+    });
   }
 
-  // 无岗位筛选时，补充没有 EmployeeDepartmentPosition 的员工
-  if (!dept && !targetCompany) {
-    for (const emp of baseEmployees) {
-      if (!epEmpIds.has(emp.id)) {
-        rows.push(flattenRow(emp, null));
-      }
-    }
-  }
-
-  // 保持 employeeId 排序，同员工多岗位保持连续
   rows.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
-
-  // 同员工多岗位空值填充：组内某字段部分为空时，用非空值填充
-  const FILL_FIELDS = ["company", "center", "dept1", "dept2", "position"];
-  let i = 0;
-  while (i < rows.length) {
-    const empId = rows[i].employeeId;
-    let j = i + 1;
-    while (j < rows.length && rows[j].employeeId === empId) j++;
-    const group = rows.slice(i, j);
-    if (group.length > 1) {
-      for (const key of FILL_FIELDS) {
-        const nonEmpty = group.find((r) => r[key])?.[key];
-        if (nonEmpty) {
-          for (const row of group) {
-            if (!row[key]) row[key] = nonEmpty;
-          }
-        }
-      }
-    }
-    i = j;
-  }
-
 
   const visibleFields = await getVisibleFields(payload.userId, isAdmin);
 

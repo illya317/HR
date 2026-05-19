@@ -327,6 +327,7 @@ model EmployeeDepartmentPosition {
   department   Department? @relation(fields: [departmentId], references: [id])
   positionId   Int? // 岗位ID
   position     Position?   @relation(fields: [positionId], references: [id])
+  system       String? // 常规体系 | GMP
   center       String? // 中心
   isPrimary    Boolean    @default(false) // 是否主岗
   sortOrder    Int        @default(0) // 排序序号
