@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     } else {
       for (const pos of emp.positions) {
         item.roles.push({
-          managementGroup: pos.department?.company || null,
+          managementGroup: pos.department?.managementGroup || null,
           dept1: pos.department?.name || null,
           position: pos.position?.name || null,
         });

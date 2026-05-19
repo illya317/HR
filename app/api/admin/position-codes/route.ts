@@ -31,15 +31,14 @@ export async function GET(request: Request) {
   const departmentCode = searchParams.get("departmentCode");
   const positionCode = searchParams.get("positionCode");
 
-  // 查询某个岗位关联的部门列表
+  // 查询某个岗位关联的部门
   if (positionCode) {
     const pos = await prisma.position.findUnique({ where: { code: positionCode } });
     if (!pos) return NextResponse.json({ departments: [] });
-    const links = await prisma.departmentPosition.findMany({
-      where: { positionId: pos.id },
-      include: { department: { select: { name: true } } },
-    });
-    return NextResponse.json({ departments: links.map((l) => l.department.name) });
+    const dept = pos.departmentId
+      ? await prisma.department.findUnique({ where: { id: pos.departmentId }, select: { name: true } })
+      : null;
+    return NextResponse.json({ departments: dept ? [dept.name] : [] });
   }
 
   const codes = companysParam
@@ -48,16 +47,16 @@ export async function GET(request: Request) {
       ? [company]
       : [];
 
-  // 如果指定了部门编码，先查该部门关联的岗位ID
+  // 如果指定了部门编码，查该部门下的岗位
   let positionIds: number[] | undefined;
   if (departmentCode) {
     const dept = await prisma.department.findUnique({ where: { code: departmentCode } });
     if (dept) {
-      const links = await prisma.departmentPosition.findMany({
+      const positions = await prisma.position.findMany({
         where: { departmentId: dept.id },
-        select: { positionId: true },
+        select: { id: true },
       });
-      positionIds = links.map((l) => l.positionId);
+      positionIds = positions.map(p => p.id);
     }
     if (!positionIds || positionIds.length === 0) {
       return NextResponse.json({ codes: [] });
@@ -71,7 +70,6 @@ export async function GET(request: Request) {
   if (positionIds) {
     where.id = { in: positionIds };
   }
-
   const result = await prisma.position.findMany({ where, orderBy: { code: "asc" } });
   const filtered = result.filter((r: any) => /^\d{5}$/.test(r.code));
   return NextResponse.json({ codes: filtered.map((r: any) => ({ code: r.code, name: r.name })) });
@@ -83,19 +81,15 @@ export async function PUT(request: Request) {
   if (!(await checkHRAccess(payload.userId))) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
-
   const body = await request.json();
   const { code, name, company, originalCode, departmentCode } = body;
   if (!code || !name) return NextResponse.json({ error: "缺少参数" }, { status: 400 });
-
   const finalCode = buildFullCode(code, company || "");
 
   const result = await prisma.$transaction(async (tx) => {
     if (originalCode && originalCode !== finalCode) {
       const existing = await tx.position.findUnique({ where: { code: finalCode } });
-      if (existing) {
-        throw new Error("编号已存在");
-      }
+      if (existing) throw new Error("编号已存在");
       const oldPos = await tx.position.findUnique({ where: { code: originalCode } });
       if (oldPos) {
         const maxVer = await tx.editHistory.findFirst({
@@ -135,37 +129,20 @@ export async function PUT(request: Request) {
           },
         });
       }
+      const data: any = { name, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } };
+      const create: any = { code: finalCode, name, managementGroup: getCompanyFromCode(finalCode) };
+      if (departmentCode) {
+        const dept = await tx.department.findUnique({ where: { code: departmentCode } });
+        if (dept) { data.departmentId = dept.id; create.departmentId = dept.id; }
+      }
       await tx.position.upsert({
         where: { code: finalCode },
-        update: { name, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
-        create: { code: finalCode, name, managementGroup: getCompanyFromCode(finalCode) },
+        update: data,
+        create,
       });
     }
-
-    // 如果指定了部门编码，自动建立关联
-    if (departmentCode) {
-      const dept = await tx.department.findUnique({ where: { code: departmentCode } });
-      const pos = await tx.position.findUnique({ where: { code: finalCode } });
-      if (dept && pos) {
-        await tx.departmentPosition.upsert({
-          where: {
-            departmentId_positionId: {
-              departmentId: dept.id,
-              positionId: pos.id,
-            },
-          },
-          update: {},
-          create: {
-            departmentId: dept.id,
-            positionId: pos.id,
-          },
-        });
-      }
-    }
-
     return { success: true };
   });
-
   return NextResponse.json(result);
 }
 
@@ -175,22 +152,15 @@ export async function DELETE(request: Request) {
   if (!(await checkHRAccess(payload.userId))) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
-
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   if (!code) return NextResponse.json({ error: "缺少code" }, { status: 400 });
-
   const pos = await prisma.position.findUnique({ where: { code } });
   if (!pos) return NextResponse.json({ error: "岗位不存在" }, { status: 404 });
-
   const epCount = await prisma.employeePosition.count({ where: { positionId: pos.id } });
   if (epCount > 0) {
-    return NextResponse.json(
-      { error: `该岗位下有 ${epCount} 名员工，无法删除` },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: `该岗位下有 ${epCount} 名员工，无法删除` }, { status: 400 });
   }
-
   await prisma.position.delete({ where: { code } });
   return NextResponse.json({ success: true });
 }
