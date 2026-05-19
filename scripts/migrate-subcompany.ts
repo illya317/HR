@@ -25,8 +25,8 @@ async function main() {
     excelMap.get(name)!.push({ dept, pos, company });
   }
 
-  // 查询所有 EmployeePosition
-  const eps = await prisma.employeePosition.findMany({
+  // 查询所有 EmployeeDepartmentPosition
+  const eps = await prisma.employeeDepartmentPosition.findMany({
     include: { employee: true, department: true, position: true },
   });
 
@@ -65,7 +65,7 @@ async function main() {
 
     if (match && match.company) {
       if (ep.company !== match.company) {
-        await prisma.employeePosition.update({
+        await prisma.employeeDepartmentPosition.update({
           where: { id: ep.id },
           data: { company: match.company },
         });

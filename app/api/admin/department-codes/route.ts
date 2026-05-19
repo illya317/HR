@@ -128,7 +128,7 @@ export async function DELETE(request: Request) {
   const dept = await prisma.department.findUnique({ where: { code } });
   if (!dept) return NextResponse.json({ error: "部门不存在" }, { status: 404 });
 
-  const epCount = await prisma.employeePosition.count({ where: { departmentId: dept.id } });
+  const epCount = await prisma.employeeDepartmentPosition.count({ where: { departmentId: dept.id } });
   if (epCount > 0) {
     return NextResponse.json(
       { error: `该部门下有 ${epCount} 名员工，无法删除` },

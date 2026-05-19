@@ -28,7 +28,7 @@ model User {
   managedDepartments      Department[]      @relation("DepartmentManager")
   editedDepartments       Department[]      @relation("DepartmentEditor")
   editedPositions         Position[]        @relation("PositionEditor")
-  editedEmployeePositions EmployeePosition[] @relation("EmpPositionEditor")
+  editedEmployeePositions EmployeeDepartmentPosition[] @relation("EmpDeptPositionEditor")
   editedCompanies         Company[]         @relation("CompanyEditor")
   editHistories           EditHistory[]     @relation("EditHistoryEditor")
   editedProjects          Project[]         @relation("ProjectEditor")
@@ -214,7 +214,7 @@ model Employee {
   deletedBy     String? // 删除操作人
   userId        Int? // 用户ID
   user          User?              @relation("EmployeeUser", fields: [userId], references: [id])
-  positions     EmployeePosition[]
+  positions     EmployeeDepartmentPosition[]
   projects      EmployeeProject[]
   editedBy      Int? // 编辑人用户ID
   editor        User?              @relation("EmployeeEditor", fields: [editedBy], references: [id])
@@ -269,7 +269,7 @@ model Department {
   managerUserId     Int?               // 负责人 → User.id
   manager           User?              @relation("DepartmentManager", fields: [managerUserId], references: [id])
   positions         Position[]         // 岗位（1:N）
-  employeePositions EmployeePosition[]
+  employeeDepartmentPositions EmployeeDepartmentPosition[]
   resourceRoles     DepartmentResourceRole[]
   managementGroup    String             @map("company") // 管理体系（丰华生物体系/丰华制药）
   createdAt         DateTime           @default(now()) // 创建时间
@@ -287,7 +287,7 @@ model Position {
   managementGroup    String             @map("company") // 管理体系（丰华生物体系/丰华制药）
   departmentId      Int?               // 所属部门
   department        Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  employeePositions EmployeePosition[]
+  employeeDepartmentPositions EmployeeDepartmentPosition[]
   resourceRoles     PositionResourceRole[]
   createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime? // 更新时间
@@ -297,7 +297,7 @@ model Position {
   version           Int                @default(1) // 版本号
 }
 
-model EmployeePosition {
+model EmployeeDepartmentPosition {
   id           Int        @id @default(autoincrement()) // 主键
   employeeId   Int // 员工编号
   employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
@@ -314,11 +314,12 @@ model EmployeePosition {
   createdAt    DateTime   @default(now()) // 创建时间
   updatedAt    DateTime? // 更新时间
   editedBy     Int? // 编辑人用户ID
-  editor       User?         @relation("EmpPositionEditor", fields: [editedBy], references: [id])
+  editor       User?         @relation("EmpDeptPositionEditor", fields: [editedBy], references: [id])
   editedAt     DateTime? // 编辑时间
   version      Int        @default(1) // 版本号
 
   @@unique([employeeId, departmentId, positionId])
+  @@map("EmployeePosition")
 }
 
 model Project {

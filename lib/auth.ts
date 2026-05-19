@@ -56,7 +56,7 @@ export type AuthPayload = {
 // ============================================================
 
 async function getUserPositionIds(userId: number): Promise<number[]> {
-  const eps = await prisma.employeePosition.findMany({
+  const eps = await prisma.employeeDepartmentPosition.findMany({
     where: { employee: { userId } },
     select: { positionId: true },
   });
@@ -64,7 +64,7 @@ async function getUserPositionIds(userId: number): Promise<number[]> {
 }
 
 async function getUserDepartmentIds(userId: number): Promise<number[]> {
-  const eps = await prisma.employeePosition.findMany({
+  const eps = await prisma.employeeDepartmentPosition.findMany({
     where: { employee: { userId } },
     select: { departmentId: true },
   });

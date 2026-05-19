@@ -48,7 +48,7 @@ export async function getUserTargets(userId: number): Promise<{
   }
 
   // Departments and positions from EmployeePosition
-  const eps = await prisma.employeePosition.findMany({
+  const eps = await prisma.employeeDepartmentPosition.findMany({
     where: { employeeId: { in: employeeIds } },
     select: {
       department: { select: { id: true, name: true, company: true } },

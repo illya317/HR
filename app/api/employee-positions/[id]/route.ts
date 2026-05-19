@@ -27,7 +27,7 @@ export async function PUT(
   const epId = parseInt(id);
 
   // 快照旧数据
-  const oldData = await prisma.employeePosition.findUnique({
+  const oldData = await prisma.employeeDepartmentPosition.findUnique({
     where: { id: epId },
   });
   if (oldData) {
@@ -61,7 +61,7 @@ export async function PUT(
         { status: 400 }
       );
     }
-    await prisma.employeePosition.update({
+    await prisma.employeeDepartmentPosition.update({
       where: { id: epId },
       data: { departmentId: dept.id, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
     });
@@ -77,12 +77,12 @@ export async function PUT(
         { status: 400 }
       );
     }
-    await prisma.employeePosition.update({
+    await prisma.employeeDepartmentPosition.update({
       where: { id: epId },
       data: { positionId: pos.id, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
     });
   } else {
-    await prisma.employeePosition.update({
+    await prisma.employeeDepartmentPosition.update({
       where: { id: epId },
       data: { [field]: value, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
     });
@@ -105,6 +105,6 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  await prisma.employeePosition.delete({ where: { id: parseInt(id) } });
+  await prisma.employeeDepartmentPosition.delete({ where: { id: parseInt(id) } });
   return NextResponse.json({ success: true });
 }

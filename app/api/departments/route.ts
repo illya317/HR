@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const depts = await prisma.department.findMany({
     where,
     include: {
-      _count: { select: { employeePositions: true } },
+      _count: { select: { employeeDepartmentPositions: true } },
       parent: { select: { id: true, name: true } },
       children: { select: { id: true, name: true } },
     },
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       parentId: d.parentId,
       parentName: d.parent?.name || null,
       managerUserId: d.managerUserId,
-      headcount: d._count.employeePositions,
+      headcount: d._count.employeeDepartmentPositions,
       children: d.children.map((c) => ({ id: c.id, name: c.name })),
     })),
   });

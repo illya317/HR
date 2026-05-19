@@ -74,7 +74,7 @@ export async function GET(request: Request) {
   const employeeIds = baseEmployees.map((e) => e.id);
   const empMap = new Map(baseEmployees.map((e) => [e.id, e]));
 
-  // 2. 查询 EmployeePosition（带部门和岗位筛选）
+  // 2. 查询 EmployeeDepartmentPosition（带部门和岗位筛选）
   const epWhere: any = { employeeId: { in: employeeIds } };
   if (dept) {
     epWhere.department = { name: { contains: dept } };
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
     epWhere.company = { in: resolveCompanyFilter(targetCompany) };
   }
 
-  const eps = await prisma.employeePosition.findMany({
+  const eps = await prisma.employeeDepartmentPosition.findMany({
     where: epWhere,
     include: { department: true, position: true },
     orderBy: [{ employeeId: "asc" }, { sortOrder: "asc" }],
@@ -121,7 +121,7 @@ export async function GET(request: Request) {
       deletedTime: emp.deletedTime,
       deletedBy: emp.deletedBy,
       userId: emp.userId,
-      employeePositionId: ep?.id ?? null,
+      employeeDepartmentPositionId: ep?.id ?? null,
     };
   }
 
@@ -133,7 +133,7 @@ export async function GET(request: Request) {
     if (emp) rows.push(flattenRow(emp, ep));
   }
 
-  // 无岗位筛选时，补充没有 EmployeePosition 的员工
+  // 无岗位筛选时，补充没有 EmployeeDepartmentPosition 的员工
   if (!dept && !targetCompany) {
     for (const emp of baseEmployees) {
       if (!epEmpIds.has(emp.id)) {

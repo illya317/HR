@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const positions = await prisma.position.findMany({
     where,
     include: {
-      _count: { select: { employeePositions: true } },
+      _count: { select: { employeeDepartmentPositions: true } },
     },
     orderBy: { code: "asc" },
   });
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       code: p.code,
       name: p.name,
       managementGroup: p.managementGroup,
-      headcount: p._count.employeePositions,
+      headcount: p._count.employeeDepartmentPositions,
     })),
   });
 }

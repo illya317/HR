@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     epWhere.company = { in: resolveCompanyFilter(targetCompany) };
   }
 
-  const eps = await prisma.employeePosition.findMany({
+  const eps = await prisma.employeeDepartmentPosition.findMany({
     where: epWhere,
     include: { department: true, position: true },
     orderBy: [{ employeeId: "asc" }, { sortOrder: "asc" }],
