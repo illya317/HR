@@ -26,6 +26,7 @@ interface Model {
   comment: string;
   fields: Field[];
   relations: Relation[];
+  compositeKeys: string[];
   inboundFrom: string[];
 }
 
@@ -53,6 +54,7 @@ function parseSchema(schemaPath: string): { models: Model[]; groups: string[] } 
         comment: currentGroup,
         fields: [],
         relations: [],
+        compositeKeys: [],
         inboundFrom: [],
       };
       continue;
@@ -66,7 +68,16 @@ function parseSchema(schemaPath: string): { models: Model[]; groups: string[] } 
 
     if (currentModel) {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("@@")) continue;
+      if (!trimmed || trimmed.startsWith("//")) continue;
+
+      // Parse @@unique and @@id for composite keys
+      const uniqueMatch = trimmed.match(/^@@(?:unique|id)\s*\(\s*\[([^\]]+)\]\s*\)/);
+      if (uniqueMatch) {
+        const keys = uniqueMatch[1].split(",").map((s) => s.trim());
+        currentModel.compositeKeys.push(...keys);
+        continue;
+      }
+      if (trimmed.startsWith("@@")) continue;
 
       const fieldMatch = trimmed.match(/^(\w+)\s+(\w+)(\?)?(\[\])?\s*(.*)$/);
       if (fieldMatch) {
@@ -259,6 +270,7 @@ function generateTablesHTML(models: Model[]): string {
           }
         }
       }
+      const pkFields = new Set(m.compositeKeys);
 
       rows.push(`<table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>`);
       for (const f of m.fields) {
@@ -267,7 +279,8 @@ function generateTablesHTML(models: Model[]): string {
         const isFK = m.relations.some((r) => r.fields.includes(f.name));
         const rel = m.relations.find((r) => r.fields.includes(f.name));
         const comment = f.comment || (rel ? `→ ${rel.targetModel}.${rel.references[0]}` : "");
-        const rowClass = fkOutFields.has(f.name) ? "fk-out" : fkInFields.has(f.name) ? "fk-in" : "";
+        const isPK = pkFields.has(f.name);
+        const rowClass = isPK ? "fk-in" : fkOutFields.has(f.name) ? "fk-out" : fkInFields.has(f.name) ? "fk-in" : "";
         const fkSuffix = isFK && rel ? ` <span style="font-size:11px;color:#d97706">→ <a href="#${rel.targetModel}" class="dep-link">${rel.targetModel}</a></span>` : "";
         rows.push(`<tr class="${rowClass}">
           <td><span class="field-name">${f.name}</span>${f.required ? ' <span class="field-required">*</span>' : ""}</td>
@@ -348,6 +361,7 @@ function generateTablesMD(models: Model[]): string {
           }
         }
       }
+      const pkFields = new Set(m.compositeKeys);
 
       lines.push(`### ${num} ${m.name}\n`);
       lines.push(`| Field | Type | Required | FK | Note |`);
@@ -356,11 +370,12 @@ function generateTablesMD(models: Model[]): string {
       for (const f of m.fields) {
         if (f.type.endsWith("[]")) continue;
         if (f.isRelation && !m.relations.some((r) => r.fields.includes(f.name))) continue;
+        const isPK = pkFields.has(f.name);
         const isFK = fkOutFields.has(f.name);
         const isRef = fkInFields.has(f.name);
         const rel = m.relations.find((r) => r.fields.includes(f.name));
         const comment = f.comment || (rel ? `→ ${rel.targetModel}.${rel.references[0]}` : "");
-        const fkFlag = isFK ? "FK" : isRef ? "REF" : "";
+        const fkFlag = isPK ? "PK" : isFK ? "FK" : isRef ? "REF" : "";
         lines.push(`| \`${f.name}\` | ${f.type} | ${f.required ? "*" : ""} | ${fkFlag} | ${comment} |`);
       }
 

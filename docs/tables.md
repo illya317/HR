@@ -1,4 +1,4 @@
-# HR Database Schema (27 tables)
+# HR Database Schema (25 tables)
 
 ## 1. System
 
@@ -17,7 +17,7 @@
 | `apiKey` | String |  |  | API密钥 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 
-← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-4 Department](#department), [5-4 Department](#department), [5-5 Position](#position), [5-6 EmployeePosition](#employeeposition), [5-7 DepartmentPosition](#departmentposition), [5-8 Project](#project), [5-10 EmployeeProject](#employeeproject), [6-1 PositionDescription](#positiondescription), [8-1 EditHistory](#edithistory)
+← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-4 Department](#department), [5-4 Department](#department), [5-5 Position](#position), [5-6 EmployeePosition](#employeeposition), [5-7 Project](#project), [5-8 EmployeeProject](#employeeproject), [6-1 PositionDescription](#positiondescription), [8-1 EditHistory](#edithistory)
 
 ### 1-2 SystemConfig
 
@@ -36,8 +36,9 @@
 | `key` | String | * |  |  |
 | `name` | String | * |  |  |
 | `description` | String |  |  |  |
+| `level` | Int | * |  | 1=父权限(无parentId), 2+=子权限 |
 | `sortOrder` | Int | * |  |  |
-| `parentId` | Int |  | FK | 上级资源（资源树） |
+| `parentId` | Int |  | FK | 上级资源（level≥2时必填） |
 
 → Depends on: [2-1 Resource](#resource)
 
@@ -60,10 +61,10 @@
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * |  |  |
-| `userId` | Int | * | FK | → User.id |
-| `resourceId` | Int | * | FK | → Resource.id |
-| `roleId` | Int | * | FK | → Role.id |
-| `scopeId` | String |  |  | null=全局, 有值=范围实例 |
+| `userId` | Int | * | PK | → User.id |
+| `resourceId` | Int | * | PK | → Resource.id |
+| `roleId` | Int | * | PK | → Role.id |
+| `scopeId` | String |  | PK | null=全局, 有值=范围实例 |
 
 → Depends on: [1-1 User](#user), [2-1 Resource](#resource), [2-2 Role](#role)
 
@@ -72,10 +73,10 @@
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * |  |  |
-| `positionId` | Int | * | FK | → Position.id |
-| `resourceId` | Int | * | FK | → Resource.id |
-| `roleId` | Int | * | FK | → Role.id |
-| `scopeId` | String |  |  |  |
+| `positionId` | Int | * | PK | → Position.id |
+| `resourceId` | Int | * | PK | → Resource.id |
+| `roleId` | Int | * | PK | → Role.id |
+| `scopeId` | String |  | PK |  |
 
 → Depends on: [5-5 Position](#position), [2-1 Resource](#resource), [2-2 Role](#role)
 
@@ -84,10 +85,10 @@
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * |  |  |
-| `departmentId` | Int | * | FK | → Department.id |
-| `resourceId` | Int | * | FK | → Resource.id |
-| `roleId` | Int | * | FK | → Role.id |
-| `scopeId` | String |  |  |  |
+| `departmentId` | Int | * | PK | → Department.id |
+| `resourceId` | Int | * | PK | → Resource.id |
+| `roleId` | Int | * | PK | → Role.id |
+| `scopeId` | String |  | PK |  |
 
 → Depends on: [5-4 Department](#department), [2-1 Resource](#resource), [2-2 Role](#role)
 
@@ -98,10 +99,10 @@
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * | REF | 主键 |
-| `userId` | Int |  | FK | 用户ID |
-| `targetType` | String | * |  | "department" | "project" | "position" |
-| `targetId` | Int | * |  | 多态 FK → Department.id | Project.id | Position.id |
-| `date` | String | * |  | 日期（yyyy-MM-dd，日报=当天，周报=周一，月报=月初） |
+| `userId` | Int |  | PK | 用户ID |
+| `targetType` | String | * | PK | "department" | "project" | "position" |
+| `targetId` | Int | * | PK | 多态 FK → Department.id | Project.id | Position.id |
+| `date` | String | * | PK | 日期（yyyy-MM-dd，日报=当天，周报=周一，月报=月初） |
 | `taskName` | String | * |  | 任务名称 |
 | `notes` | String |  |  | 备注 |
 | `version` | Int | * |  | 版本号 |
@@ -132,8 +133,8 @@
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * |  | 主键 |
-| `reportId` | Int | * | FK | 周报ID |
-| `version` | Int | * |  | 版本号 |
+| `reportId` | Int | * | PK | 周报ID |
+| `version` | Int | * | PK | 版本号 |
 | `taskName` | String | * |  | 任务名称 |
 | `notes` | String |  |  | 备注 |
 | `itemsJson` | String | * |  | 条目JSON快照 |
@@ -209,7 +210,7 @@
 
 → Depends on: [1-1 User](#user), [1-1 User](#user)
 
-← Referenced by: [5-6 EmployeePosition](#employeeposition), [5-10 EmployeeProject](#employeeproject)
+← Referenced by: [5-6 EmployeePosition](#employeeposition), [5-8 EmployeeProject](#employeeproject)
 
 ### 5-2 Company
 
@@ -222,9 +223,10 @@
 | `registeredCapital` | String |  |  | 注册资本 |
 | `unifiedCode` | String |  |  | 统一社会信用代码 |
 | `bankName` | String |  |  | 开户行 |
-| `registeredAddress` | String |  |  | 注册地址 |
+| `registeredAddress` | String |  |  | 办公地址 |
 | `registeredDate` | String |  |  | 注册时间 |
-| `legalPerson` | String |  |  | 法人 |
+| `legalPerson` | String |  |  | 法定代表人 |
+| `managementGroup` | String |  |  | 管理体系（丰华生物体系/丰华制药） |
 | `sortOrder` | Int | * |  | 排序 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime |  |  | 更新时间 |
@@ -241,8 +243,8 @@
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * |  |  |
-| `parentId` | Int | * | FK | 持股方 |
-| `childId` | Int | * | FK | 被持股方 |
+| `parentId` | Int | * | PK | 持股方 |
+| `childId` | Int | * | PK | 被持股方 |
 | `shareRatio` | Float |  |  | 持股比例 |
 | `isConsolidated` | Boolean | * |  | 是否并表 |
 
@@ -258,7 +260,7 @@
 | `level` | Int | * |  | 层级 |
 | `parentId` | Int |  | FK | 上级ID |
 | `managerUserId` | Int |  | FK | 负责人 → User.id |
-| `company` | String |  |  | 公司编码（如 01/02/03） |
+| `managementGroup` | String | * |  | 管理体系（丰华生物体系/丰华制药） |
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime |  |  | 更新时间 |
 | `editedBy` | Int |  | FK | 编辑人用户ID |
@@ -267,7 +269,7 @@
 
 → Depends on: [5-4 Department](#department), [1-1 User](#user), [1-1 User](#user)
 
-← Referenced by: [2-5 DepartmentResourceRole](#departmentresourcerole), [5-6 EmployeePosition](#employeeposition), [5-7 DepartmentPosition](#departmentposition), [5-9 ProjectDepartment](#projectdepartment)
+← Referenced by: [2-5 DepartmentResourceRole](#departmentresourcerole), [5-5 Position](#position), [5-6 EmployeePosition](#employeeposition)
 
 ### 5-5 Position
 
@@ -276,16 +278,17 @@
 | `id` | Int | * | REF | 主键 |
 | `code` | String | * |  | 编码 |
 | `name` | String | * |  | 名称 |
-| `company` | String |  |  | 公司编码（如 01/02/03） |
+| `managementGroup` | String | * |  | 管理体系（丰华生物体系/丰华制药） |
+| `departmentId` | Int |  | FK | 所属部门 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime |  |  | 更新时间 |
 | `editedBy` | Int |  | FK | 编辑人用户ID |
 | `editedAt` | DateTime |  |  | 编辑时间 |
 | `version` | Int | * |  | 版本号 |
 
-→ Depends on: [1-1 User](#user)
+→ Depends on: [5-4 Department](#department), [1-1 User](#user)
 
-← Referenced by: [2-4 PositionResourceRole](#positionresourcerole), [5-6 EmployeePosition](#employeeposition), [5-7 DepartmentPosition](#departmentposition)
+← Referenced by: [2-4 PositionResourceRole](#positionresourcerole), [5-6 EmployeePosition](#employeeposition)
 
 ### 5-6 EmployeePosition
 
@@ -295,7 +298,7 @@
 | `employeeId` | Int | * | FK | 员工编号 |
 | `departmentId` | Int | * | FK | 部门ID |
 | `positionId` | Int | * | FK | 岗位ID |
-| `company` | String |  |  | 公司编码（如 01/02/03） |
+| `managementGroup` | String |  |  | 管理体系（丰华生物体系/丰华制药） |
 | `center` | String |  |  | 中心 |
 | `isPrimary` | Boolean | * |  | 是否主岗 |
 | `sortOrder` | Int | * |  | 排序序号 |
@@ -309,23 +312,7 @@
 
 → Depends on: [5-1 Employee](#employee), [5-4 Department](#department), [5-5 Position](#position), [1-1 User](#user)
 
-### 5-7 DepartmentPosition
-
-| Field | Type | Required | FK | Note |
-|-------|------|----------|----|------|
-| `id` | Int | * |  | 主键 |
-| `departmentId` | Int | * | FK | 部门ID |
-| `positionId` | Int | * | FK | 岗位ID |
-| `company` | String |  |  | 公司编码（如 01/02/03） |
-| `createdAt` | DateTime | * |  | 创建时间 |
-| `updatedAt` | DateTime |  |  | 更新时间 |
-| `editedBy` | Int |  | FK | 编辑人用户ID |
-| `editedAt` | DateTime |  |  | 编辑时间 |
-| `version` | Int | * |  | 版本号 |
-
-→ Depends on: [5-4 Department](#department), [5-5 Position](#position), [1-1 User](#user)
-
-### 5-8 Project
+### 5-7 Project
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
@@ -341,24 +328,15 @@
 
 → Depends on: [1-1 User](#user)
 
-← Referenced by: [5-9 ProjectDepartment](#projectdepartment), [5-10 EmployeeProject](#employeeproject)
+← Referenced by: [5-8 EmployeeProject](#employeeproject)
 
-### 5-9 ProjectDepartment
-
-| Field | Type | Required | FK | Note |
-|-------|------|----------|----|------|
-| `projectId` | Int | * | FK | → Project.id |
-| `departmentId` | Int | * | FK | → Department.id |
-
-→ Depends on: [5-8 Project](#project), [5-4 Department](#department)
-
-### 5-10 EmployeeProject
+### 5-8 EmployeeProject
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * |  | 主键 |
-| `employeeId` | Int | * | FK | 员工ID |
-| `projectId` | Int | * | FK | 项目ID |
+| `employeeId` | Int | * | PK | 员工ID |
+| `projectId` | Int | * | PK | 项目ID |
 | `role` | String |  |  | 项目角色 |
 | `startDate` | String |  |  | 开始日期 |
 | `endDate` | String |  |  | 结束日期 |
@@ -368,7 +346,7 @@
 | `editedAt` | DateTime |  |  | 编辑时间 |
 | `version` | Int | * |  | 版本号 |
 
-→ Depends on: [5-1 Employee](#employee), [5-8 Project](#project), [1-1 User](#user)
+→ Depends on: [5-1 Employee](#employee), [5-7 Project](#project), [1-1 User](#user)
 
 ## 制药岗位说明书
 
@@ -488,9 +466,9 @@
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * |  | 主键 |
-| `entityType` | String | * |  | "employee" | "employee_position" | "code_department" | "code_position" |
-| `entityId` | String | * |  | 实体主键 |
-| `version` | Int | * |  | 版本号 |
+| `entityType` | String | * | PK | "employee" | "employee_position" | "code_department" | "code_position" |
+| `entityId` | String | * | PK | 实体主键 |
+| `version` | Int | * | PK | 版本号 |
 | `dataJson` | String | * |  | 编辑前快照 |
 | `editedBy` | Int | * | FK | 编辑人用户ID |
 | `createdAt` | DateTime | * |  | 创建时间 |

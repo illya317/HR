@@ -1,8 +1,8 @@
 # HR API Reference
 
-**71 endpoints** across 10 groups
+**72 endpoints** across 11 groups
 
-GET: 30 | POST: 10 | PUT: 19 | DELETE: 12
+GET: 31 | POST: 10 | PUT: 19 | DELETE: 12
 
 ## 认证与账户
 
@@ -124,3 +124,9 @@ GET: 30 | POST: 10 | PUT: 19 | DELETE: 12
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | **GET** | `/api/admin/edit-history` | 登录 + HR权限 | 编辑历史查询 |
+
+## Admin — 其他
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| **GET** | `/api/admin/company-relations` | 登录 + HR权限 |  |

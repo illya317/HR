@@ -47,7 +47,7 @@
 <body>
 <nav>
 <h1>HR Database Schema</h1>
-<p style="font-size:12px;color:#94a3b8;margin-bottom:20px">27 tables</p>
+<p style="font-size:12px;color:#94a3b8;margin-bottom:20px">25 tables</p>
 
 <div class="group"><div class="group-title">1. System</div>
 <a href="#User">1-1 User</a>
@@ -76,10 +76,8 @@
 <a href="#Department">5-4 Department</a>
 <a href="#Position">5-5 Position</a>
 <a href="#EmployeePosition">5-6 EmployeePosition</a>
-<a href="#DepartmentPosition">5-7 DepartmentPosition</a>
-<a href="#Project">5-8 Project</a>
-<a href="#ProjectDepartment">5-9 ProjectDepartment</a>
-<a href="#EmployeeProject">5-10 EmployeeProject</a>
+<a href="#Project">5-7 Project</a>
+<a href="#EmployeeProject">5-8 EmployeeProject</a>
 </div>
 <div class="group"><div class="group-title">6. 制药岗位说明书</div>
 <a href="#PositionDescription">6-1 PositionDescription</a>
@@ -167,9 +165,8 @@
 <a href="#Department" class="dep-link">5-4 Department</a>
 <a href="#Position" class="dep-link">5-5 Position</a>
 <a href="#EmployeePosition" class="dep-link">5-6 EmployeePosition</a>
-<a href="#DepartmentPosition" class="dep-link">5-7 DepartmentPosition</a>
-<a href="#Project" class="dep-link">5-8 Project</a>
-<a href="#EmployeeProject" class="dep-link">5-10 EmployeeProject</a>
+<a href="#Project" class="dep-link">5-7 Project</a>
+<a href="#EmployeeProject" class="dep-link">5-8 EmployeeProject</a>
 <a href="#PositionDescription" class="dep-link">6-1 PositionDescription</a>
 <a href="#EditHistory" class="dep-link">8-1 EditHistory</a>
 </div>
@@ -224,6 +221,11 @@
           <td class="field-comment"></td>
         </tr>
 <tr class="">
+          <td><span class="field-name">level</span> <span class="field-required">*</span></td>
+          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+          <td class="field-comment">1=父权限(无parentId), 2+=子权限</td>
+        </tr>
+<tr class="">
           <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -231,7 +233,7 @@
 <tr class="fk-out">
           <td><span class="field-name">parentId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment">上级资源（资源树） <span style="font-size:11px;color:#d97706">→ <a href="#Resource" class="dep-link">Resource</a></span></td>
+          <td class="field-comment">上级资源（level≥2时必填） <span style="font-size:11px;color:#d97706">→ <a href="#Resource" class="dep-link">Resource</a></span></td>
         </tr>
 </tbody></table>
 <div class="table-footer">
@@ -293,22 +295,22 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">userId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ User.id <span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">User</a></span></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">resourceId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Resource.id <span style="font-size:11px;color:#d97706">→ <a href="#Resource" class="dep-link">Resource</a></span></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">roleId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Role.id <span style="font-size:11px;color:#d97706">→ <a href="#Role" class="dep-link">Role</a></span></td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">scopeId</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">null=全局, 有值=范围实例</td>
@@ -333,22 +335,22 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">positionId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Position.id <span style="font-size:11px;color:#d97706">→ <a href="#Position" class="dep-link">Position</a></span></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">resourceId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Resource.id <span style="font-size:11px;color:#d97706">→ <a href="#Resource" class="dep-link">Resource</a></span></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">roleId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Role.id <span style="font-size:11px;color:#d97706">→ <a href="#Role" class="dep-link">Role</a></span></td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">scopeId</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
@@ -373,22 +375,22 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">departmentId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Department.id <span style="font-size:11px;color:#d97706">→ <a href="#Department" class="dep-link">Department</a></span></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">resourceId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Resource.id <span style="font-size:11px;color:#d97706">→ <a href="#Resource" class="dep-link">Resource</a></span></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">roleId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">→ Role.id <span style="font-size:11px;color:#d97706">→ <a href="#Role" class="dep-link">Role</a></span></td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">scopeId</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment"></td>
@@ -415,22 +417,22 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">userId</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">用户ID <span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">User</a></span></td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">targetType</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">"department" | "project" | "position"</td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">targetId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">多态 FK → Department.id | Project.id | Position.id</td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">date</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">日期（yyyy-MM-dd，日报=当天，周报=周一，月报=月初）</td>
@@ -533,12 +535,12 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">reportId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">周报ID <span style="font-size:11px;color:#d97706">→ <a href="#Report" class="dep-link">Report</a></span></td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">版本号</td>
@@ -830,7 +832,7 @@
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <a href="#EmployeePosition" class="dep-link">5-6 EmployeePosition</a>
-<a href="#EmployeeProject" class="dep-link">5-10 EmployeeProject</a>
+<a href="#EmployeeProject" class="dep-link">5-8 EmployeeProject</a>
 </div>
 </div>
 </div>
@@ -875,7 +877,7 @@
 <tr class="">
           <td><span class="field-name">registeredAddress</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment">注册地址</td>
+          <td class="field-comment">办公地址</td>
         </tr>
 <tr class="">
           <td><span class="field-name">registeredDate</span></td>
@@ -885,7 +887,12 @@
 <tr class="">
           <td><span class="field-name">legalPerson</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment">法人</td>
+          <td class="field-comment">法定代表人</td>
+        </tr>
+<tr class="">
+          <td><span class="field-name">managementGroup</span></td>
+          <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+          <td class="field-comment">管理体系（丰华生物体系/丰华制药）</td>
         </tr>
 <tr class="">
           <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
@@ -936,12 +943,12 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">parentId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">持股方 <span style="font-size:11px;color:#d97706">→ <a href="#Company" class="dep-link">Company</a></span></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">childId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">被持股方 <span style="font-size:11px;color:#d97706">→ <a href="#Company" class="dep-link">Company</a></span></td>
@@ -1001,9 +1008,9 @@
           <td class="field-comment">负责人 → User.id <span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">User</a></span></td>
         </tr>
 <tr class="">
-          <td><span class="field-name">company</span></td>
+          <td><span class="field-name">managementGroup</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment">公司编码（如 01/02/03）</td>
+          <td class="field-comment">管理体系（丰华生物体系/丰华制药）</td>
         </tr>
 <tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
@@ -1039,9 +1046,8 @@
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <a href="#DepartmentResourceRole" class="dep-link">2-5 DepartmentResourceRole</a>
+<a href="#Position" class="dep-link">5-5 Position</a>
 <a href="#EmployeePosition" class="dep-link">5-6 EmployeePosition</a>
-<a href="#DepartmentPosition" class="dep-link">5-7 DepartmentPosition</a>
-<a href="#ProjectDepartment" class="dep-link">5-9 ProjectDepartment</a>
 </div>
 </div>
 </div>
@@ -1064,9 +1070,14 @@
           <td class="field-comment">名称</td>
         </tr>
 <tr class="">
-          <td><span class="field-name">company</span></td>
+          <td><span class="field-name">managementGroup</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment">公司编码（如 01/02/03）</td>
+          <td class="field-comment">管理体系（丰华生物体系/丰华制药）</td>
+        </tr>
+<tr class="fk-out">
+          <td><span class="field-name">departmentId</span></td>
+          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+          <td class="field-comment">所属部门 <span style="font-size:11px;color:#d97706">→ <a href="#Department" class="dep-link">Department</a></span></td>
         </tr>
 <tr class="">
           <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
@@ -1096,12 +1107,12 @@
 </tbody></table>
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#Department" class="dep-link">5-4 Department</a>
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <a href="#PositionResourceRole" class="dep-link">2-4 PositionResourceRole</a>
 <a href="#EmployeePosition" class="dep-link">5-6 EmployeePosition</a>
-<a href="#DepartmentPosition" class="dep-link">5-7 DepartmentPosition</a>
 </div>
 </div>
 </div>
@@ -1129,9 +1140,9 @@
           <td class="field-comment">岗位ID <span style="font-size:11px;color:#d97706">→ <a href="#Position" class="dep-link">Position</a></span></td>
         </tr>
 <tr class="">
-          <td><span class="field-name">company</span></td>
+          <td><span class="field-name">managementGroup</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment">公司编码（如 01/02/03）</td>
+          <td class="field-comment">管理体系（丰华生物体系/丰华制药）</td>
         </tr>
 <tr class="">
           <td><span class="field-name">center</span></td>
@@ -1196,68 +1207,8 @@
 </div>
 </div>
 </div>
-<div class="table-block" id="DepartmentPosition">
-<div class="table-header"><h3><span class="table-num">5-7</span> DepartmentPosition</h3></div>
-<table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
-          <td><span class="field-name">id</span> <span class="field-required">*</span></td>
-          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment">主键</td>
-        </tr>
-<tr class="fk-out">
-          <td><span class="field-name">departmentId</span> <span class="field-required">*</span></td>
-          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment">部门ID <span style="font-size:11px;color:#d97706">→ <a href="#Department" class="dep-link">Department</a></span></td>
-        </tr>
-<tr class="fk-out">
-          <td><span class="field-name">positionId</span> <span class="field-required">*</span></td>
-          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment">岗位ID <span style="font-size:11px;color:#d97706">→ <a href="#Position" class="dep-link">Position</a></span></td>
-        </tr>
-<tr class="">
-          <td><span class="field-name">company</span></td>
-          <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-          <td class="field-comment">公司编码（如 01/02/03）</td>
-        </tr>
-<tr class="">
-          <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
-          <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment">创建时间</td>
-        </tr>
-<tr class="">
-          <td><span class="field-name">updatedAt</span></td>
-          <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment">更新时间</td>
-        </tr>
-<tr class="fk-out">
-          <td><span class="field-name">editedBy</span></td>
-          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment">编辑人用户ID <span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">User</a></span></td>
-        </tr>
-<tr class="">
-          <td><span class="field-name">editedAt</span></td>
-          <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-          <td class="field-comment">编辑时间</td>
-        </tr>
-<tr class="">
-          <td><span class="field-name">version</span> <span class="field-required">*</span></td>
-          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment">版本号</td>
-        </tr>
-</tbody></table>
-<div class="table-footer">
-<div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#Department" class="dep-link">5-4 Department</a>
-<a href="#Position" class="dep-link">5-5 Position</a>
-<a href="#User" class="dep-link">1-1 User</a>
-</div>
-<div class="dep-in"><span class="dep-label">Referenced by:</span>
-<span class="dep-none">无</span>
-</div>
-</div>
-</div>
 <div class="table-block" id="Project">
-<div class="table-header"><h3><span class="table-num">5-8</span> Project</h3></div>
+<div class="table-header"><h3><span class="table-num">5-7</span> Project</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
 <tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
@@ -1310,49 +1261,24 @@
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
-<a href="#ProjectDepartment" class="dep-link">5-9 ProjectDepartment</a>
-<a href="#EmployeeProject" class="dep-link">5-10 EmployeeProject</a>
-</div>
-</div>
-</div>
-<div class="table-block" id="ProjectDepartment">
-<div class="table-header"><h3><span class="table-num">5-9</span> ProjectDepartment</h3></div>
-<table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="fk-out">
-          <td><span class="field-name">projectId</span> <span class="field-required">*</span></td>
-          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment">→ Project.id <span style="font-size:11px;color:#d97706">→ <a href="#Project" class="dep-link">Project</a></span></td>
-        </tr>
-<tr class="fk-out">
-          <td><span class="field-name">departmentId</span> <span class="field-required">*</span></td>
-          <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-          <td class="field-comment">→ Department.id <span style="font-size:11px;color:#d97706">→ <a href="#Department" class="dep-link">Department</a></span></td>
-        </tr>
-</tbody></table>
-<div class="table-footer">
-<div class="dep-out"><span class="dep-label">Depends on:</span>
-<a href="#Project" class="dep-link">5-8 Project</a>
-<a href="#Department" class="dep-link">5-4 Department</a>
-</div>
-<div class="dep-in"><span class="dep-label">Referenced by:</span>
-<span class="dep-none">无</span>
+<a href="#EmployeeProject" class="dep-link">5-8 EmployeeProject</a>
 </div>
 </div>
 </div>
 <div class="table-block" id="EmployeeProject">
-<div class="table-header"><h3><span class="table-num">5-10</span> EmployeeProject</h3></div>
+<div class="table-header"><h3><span class="table-num">5-8</span> EmployeeProject</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
 <tr class="">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">employeeId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">员工ID <span style="font-size:11px;color:#d97706">→ <a href="#Employee" class="dep-link">Employee</a></span></td>
         </tr>
-<tr class="fk-out">
+<tr class="fk-in">
           <td><span class="field-name">projectId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">项目ID <span style="font-size:11px;color:#d97706">→ <a href="#Project" class="dep-link">Project</a></span></td>
@@ -1401,7 +1327,7 @@
 <div class="table-footer">
 <div class="dep-out"><span class="dep-label">Depends on:</span>
 <a href="#Employee" class="dep-link">5-1 Employee</a>
-<a href="#Project" class="dep-link">5-8 Project</a>
+<a href="#Project" class="dep-link">5-7 Project</a>
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
@@ -1871,17 +1797,17 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">entityType</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">"employee" | "employee_position" | "code_department" | "code_position"</td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">entityId</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">实体主键</td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">version</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">版本号</td>
