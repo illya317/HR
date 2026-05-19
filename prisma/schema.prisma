@@ -323,10 +323,10 @@ model EmployeeDepartmentPosition {
   id           Int        @id @default(autoincrement()) // 主键
   employeeId   Int // 员工编号
   employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  departmentId Int // 部门ID
-  department   Department @relation(fields: [departmentId], references: [id])
-  positionId   Int // 岗位ID
-  position     Position   @relation(fields: [positionId], references: [id])
+  departmentId Int? // 部门ID
+  department   Department? @relation(fields: [departmentId], references: [id])
+  positionId   Int? // 岗位ID
+  position     Position?   @relation(fields: [positionId], references: [id])
   center       String? // 中心
   isPrimary    Boolean    @default(false) // 是否主岗
   sortOrder    Int        @default(0) // 排序序号
@@ -339,7 +339,6 @@ model EmployeeDepartmentPosition {
   editedAt     DateTime? // 编辑时间
   version      Int        @default(1) // 版本号
 
-  @@unique([employeeId, departmentId, positionId])
   @@map("EmployeePosition")
 }
 

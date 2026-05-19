@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   }
 
   const depts = await prisma.department.findMany({
-    where: { level: 1, managementGroupId: { not: 1 } },
+    where: { level: 2 },
 
     orderBy: [{ managementGroup: { name: "asc" } }, { name: "asc" }],
   });
