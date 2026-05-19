@@ -33,7 +33,6 @@ model User {
   editHistories           EditHistory[]     @relation("EditHistoryEditor")
   editedProjects          Project[]         @relation("ProjectEditor")
   editedEmployeeProjects  EmployeeProject[] @relation("EmpProjectEditor")
-  editedPositionDescriptions PositionDescription[] @relation("PosDescEditor")
 }
 
 model SystemConfig {
@@ -192,9 +191,11 @@ model WorkParticipant {
 model Employee {
   id            Int                @id @default(autoincrement()) // 主键
   employeeId    String             @unique // 员工编号
+  idNumber      String?            @unique // 身份证号
   name          String // 名称
   alias         String? // 别名
   gender        String? // 性别
+  birthDate     String? // 出生年月
   ethnicity     String? // 民族
   hometown      String? // 籍贯
   politics      String? // 政治面貌
@@ -204,11 +205,13 @@ model Employee {
   major         String? // 专业
   phone         String? // 电话
   joinDate      String? // 进司时间
+  workStartDate String? // 参加工作时间
   nature        String? // 性质（全职/兼职等）
-  createdAt     DateTime           @default(now()) // 创建时间
-  updatedAt     DateTime           @updatedAt // 更新时间
   leaveDate     String? // 离职日期
   status        String?            @default("在职") // 状态
+  details       String? // JSON: {companyTitle,majorRelevant,officeLocation,attendanceType,leaveReason,serviceYears,...}
+  createdAt     DateTime           @default(now()) // 创建时间
+  updatedAt     DateTime           @updatedAt // 更新时间
   deleted       Boolean?           @default(false) // 是否软删除
   deletedTime   String? // 删除时间
   deletedBy     String? // 删除操作人
@@ -233,7 +236,7 @@ model Company {
   registeredAddress  String?            // 办公地址
   registeredDate     String?            // 注册时间
   legalPerson        String?            // 法定代表人
-  managementGroup    String?            // 管理体系（丰华生物体系/丰华制药）
+  queryGroup         Int?               // 查询分组（1=常规体系, 2=GMP）
   sortOrder          Int                @default(0) // 排序
   createdAt          DateTime           @default(now()) // 创建时间
   updatedAt          DateTime?          // 更新时间
@@ -258,11 +261,22 @@ model CompanyRelation {
   @@unique([parentId, childId])
 }
 
+model ManagementGroup {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique // 常规体系, GMP
+  departments Department[]
+  positions   Position[]
+  positionDescriptions PositionDescription[]
+}
+
 model Department {
   id                Int                @id @default(autoincrement()) // 主键
   code              String             // 编码
   name              String // 名称
-  level             Int // 层级
+  managementGroupId  Int?               // 体系ID
+  managementGroup    ManagementGroup?   @relation(fields: [managementGroupId], references: [id])
+  level             Int                @default(1) // 层级
+  levelLabel        String             @default("部门") // 层级标签（中心/部门/子部门）
   parentId          Int? // 上级ID
   parent            Department?        @relation("DeptHierarchy", fields: [parentId], references: [id])
   children          Department[]       @relation("DeptHierarchy")
@@ -271,7 +285,7 @@ model Department {
   positions         Position[]         // 岗位（1:N）
   employeeDepartmentPositions EmployeeDepartmentPosition[]
   resourceRoles     DepartmentResourceRole[]
-  managementGroup    String             @map("company") // 管理体系（丰华生物体系/丰华制药）
+  endDate           DateTime?          // 截止时间（null=至今）
   createdAt         DateTime           @default(now()) // 创建时间
   updatedAt         DateTime? // 更新时间
   editedBy          Int? // 编辑人用户ID
@@ -279,26 +293,30 @@ model Department {
   editedAt          DateTime? // 编辑时间
   version           Int                @default(1) // 版本号
 
-  @@unique([managementGroup, code])
+  @@unique([managementGroupId, code])
 }
 
 model Position {
-  id                Int                @id @default(autoincrement()) // 主键
-  code              String             // 编码
-  name              String // 名称
-  managementGroup    String             @map("company") // 管理体系（丰华生物体系/丰华制药）
-  departmentId      Int?               // 所属部门
-  department        Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  id                    Int                     @id @default(autoincrement()) // 主键
+  code                  String                  // 编码
+  name                  String                  // 名称
+  managementGroupId     Int?                    // 体系ID
+  managementGroup       ManagementGroup?        @relation(fields: [managementGroupId], references: [id])
+  departmentId          Int?                    // 所属部门
+  department            Department?             @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  positionDescriptionId Int?                    // → PositionDescription.id
+  positionDescription   PositionDescription?    @relation(fields: [positionDescriptionId], references: [id], onDelete: SetNull)
   employeeDepartmentPositions EmployeeDepartmentPosition[]
-  resourceRoles     PositionResourceRole[]
-  createdAt         DateTime           @default(now()) // 创建时间
-  updatedAt         DateTime? // 更新时间
-  editedBy          Int? // 编辑人用户ID
-  editor            User?              @relation("PositionEditor", fields: [editedBy], references: [id])
-  editedAt          DateTime? // 编辑时间
-  version           Int                @default(1) // 版本号
+  resourceRoles         PositionResourceRole[]
+  endDate               DateTime?               // 截止时间（null=至今）
+  createdAt             DateTime                @default(now()) // 创建时间
+  updatedAt             DateTime?               // 更新时间
+  editedBy              Int?                    // 编辑人用户ID
+  editor                User?                   @relation("PositionEditor", fields: [editedBy], references: [id])
+  editedAt              DateTime?               // 编辑时间
+  version               Int                     @default(1) // 版本号
 
-  @@unique([managementGroup, code])
+  @@unique([managementGroupId, code])
 }
 
 model EmployeeDepartmentPosition {
@@ -309,7 +327,6 @@ model EmployeeDepartmentPosition {
   department   Department @relation(fields: [departmentId], references: [id])
   positionId   Int // 岗位ID
   position     Position   @relation(fields: [positionId], references: [id])
-  managementGroup    String?     @map("company") // 管理体系（丰华生物体系/丰华制药）
   center       String? // 中心
   isPrimary    Boolean    @default(false) // 是否主岗
   sortOrder    Int        @default(0) // 排序序号
@@ -331,6 +348,7 @@ model Project {
   name         String // 项目名称
   type         String           @default("project") // "department" | "project"
   description  String? // 说明
+  endDate      DateTime?        // 截止时间（null=至今）
   createdAt    DateTime         @default(now()) // 创建时间
   updatedAt    DateTime? // 更新时间
   editedBy     Int? // 编辑人用户ID
@@ -359,109 +377,29 @@ model EmployeeProject {
   @@unique([employeeId, projectId])
 }
 
-// ─── 制药岗位说明书 ─────────────────────────────────────
+// ─── 岗位说明书 ───────────────────────────────────────────
 
 model PositionDescription {
-  id                    Int       @id @default(autoincrement())
-  code                  String    @unique // 岗位编号（如 0101，去PPA-GW前缀）
-  name                  String    // 岗位名称
-  positionName          String?   // 岗位名称（关联 Position.name）
-  departmentName        String?   // 所属部门名称
-  purpose               String?   // 文档目的
-  scope                 String?   // 适用范围
-  reportTo              String?   // 直接上级
-  subordinates          String?   // 直接下级
-  headcount             Int?      // 岗位编制人数
-  positionPurpose       String?   // 岗位目的
-  summary               String?   // 岗位职责概要
-  dutyOverview          String?   // 职责概述
-  externalCollaboration String?   // 外部协作关系
-  qualificationsJson    String?   // 任职资质 JSON
-  conditionsJson        String?   // 工作条件 JSON
-  documentSource        String    // 原文件名
-  documentNumber        String?   // 文档编号
-  version               String?   // 版本号
-  effectiveDate         String?   // 生效日期
-  drafter               String?   // 起草人
-  reviewer1             String?   // 审核人1
-  reviewer2             String?   // 审核人2
-  approver              String?   // 批准人
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  editedBy              Int?
-  editor                User?     @relation("PosDescEditor", fields: [editedBy], references: [id])
-  editedAt              DateTime?
-
-  duties            PositionDuty[]
-  changeHistories   PositionChangeHistory[]
-}
-
-model PositionDuty {
-  id                    Int                 @id @default(autoincrement())
-  positionDescriptionId Int
-  content               String
-  sortOrder             Int                 @default(0)
-  positionDescription   PositionDescription @relation(fields: [positionDescriptionId], references: [id], onDelete: Cascade)
-}
-
-model PositionChangeHistory {
-  id                    Int                 @id @default(autoincrement())
-  positionDescriptionId Int
-  version               String
-  documentName          String?
-  effectiveDate         String?
-  approver              String?
-  sortOrder             Int                 @default(0)
-  positionDescription   PositionDescription @relation(fields: [positionDescriptionId], references: [id], onDelete: Cascade)
-}
-
-// ─── 丰华制药花名册导入 ─────────────────────────────────
-
-model PharmaRoster {
-  id                Int      @id @default(autoincrement())
-  isNew             Boolean  @default(true)
-  source            String   @default("在职") // 在职 | 离职
-  sequence          Int?     // 序号
-  subSequence       Int?     // 分序号
-  nature            String?  // 性质
-  platform          String?  // 事业部/职能平台
-  name              String   // 姓名
-  isResearch        String?  // 科技研发
-  personnelType     String?  // 人员类型
-  department        String?  // 部门
-  position          String?  // 职务/岗位（新）
-  primaryPosition   String?  // 主要岗位
-  secondaryPosition String?  // 次要岗位
-  rank              String?  // 职级
-  employeeNumber    String?  // 编号
-  hometown          String?  // 籍贯
-  idNumber          String?  // 身份证号码
-  politicsStatus    String?  // 政治面貌
-  ethnicity         String?  // 民族
-  education         String?  // 学历
-  school            String?  // 毕业院校
-  major             String?  // 专业
-  majorRelevant     String?  // 是否相关专业
-  title             String?  // 职称
-  companyTitle      String?  // 职称（公司评定）
-  phone             String?  // 电话
-  gender            String?  // 性别
-  birthDate         String?  // 出生年月
-  birthMonth        String?  // 生日月份
-  age               Int?     // 年龄
-  retireDate        String?  // 退休日期
-  workStartDate     String?  // 参加工作时间
-  joinDate          String?  // 进司时间
-  serviceYears      String?  // 司龄
-  serviceYearsNum   Int?     // 司龄（年）
-  leaveDate         String?  // 离职时间
-  tenureAtCompany   String?  // 在职时间
-  originalRow       String?   // 原始行JSON（保留完整数据）
-  createdAt         DateTime @default(now())
+  id                Int              @id @default(autoincrement())
+  code              String           @unique // PPA-GW0101
+  name              String           // 岗位名称
+  departmentName    String?          // 所属部门
+  reportTo          String?          // 直接上级
+  positionPurpose   String?          // 岗位目的（一句话）
+  summary           String?          // 职责概要（一段话）
+  headcount         Int?             // 编制人数
+  version           String?          // 版本号
+  effectiveDate     String?          // 生效日期
+  sourceFile        String           // 原始JSON文件名
+  managementGroupId Int              // → ManagementGroup.id
+  managementGroup   ManagementGroup  @relation(fields: [managementGroupId], references: [id])
+  details           String?          // JSON: {duties, qualifications, conditions, collaborations, changeHistory, ...}
+  positions         Position[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
 
 // ─── 编辑历史 ─────────────────────────────────────────────
-
 model EditHistory {
   id         Int      @id @default(autoincrement()) // 主键
   entityType String   // "employee" | "employee_position" | "code_department" | "code_position"

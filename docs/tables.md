@@ -1,4 +1,4 @@
-# HR Database Schema (26 tables)
+# HR Database Schema (23 tables)
 
 ## 1. System
 
@@ -17,7 +17,7 @@
 | `apiKey` | String |  | UK | API密钥 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 
-← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-5 Department](#department), [5-5 Department](#department), [5-6 Position](#position), [5-7 EmployeeDepartmentPosition](#employeedepartmentposition), [5-8 Project](#project), [5-9 EmployeeProject](#employeeproject), [6-1 PositionDescription](#positiondescription), [8-1 EditHistory](#edithistory)
+← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-5 Department](#department), [5-5 Department](#department), [5-6 Position](#position), [5-7 EmployeeDepartmentPosition](#employeedepartmentposition), [5-8 Project](#project), [5-9 EmployeeProject](#employeeproject), [7-1 EditHistory](#edithistory)
 
 ### 1-2 SystemConfig
 
@@ -183,9 +183,11 @@
 |-------|------|----------|----|------|
 | `id` | Int | * | PK+REF | 主键 |
 | `employeeId` | String | * | UK | 员工编号 |
+| `idNumber` | String |  | UK | 身份证号 |
 | `name` | String | * |  | 名称 |
 | `alias` | String |  |  | 别名 |
 | `gender` | String |  |  | 性别 |
+| `birthDate` | String |  |  | 出生年月 |
 | `ethnicity` | String |  |  | 民族 |
 | `hometown` | String |  |  | 籍贯 |
 | `politics` | String |  |  | 政治面貌 |
@@ -195,11 +197,13 @@
 | `major` | String |  |  | 专业 |
 | `phone` | String |  |  | 电话 |
 | `joinDate` | String |  |  | 进司时间 |
+| `workStartDate` | String |  |  | 参加工作时间 |
 | `nature` | String |  |  | 性质（全职/兼职等） |
-| `createdAt` | DateTime | * |  | 创建时间 |
-| `updatedAt` | DateTime | * |  | 更新时间 |
 | `leaveDate` | String |  |  | 离职日期 |
 | `status` | String |  |  | 状态 |
+| `details` | String |  |  | JSON: {companyTitle,majorRelevant,officeLocation,attendanceType,leaveReason,serviceYears,...} |
+| `createdAt` | DateTime | * |  | 创建时间 |
+| `updatedAt` | DateTime | * |  | 更新时间 |
 | `deleted` | Boolean |  |  | 是否软删除 |
 | `deletedTime` | String |  |  | 删除时间 |
 | `deletedBy` | String |  |  | 删除操作人 |
@@ -257,7 +261,7 @@
 | `id` | Int | * | PK+REF |  |
 | `name` | String | * | UK | 常规体系, GMP |
 
-← Referenced by: [5-5 Department](#department), [5-6 Position](#position)
+← Referenced by: [5-5 Department](#department), [5-6 Position](#position), [6-1 PositionDescription](#positiondescription)
 
 ### 5-5 Department
 
@@ -291,6 +295,7 @@
 | `name` | String | * |  | 名称 |
 | `managementGroupId` | Int |  | cUK+FK | 体系ID |
 | `departmentId` | Int |  | FK | 所属部门 |
+| `positionDescriptionId` | Int |  | FK | → PositionDescription.id |
 | `endDate` | DateTime |  |  | 截止时间（null=至今） |
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime |  |  | 更新时间 |
@@ -298,7 +303,7 @@
 | `editedAt` | DateTime |  |  | 编辑时间 |
 | `version` | Int | * |  | 版本号 |
 
-→ Depends on: [5-4 ManagementGroup](#managementgroup), [5-5 Department](#department), [1-1 User](#user)
+→ Depends on: [5-4 ManagementGroup](#managementgroup), [5-5 Department](#department), [6-1 PositionDescription](#positiondescription), [1-1 User](#user)
 
 ← Referenced by: [2-4 PositionResourceRole](#positionresourcerole), [5-7 EmployeeDepartmentPosition](#employeedepartmentposition)
 
@@ -360,120 +365,35 @@
 
 → Depends on: [5-1 Employee](#employee), [5-8 Project](#project), [1-1 User](#user)
 
-## 制药岗位说明书
+## 岗位说明书
 
 ### 6-1 PositionDescription
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
 | `id` | Int | * | PK+REF |  |
-| `code` | String | * | UK | 岗位编号（如 0101，去PPA-GW前缀） |
+| `code` | String | * | UK | PPA-GW0101 |
 | `name` | String | * |  | 岗位名称 |
-| `positionName` | String |  |  | 岗位名称（关联 Position.name） |
-| `departmentName` | String |  |  | 所属部门名称 |
-| `purpose` | String |  |  | 文档目的 |
-| `scope` | String |  |  | 适用范围 |
+| `departmentName` | String |  |  | 所属部门 |
 | `reportTo` | String |  |  | 直接上级 |
-| `subordinates` | String |  |  | 直接下级 |
-| `headcount` | Int |  |  | 岗位编制人数 |
-| `positionPurpose` | String |  |  | 岗位目的 |
-| `summary` | String |  |  | 岗位职责概要 |
-| `dutyOverview` | String |  |  | 职责概述 |
-| `externalCollaboration` | String |  |  | 外部协作关系 |
-| `qualificationsJson` | String |  |  | 任职资质 JSON |
-| `conditionsJson` | String |  |  | 工作条件 JSON |
-| `documentSource` | String | * |  | 原文件名 |
-| `documentNumber` | String |  |  | 文档编号 |
+| `positionPurpose` | String |  |  | 岗位目的（一句话） |
+| `summary` | String |  |  | 职责概要（一段话） |
+| `headcount` | Int |  |  | 编制人数 |
 | `version` | String |  |  | 版本号 |
 | `effectiveDate` | String |  |  | 生效日期 |
-| `drafter` | String |  |  | 起草人 |
-| `reviewer1` | String |  |  | 审核人1 |
-| `reviewer2` | String |  |  | 审核人2 |
-| `approver` | String |  |  | 批准人 |
+| `sourceFile` | String | * |  | 原始JSON文件名 |
+| `managementGroupId` | Int | * | FK | → ManagementGroup.id |
+| `details` | String |  |  | JSON: {duties, qualifications, conditions, collaborations, changeHistory, ...} |
 | `createdAt` | DateTime | * |  |  |
 | `updatedAt` | DateTime | * |  |  |
-| `editedBy` | Int |  | FK | → User.id |
-| `editedAt` | DateTime |  |  |  |
 
-→ Depends on: [1-1 User](#user)
+→ Depends on: [5-4 ManagementGroup](#managementgroup)
 
-← Referenced by: [6-2 PositionDuty](#positionduty), [6-3 PositionChangeHistory](#positionchangehistory)
-
-### 6-2 PositionDuty
-
-| Field | Type | Required | FK | Note |
-|-------|------|----------|----|------|
-| `id` | Int | * | PK |  |
-| `positionDescriptionId` | Int | * | FK | → PositionDescription.id |
-| `content` | String | * |  |  |
-| `sortOrder` | Int | * |  |  |
-
-→ Depends on: [6-1 PositionDescription](#positiondescription)
-
-### 6-3 PositionChangeHistory
-
-| Field | Type | Required | FK | Note |
-|-------|------|----------|----|------|
-| `id` | Int | * | PK |  |
-| `positionDescriptionId` | Int | * | FK | → PositionDescription.id |
-| `version` | String | * |  |  |
-| `documentName` | String |  |  |  |
-| `effectiveDate` | String |  |  |  |
-| `approver` | String |  |  |  |
-| `sortOrder` | Int | * |  |  |
-
-→ Depends on: [6-1 PositionDescription](#positiondescription)
-
-## 丰华制药花名册导入
-
-### 7-1 PharmaRoster
-
-| Field | Type | Required | FK | Note |
-|-------|------|----------|----|------|
-| `id` | Int | * | PK |  |
-| `isNew` | Boolean | * |  |  |
-| `source` | String | * |  | 在职 | 离职 |
-| `sequence` | Int |  |  | 序号 |
-| `subSequence` | Int |  |  | 分序号 |
-| `nature` | String |  |  | 性质 |
-| `platform` | String |  |  | 事业部/职能平台 |
-| `name` | String | * |  | 姓名 |
-| `isResearch` | String |  |  | 科技研发 |
-| `personnelType` | String |  |  | 人员类型 |
-| `department` | String |  |  | 部门 |
-| `position` | String |  |  | 职务/岗位（新） |
-| `primaryPosition` | String |  |  | 主要岗位 |
-| `secondaryPosition` | String |  |  | 次要岗位 |
-| `rank` | String |  |  | 职级 |
-| `employeeNumber` | String |  |  | 编号 |
-| `hometown` | String |  |  | 籍贯 |
-| `idNumber` | String |  |  | 身份证号码 |
-| `politicsStatus` | String |  |  | 政治面貌 |
-| `ethnicity` | String |  |  | 民族 |
-| `education` | String |  |  | 学历 |
-| `school` | String |  |  | 毕业院校 |
-| `major` | String |  |  | 专业 |
-| `majorRelevant` | String |  |  | 是否相关专业 |
-| `title` | String |  |  | 职称 |
-| `companyTitle` | String |  |  | 职称（公司评定） |
-| `phone` | String |  |  | 电话 |
-| `gender` | String |  |  | 性别 |
-| `birthDate` | String |  |  | 出生年月 |
-| `birthMonth` | String |  |  | 生日月份 |
-| `age` | Int |  |  | 年龄 |
-| `retireDate` | String |  |  | 退休日期 |
-| `workStartDate` | String |  |  | 参加工作时间 |
-| `joinDate` | String |  |  | 进司时间 |
-| `serviceYears` | String |  |  | 司龄 |
-| `serviceYearsNum` | Int |  |  | 司龄（年） |
-| `leaveDate` | String |  |  | 离职时间 |
-| `tenureAtCompany` | String |  |  | 在职时间 |
-| `originalRow` | String |  |  | 原始行JSON（保留完整数据） |
-| `createdAt` | DateTime | * |  |  |
+← Referenced by: [5-6 Position](#position)
 
 ## 6. Edit History
 
-### 8-1 EditHistory
+### 7-1 EditHistory
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
