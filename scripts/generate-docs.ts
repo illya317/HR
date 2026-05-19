@@ -279,7 +279,7 @@ function generateTablesHTML(models: Model[]): string {
         const isFK = m.relations.some((r) => r.fields.includes(f.name));
         const rel = m.relations.find((r) => r.fields.includes(f.name));
         const comment = f.comment || (rel ? `→ ${rel.targetModel}.${rel.references[0]}` : "");
-        const isPK = pkFields.has(f.name);
+        const isPK = pkFields.has(f.name) || (f.name === "id" && f.required);
         const rowClass = isPK ? "fk-in" : fkOutFields.has(f.name) ? "fk-out" : fkInFields.has(f.name) ? "fk-in" : "";
         const fkSuffix = isFK && rel ? ` <span style="font-size:11px;color:#d97706">→ <a href="#${rel.targetModel}" class="dep-link">${rel.targetModel}</a></span>` : "";
         rows.push(`<tr class="${rowClass}">
@@ -370,7 +370,7 @@ function generateTablesMD(models: Model[]): string {
       for (const f of m.fields) {
         if (f.type.endsWith("[]")) continue;
         if (f.isRelation && !m.relations.some((r) => r.fields.includes(f.name))) continue;
-        const isPK = pkFields.has(f.name);
+        const isPK = pkFields.has(f.name) || (f.name === "id" && f.required);
         const isFK = fkOutFields.has(f.name);
         const isRef = fkInFields.has(f.name);
         const rel = m.relations.find((r) => r.fields.includes(f.name));

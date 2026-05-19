@@ -75,7 +75,7 @@
 <a href="#CompanyRelation">5-3 CompanyRelation</a>
 <a href="#Department">5-4 Department</a>
 <a href="#Position">5-5 Position</a>
-<a href="#EmployeePosition">5-6 EmployeePosition</a>
+<a href="#EmployeeDepartmentPosition">5-6 EmployeeDepartmentPosition</a>
 <a href="#Project">5-7 Project</a>
 <a href="#EmployeeProject">5-8 EmployeeProject</a>
 </div>
@@ -164,7 +164,7 @@
 <a href="#Department" class="dep-link">5-4 Department</a>
 <a href="#Department" class="dep-link">5-4 Department</a>
 <a href="#Position" class="dep-link">5-5 Position</a>
-<a href="#EmployeePosition" class="dep-link">5-6 EmployeePosition</a>
+<a href="#EmployeeDepartmentPosition" class="dep-link">5-6 EmployeeDepartmentPosition</a>
 <a href="#Project" class="dep-link">5-7 Project</a>
 <a href="#EmployeeProject" class="dep-link">5-8 EmployeeProject</a>
 <a href="#PositionDescription" class="dep-link">6-1 PositionDescription</a>
@@ -290,7 +290,7 @@
 <div class="table-block" id="UserResourceRole">
 <div class="table-header"><h3><span class="table-num">2-3</span> UserResourceRole</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -330,7 +330,7 @@
 <div class="table-block" id="PositionResourceRole">
 <div class="table-header"><h3><span class="table-num">2-4</span> PositionResourceRole</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -370,7 +370,7 @@
 <div class="table-block" id="DepartmentResourceRole">
 <div class="table-header"><h3><span class="table-num">2-5</span> DepartmentResourceRole</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -476,7 +476,7 @@
 <div class="table-block" id="ReportItem">
 <div class="table-header"><h3><span class="table-num">3-2</span> ReportItem</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
@@ -530,7 +530,7 @@
 <div class="table-block" id="ReportHistory">
 <div class="table-header"><h3><span class="table-num">3-3</span> ReportHistory</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
@@ -654,7 +654,7 @@
 <div class="table-block" id="WorkParticipant">
 <div class="table-header"><h3><span class="table-num">4-2</span> WorkParticipant</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
@@ -831,7 +831,7 @@
 <a href="#User" class="dep-link">1-1 User</a>
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
-<a href="#EmployeePosition" class="dep-link">5-6 EmployeePosition</a>
+<a href="#EmployeeDepartmentPosition" class="dep-link">5-6 EmployeeDepartmentPosition</a>
 <a href="#EmployeeProject" class="dep-link">5-8 EmployeeProject</a>
 </div>
 </div>
@@ -938,7 +938,7 @@
 <div class="table-block" id="CompanyRelation">
 <div class="table-header"><h3><span class="table-num">5-3</span> CompanyRelation</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -982,7 +982,7 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">code</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">编码</td>
@@ -1007,7 +1007,7 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">负责人 → User.id <span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">User</a></span></td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">managementGroup</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">管理体系（丰华生物体系/丰华制药）</td>
@@ -1047,7 +1047,7 @@
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <a href="#DepartmentResourceRole" class="dep-link">2-5 DepartmentResourceRole</a>
 <a href="#Position" class="dep-link">5-5 Position</a>
-<a href="#EmployeePosition" class="dep-link">5-6 EmployeePosition</a>
+<a href="#EmployeeDepartmentPosition" class="dep-link">5-6 EmployeeDepartmentPosition</a>
 </div>
 </div>
 </div>
@@ -1059,7 +1059,7 @@
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">code</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">编码</td>
@@ -1069,7 +1069,7 @@
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">名称</td>
         </tr>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">managementGroup</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
           <td class="field-comment">管理体系（丰华生物体系/丰华制药）</td>
@@ -1112,14 +1112,14 @@
 </div>
 <div class="dep-in"><span class="dep-label">Referenced by:</span>
 <a href="#PositionResourceRole" class="dep-link">2-4 PositionResourceRole</a>
-<a href="#EmployeePosition" class="dep-link">5-6 EmployeePosition</a>
+<a href="#EmployeeDepartmentPosition" class="dep-link">5-6 EmployeeDepartmentPosition</a>
 </div>
 </div>
 </div>
-<div class="table-block" id="EmployeePosition">
-<div class="table-header"><h3><span class="table-num">5-6</span> EmployeePosition</h3></div>
+<div class="table-block" id="EmployeeDepartmentPosition">
+<div class="table-header"><h3><span class="table-num">5-6</span> EmployeeDepartmentPosition</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
@@ -1268,7 +1268,7 @@
 <div class="table-block" id="EmployeeProject">
 <div class="table-header"><h3><span class="table-num">5-8</span> EmployeeProject</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>
@@ -1494,7 +1494,7 @@
 <div class="table-block" id="PositionDuty">
 <div class="table-header"><h3><span class="table-num">6-2</span> PositionDuty</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -1527,7 +1527,7 @@
 <div class="table-block" id="PositionChangeHistory">
 <div class="table-header"><h3><span class="table-num">6-3</span> PositionChangeHistory</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -1577,7 +1577,7 @@
 <div class="table-block" id="PharmaRoster">
 <div class="table-header"><h3><span class="table-num">7-1</span> PharmaRoster</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment"></td>
@@ -1792,7 +1792,7 @@
 <div class="table-block" id="EditHistory">
 <div class="table-header"><h3><span class="table-num">8-1</span> EditHistory</h3></div>
 <table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
-<tr class="">
+<tr class="fk-in">
           <td><span class="field-name">id</span> <span class="field-required">*</span></td>
           <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
           <td class="field-comment">主键</td>

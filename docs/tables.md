@@ -6,7 +6,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `wxUserId` | String |  |  | 微信用户ID（无微信则留空） |
 | `username` | String |  |  | 登录用户名（自取） |
 | `password` | String |  |  | 登录密码 |
@@ -17,7 +17,7 @@
 | `apiKey` | String |  |  | API密钥 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 
-← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-4 Department](#department), [5-4 Department](#department), [5-5 Position](#position), [5-6 EmployeePosition](#employeeposition), [5-7 Project](#project), [5-8 EmployeeProject](#employeeproject), [6-1 PositionDescription](#positiondescription), [8-1 EditHistory](#edithistory)
+← Referenced by: [2-3 UserResourceRole](#userresourcerole), [3-1 Report](#report), [5-1 Employee](#employee), [5-1 Employee](#employee), [5-2 Company](#company), [5-4 Department](#department), [5-4 Department](#department), [5-5 Position](#position), [5-6 EmployeeDepartmentPosition](#employeedepartmentposition), [5-7 Project](#project), [5-8 EmployeeProject](#employeeproject), [6-1 PositionDescription](#positiondescription), [8-1 EditHistory](#edithistory)
 
 ### 1-2 SystemConfig
 
@@ -32,7 +32,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF |  |
+| `id` | Int | * | PK |  |
 | `key` | String | * |  |  |
 | `name` | String | * |  |  |
 | `description` | String |  |  |  |
@@ -48,7 +48,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF |  |
+| `id` | Int | * | PK |  |
 | `key` | String | * |  | "access" | "read" | "write" | "delete" | "admin" |
 | `name` | String | * |  |  |
 | `description` | String |  |  |  |
@@ -60,7 +60,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  |  |
+| `id` | Int | * | PK |  |
 | `userId` | Int | * | PK | → User.id |
 | `resourceId` | Int | * | PK | → Resource.id |
 | `roleId` | Int | * | PK | → Role.id |
@@ -72,7 +72,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  |  |
+| `id` | Int | * | PK |  |
 | `positionId` | Int | * | PK | → Position.id |
 | `resourceId` | Int | * | PK | → Resource.id |
 | `roleId` | Int | * | PK | → Role.id |
@@ -84,7 +84,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  |  |
+| `id` | Int | * | PK |  |
 | `departmentId` | Int | * | PK | → Department.id |
 | `resourceId` | Int | * | PK | → Resource.id |
 | `roleId` | Int | * | PK | → Role.id |
@@ -98,7 +98,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `userId` | Int |  | PK | 用户ID |
 | `targetType` | String | * | PK | "department" | "project" | "position" |
 | `targetId` | Int | * | PK | 多态 FK → Department.id | Project.id | Position.id |
@@ -117,7 +117,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `reportId` | Int | * | FK | 周报ID |
 | `category` | String | * |  | 分类 |
 | `plan` | String | * |  | 本周计划 |
@@ -132,7 +132,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `reportId` | Int | * | PK | 周报ID |
 | `version` | Int | * | PK | 版本号 |
 | `taskName` | String | * |  | 任务名称 |
@@ -148,7 +148,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `targetType` | String | * |  | "project" | "department" | "position" | "personal" |
 | `targetId` | Int |  |  | 多态 FK |
 | `category` | String | * |  | 分类 |
@@ -167,7 +167,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `workItemId` | Int | * | FK | 关联工作清单条目ID |
 | `name` | String | * |  | 名称 |
 | `wxUserId` | String |  |  | 微信用户ID |
@@ -181,7 +181,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `employeeId` | String | * |  | 员工编号 |
 | `name` | String | * |  | 名称 |
 | `alias` | String |  |  | 别名 |
@@ -210,13 +210,13 @@
 
 → Depends on: [1-1 User](#user), [1-1 User](#user)
 
-← Referenced by: [5-6 EmployeePosition](#employeeposition), [5-8 EmployeeProject](#employeeproject)
+← Referenced by: [5-6 EmployeeDepartmentPosition](#employeedepartmentposition), [5-8 EmployeeProject](#employeeproject)
 
 ### 5-2 Company
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `code` | String | * |  | 编码 |
 | `name` | String | * |  | 名称 |
 | `fullName` | String |  |  | 全称 |
@@ -242,7 +242,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  |  |
+| `id` | Int | * | PK |  |
 | `parentId` | Int | * | PK | 持股方 |
 | `childId` | Int | * | PK | 被持股方 |
 | `shareRatio` | Float |  |  | 持股比例 |
@@ -254,13 +254,13 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
-| `code` | String | * |  | 编码 |
+| `id` | Int | * | PK | 主键 |
+| `code` | String | * | PK | 编码 |
 | `name` | String | * |  | 名称 |
 | `level` | Int | * |  | 层级 |
 | `parentId` | Int |  | FK | 上级ID |
 | `managerUserId` | Int |  | FK | 负责人 → User.id |
-| `managementGroup` | String | * |  | 管理体系（丰华生物体系/丰华制药） |
+| `managementGroup` | String | * | PK | 管理体系（丰华生物体系/丰华制药） |
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime |  |  | 更新时间 |
 | `editedBy` | Int |  | FK | 编辑人用户ID |
@@ -269,16 +269,16 @@
 
 → Depends on: [5-4 Department](#department), [1-1 User](#user), [1-1 User](#user)
 
-← Referenced by: [2-5 DepartmentResourceRole](#departmentresourcerole), [5-5 Position](#position), [5-6 EmployeePosition](#employeeposition)
+← Referenced by: [2-5 DepartmentResourceRole](#departmentresourcerole), [5-5 Position](#position), [5-6 EmployeeDepartmentPosition](#employeedepartmentposition)
 
 ### 5-5 Position
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
-| `code` | String | * |  | 编码 |
+| `id` | Int | * | PK | 主键 |
+| `code` | String | * | PK | 编码 |
 | `name` | String | * |  | 名称 |
-| `managementGroup` | String | * |  | 管理体系（丰华生物体系/丰华制药） |
+| `managementGroup` | String | * | PK | 管理体系（丰华生物体系/丰华制药） |
 | `departmentId` | Int |  | FK | 所属部门 |
 | `createdAt` | DateTime | * |  | 创建时间 |
 | `updatedAt` | DateTime |  |  | 更新时间 |
@@ -288,13 +288,13 @@
 
 → Depends on: [5-4 Department](#department), [1-1 User](#user)
 
-← Referenced by: [2-4 PositionResourceRole](#positionresourcerole), [5-6 EmployeePosition](#employeeposition)
+← Referenced by: [2-4 PositionResourceRole](#positionresourcerole), [5-6 EmployeeDepartmentPosition](#employeedepartmentposition)
 
-### 5-6 EmployeePosition
+### 5-6 EmployeeDepartmentPosition
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `employeeId` | Int | * | PK | 员工编号 |
 | `departmentId` | Int | * | PK | 部门ID |
 | `positionId` | Int | * | PK | 岗位ID |
@@ -316,7 +316,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `name` | String | * |  | 项目名称 |
 | `type` | String | * |  | "department" | "project" |
 | `description` | String |  |  | 说明 |
@@ -334,7 +334,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `employeeId` | Int | * | PK | 员工ID |
 | `projectId` | Int | * | PK | 项目ID |
 | `role` | String |  |  | 项目角色 |
@@ -354,7 +354,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * | REF |  |
+| `id` | Int | * | PK |  |
 | `code` | String | * |  | 岗位编号（如 0101，去PPA-GW前缀） |
 | `name` | String | * |  | 岗位名称 |
 | `positionName` | String |  |  | 岗位名称（关联 Position.name） |
@@ -391,7 +391,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  |  |
+| `id` | Int | * | PK |  |
 | `positionDescriptionId` | Int | * | FK | → PositionDescription.id |
 | `content` | String | * |  |  |
 | `sortOrder` | Int | * |  |  |
@@ -402,7 +402,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  |  |
+| `id` | Int | * | PK |  |
 | `positionDescriptionId` | Int | * | FK | → PositionDescription.id |
 | `version` | String | * |  |  |
 | `documentName` | String |  |  |  |
@@ -418,7 +418,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  |  |
+| `id` | Int | * | PK |  |
 | `isNew` | Boolean | * |  |  |
 | `source` | String | * |  | 在职 | 离职 |
 | `sequence` | Int |  |  | 序号 |
@@ -465,7 +465,7 @@
 
 | Field | Type | Required | FK | Note |
 |-------|------|----------|----|------|
-| `id` | Int | * |  | 主键 |
+| `id` | Int | * | PK | 主键 |
 | `entityType` | String | * | PK | "employee" | "employee_position" | "code_department" | "code_position" |
 | `entityId` | String | * | PK | 实体主键 |
 | `version` | Int | * | PK | 版本号 |
