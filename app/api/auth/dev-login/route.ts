@@ -3,6 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { createToken, checkPermission } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  // 非浏览器拦截：必须有 Origin/Referer 或 x-csrf-token
+  const origin = request.headers.get("origin") || request.headers.get("referer");
+  const csrf = request.headers.get("x-csrf-token");
+  if (!origin && !csrf) {
+    return NextResponse.json({ error: "仅限浏览器访问" }, { status: 403 });
+  }
+
   const { username, password } = await request.json();
 
   if (!username || !password) {
