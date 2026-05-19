@@ -6,19 +6,11 @@ import Link from "next/link";
 import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
-
-interface UserInfo {
-  id: number;
-  name: string;
-  company: string | null;
-  departmentName: string | null;
-  departmentId: number;
-  isWorkListAdmin: boolean;
-}
+import { SessionUser } from '@/lib/types';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 修改密码

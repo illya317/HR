@@ -2,15 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { SessionUser } from '@/lib/types';
 
-interface User {
-  id: number;
-  name: string;
-  company?: string | null;
-  departmentName?: string | null;
-}
-
-export default function UserMenu({ user }: { user: User | null }) {
+export default function UserMenu({ user }: { user: SessionUser | null }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

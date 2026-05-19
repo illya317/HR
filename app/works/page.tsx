@@ -13,18 +13,11 @@ import WorkCard from "./WorkCard";
 import WorkForm from "./WorkForm";
 import SectionHeader from "./SectionHeader";
 import type { WorkItem } from "./types";
-
-interface User {
-  id: number;
-  name: string;
-  departmentId: number;
-  departmentName?: string | null;
-  isWorkListAdmin: boolean;
-}
+import { SessionUser } from '@/lib/types';
 
 export default function WorksPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [works, setWorks] = useState<WorkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

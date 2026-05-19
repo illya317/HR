@@ -5,13 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
+import { SessionUser } from '@/lib/types';
 // 搜索用原生 input，不引入 SearchBox（该组件需配合 useSearch hook）
-
-interface UserInfo {
-  id: number;
-  name: string;
-  company: string | null;
-}
 
 interface PositionDesc {
   id: number;
@@ -26,7 +21,7 @@ interface PositionDesc {
 
 export default function GmpPositionsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [positions, setPositions] = useState<PositionDesc[]>([]);
   const [search, setSearch] = useState("");

@@ -6,14 +6,7 @@ import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
 import ConfirmModal from "@/app/components/ConfirmModal";
-
-interface User {
-  id: number;
-  name: string;
-  username?: string | null;
-  company?: string | null;
-  departmentName?: string | null;
-}
+import { SessionUser } from '@/lib/types';
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "工作台";
 const API_BASE = "http://49.235.213.225:3000";
@@ -121,7 +114,7 @@ function MyApiKeyPanel({ apiKey, onApiKeyChange }: { apiKey: string | null; onAp
 
 export default function ApiGuidePage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [copied, setCopied] = useState(false);

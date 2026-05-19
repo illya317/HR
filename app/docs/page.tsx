@@ -5,12 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
-
-interface UserInfo {
-  id: number;
-  name: string;
-  company: string | null;
-}
+import { SessionUser } from '@/lib/types';
 
 const DOC_CATEGORIES: Record<string, Array<{ title: string; href: string }>> = {
   "入职指南": [
@@ -35,7 +30,7 @@ const DOC_CATEGORIES: Record<string, Array<{ title: string; href: string }>> = {
 
 export default function DocsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

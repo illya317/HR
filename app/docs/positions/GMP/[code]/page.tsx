@@ -5,12 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
-
-interface UserInfo {
-  id: number;
-  name: string;
-  company: string | null;
-}
+import { SessionUser } from '@/lib/types';
 
 interface PositionDescDetail {
   id: number;
@@ -98,7 +93,7 @@ export default function GmpPositionDetailPage() {
   const params = useParams();
   const code = params.code as string;
 
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [position, setPosition] = useState<PositionDescDetail | null>(null);
   const [error, setError] = useState("");

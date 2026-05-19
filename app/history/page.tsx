@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
 import NavLink from "@/app/components/NavLink";
+import { SessionUser } from '@/lib/types';
 
 interface ReportItemData {
   id: number;
@@ -30,16 +31,9 @@ interface Report {
   };
 }
 
-interface User {
-  id: number;
-  name: string;
-  departmentId: number;
-  departmentName?: string | null;
-}
-
 export default function HistoryPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -63,7 +57,7 @@ export default function HistoryPage() {
     }
   }
 
-  async function fetchReports(currentUser: User) {
+  async function fetchReports(currentUser: SessionUser) {
     try {
       // 获取所有报告（无过滤 = 用户自己的报告）
       const res = await fetch("/api/reports");

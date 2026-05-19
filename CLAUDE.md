@@ -68,6 +68,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 公司名/编码 → `lib/company` 导入，禁止硬编码
 - API 鉴权 → `lib/auth.ts`
 - 搜索 → `useSearch` hook 或 `<SearchBox>` 组件
+- 当前用户类型 → `import { SessionUser } from "@/lib/types"`，禁止页面内重复定义 `interface User`
 
 ## 子 Agent
 
@@ -81,6 +82,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | 模块 | 用途 | 关键导出 |
 |------|------|----------|
 | `lib/company.ts` | 公司常量/分组 | `CODE_TO_NAME`, `FENGHUA_BIO_GROUP`, `SHARED_GROUP_CODES`, `resolveCompanyFilter` |
+| `lib/types.ts` | 共享类型 | `SessionUser`（当前用户，全站统一，禁止各处重复定义） |
+| `lib/security.ts` | 登录安全 | `checkBruteForce`, `recordAttempt` |
 | `lib/search.ts` | 拼音搜索 | `getInitials`, `matchEmployee` |
 | `lib/auth.ts` | 认证鉴权 | `authenticate`, `checkPermission`, `checkHRAccess`, `checkWorksAccess` |
 | `lib/access.ts` | 目标权限 | `getUserTargets`, `canAccessTarget`, `canSubmitToTarget` |

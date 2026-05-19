@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SessionUser } from '@/lib/types';
 
 interface Dept {
   id: number;
@@ -8,16 +9,8 @@ interface Dept {
   managementGroup: string;
 }
 
-interface UserInfo {
-  name: string;
-  managementGroup: string | null;
-  departmentName: string | null;
-  departmentId: number;
-  isWorkListAdmin: boolean;
-}
-
 export default function DepartmentSwitcher({ onChange }: { onChange?: (deptId: number | null) => void }) {
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [depts, setDepts] = useState<Dept[]>([]);
   const [companies, setCompanies] = useState<string[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string>("");
@@ -27,7 +20,7 @@ export default function DepartmentSwitcher({ onChange }: { onChange?: (deptId: n
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => {
-        const u = data.user as UserInfo;
+        const u = data.user as SessionUser;
         setUser(u);
         if (u?.isWorkListAdmin) {
           const saved = localStorage.getItem("selectedDeptId");

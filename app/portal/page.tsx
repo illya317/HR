@@ -5,17 +5,11 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Toast from "@/app/components/Toast";
 import { useToast } from "@/app/hooks/useToast";
-
-interface User {
-  id: number;
-  name: string;
-  canAccessWorks: boolean;
-  canAccessHR: boolean;
-}
+import { SessionUser } from '@/lib/types';
 
 export default function PortalPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast, showToast, closeToast } = useToast();
 
