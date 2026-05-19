@@ -65,15 +65,15 @@ export async function getUserTargets(userId: number): Promise<{
   // Deduplicate
   const deptMap = new Map<number, TargetInfo>();
   for (const ep of eps) {
-    if (!deptMap.has(ep.department?.id)) {
-      deptMap.set(ep.department?.id, ep.department);
+    if (ep.department?.id && !deptMap.has(ep.department.id)) {
+      deptMap.set(ep.department.id, ep.department as any);
     }
   }
 
   const posMap = new Map<number, TargetInfo>();
   for (const ep of eps) {
-    if (!posMap.has(ep.position.id)) {
-      posMap.set(ep.position.id, ep.position);
+    if (ep.position?.id && !posMap.has(ep.position.id)) {
+      posMap.set(ep.position.id, ep.position as any);
     }
   }
 

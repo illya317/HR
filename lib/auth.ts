@@ -60,7 +60,7 @@ async function getUserPositionIds(userId: number): Promise<number[]> {
     where: { employee: { userId } },
     select: { positionId: true },
   });
-  return eps.map((e) => e.positionId);
+  return eps.map((e) => e.positionId).filter((id): id is number => id !== null);
 }
 
 async function getUserDepartmentIds(userId: number): Promise<number[]> {
@@ -68,7 +68,7 @@ async function getUserDepartmentIds(userId: number): Promise<number[]> {
     where: { employee: { userId } },
     select: { departmentId: true },
   });
-  return [...new Set(eps.map((e) => e.departmentId))];
+  return [...new Set(eps.map((e) => e.departmentId).filter((id): id is number => id !== null))];
 }
 
 // Get all descendant resource IDs (for batch granting)
