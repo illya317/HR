@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     departments: depts.map((d: any) => ({
       id: d.id,
       name: d.name,
-      managementGroup: d.managementGroup?.name || null || "",
+      company: d.managementGroup?.name || null || "",
       count: 0,
     })),
   });

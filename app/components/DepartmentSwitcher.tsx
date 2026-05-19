@@ -31,12 +31,12 @@ export default function DepartmentSwitcher({ onChange }: { onChange?: (deptId: n
               const list = (d.departments || []) as Dept[];
               setDepts(list);
               const comps = [
-                ...new Set(list.map((d) => d.managementGroup).filter((c) => c === "常规体系" || c === "GMP")),
+                ...new Set(list.map((d) => d.company).filter((c) => c === '丰华生物' || c === '丰华制药')),
               ];
               setCompanies(comps);
               if (saved) {
                 const savedDept = list.find((d) => d.id === parseInt(saved));
-                if (savedDept) setSelectedCompany(savedDept.managementGroup);
+                if (savedDept) setSelectedCompany(savedDept.company);
               }
             });
         }
@@ -70,13 +70,13 @@ export default function DepartmentSwitcher({ onChange }: { onChange?: (deptId: n
   if (!user.isWorkListAdmin) {
     return (
       <span className="ml-2 text-xs text-gray-500">
-        {user.managementGroup} - {user.departmentName}
+        {user.company} - {user.departmentName}
       </span>
     );
   }
 
   // 管理员：两个下拉框
-  const deptsInCompany = depts.filter((d) => d.managementGroup === selectedCompany);
+  const deptsInCompany = depts.filter((d) => d.company === selectedCompany);
   const savedLabel = selectedDeptId
     ? depts.find((d) => d.id === selectedDeptId)?.name
     : null;

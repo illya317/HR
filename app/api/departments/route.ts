@@ -29,7 +29,7 @@ export async function GET(request: Request) {
       id: d.id,
       code: d.code,
       name: d.name,
-      managementGroup: d.managementGroup?.name || null,
+      company: d.managementGroup?.name === 'GMP' ? '丰华制药' : d.managementGroup?.name === '常规体系' ? '丰华生物' : d.managementGroup?.name || null,
       level: d.level,
       parentId: d.parentId,
       parentName: d.parent?.name || null,

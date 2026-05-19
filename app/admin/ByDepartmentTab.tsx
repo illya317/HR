@@ -62,7 +62,7 @@ export default function ByDepartmentTab({ user, resources, allDepts, showToast }
           <div className="mb-3 flex items-center justify-between">
             <div>
               <span className="font-medium text-gray-800">{dept.name}</span>
-              <span className="ml-2 text-xs text-gray-400">{dept.managementGroup || ""}</span>
+              <span className="ml-2 text-xs text-gray-400">{dept.company || ""}</span>
             </div>
             <span className="text-xs text-gray-400">{dept.count}人</span>
           </div>

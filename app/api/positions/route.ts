@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       id: p.id,
       code: p.code,
       name: p.name,
-      managementGroup: p.managementGroup?.name || null,
+      company: p.managementGroup?.name === 'GMP' ? '丰华制药' : p.managementGroup?.name === '常规体系' ? '丰华生物' : p.managementGroup?.name || null,
       headcount: p._count.employeeDepartmentPositions,
     })),
   });

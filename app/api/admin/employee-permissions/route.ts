@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     {
       employeeId: string;
       name: string;
-      roles: { managementGroup: string | null; dept1: string | null; position: string | null }[];
+      roles: { company: string | null; dept1: string | null; position: string | null }[];
     }
   >();
 
@@ -40,11 +40,13 @@ export async function GET(request: Request) {
     }
     const item = mergedMap.get(key)!;
     if (emp.positions.length === 0) {
-      item.roles.push({ managementGroup: null, dept1: null, position: null });
+      item.roles.push({ company: null, dept1: null, position: null });
     } else {
       for (const pos of emp.positions) {
+        const mgmt = pos.department?.managementGroup?.name;
+        const company = mgmt === "GMP" ? "丰华制药" : mgmt === "常规体系" ? "丰华生物" : mgmt;
         item.roles.push({
-          managementGroup: pos.department?.managementGroup?.name || null,
+          company,
           dept1: pos.department?.name || null,
           position: pos.position?.name || null,
         });
