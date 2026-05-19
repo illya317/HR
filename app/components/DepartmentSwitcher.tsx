@@ -6,7 +6,7 @@ import { SessionUser } from '@/lib/types';
 interface Dept {
   id: number;
   name: string;
-  managementGroup: string;
+  company: string;
 }
 
 export default function DepartmentSwitcher({ onChange }: { onChange?: (deptId: number | null) => void }) {

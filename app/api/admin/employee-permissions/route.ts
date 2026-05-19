@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     } else {
       for (const pos of emp.positions) {
         const mgmt = pos.department?.managementGroup?.name;
-        const company = mgmt === "GMP" ? "丰华制药" : mgmt === "常规体系" ? "丰华生物" : mgmt;
+        const company: string | null = mgmt === "GMP" ? "丰华制药" : mgmt === "常规体系" ? "丰华生物" : (mgmt ?? null);
         item.roles.push({
           company,
           dept1: pos.department?.name || null,

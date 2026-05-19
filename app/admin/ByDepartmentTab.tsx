@@ -6,7 +6,7 @@ import { useByDepartmentTab } from "./useByDepartmentTab";
 interface Props {
   user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };
   resources: Array<{ id: number; key: string; name: string; description: string | null }>;
-  allDepts: Array<{ id: number; name: string; managementGroup: string; count: number }>;
+  allDepts: Array<{ id: number; name: string; company: string; count: number }>;
   showToast: (msg: string, type?: "success" | "error") => void;
 }
 
