@@ -156,9 +156,9 @@ export function useByUserTab(
     } catch { showToast("网络错误", "error"); }
   }
 
-  const companies = ["全部", ...Array.from(new Set(allDepts.map((d) => d.managementGroup).filter(Boolean)))];
+  const companies = ["全部", ...Array.from(new Set(allDepts.map((d) => d.managementGroup || "").filter(Boolean)))];
   const deptOptions = ["全部", ...Array.from(new Set(
-    (companyFilter === "全部" ? allDepts : allDepts.filter((d) => d.managementGroup === companyFilter))
+    (companyFilter === "全部" ? allDepts : allDepts.filter((d) => d.managementGroup || "" === companyFilter))
       .map((d) => d.name)
   ))];
 

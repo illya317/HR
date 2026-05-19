@@ -22,15 +22,16 @@ export async function GET(request: Request) {
   }
 
   const depts = await prisma.department.findMany({
-    where: { level: 1, managementGroup: { not: "加拿大" } },
-    orderBy: [{ managementGroup: "asc" }, { name: "asc" }],
+    where: { level: 1, managementGroupId: { not: 1 } },
+
+    orderBy: [{ managementGroup: { name: "asc" } }, { name: "asc" }],
   });
 
   return NextResponse.json({
     departments: depts.map((d: any) => ({
       id: d.id,
       name: d.name,
-      managementGroup: d.managementGroup || "",
+      managementGroup: d.managementGroup?.name || null || "",
       count: 0,
     })),
   });

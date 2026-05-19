@@ -127,7 +127,7 @@ function EmployeePanel({ drillKey, empPerms, empLoading, fCompany, fDept, fKeywo
   empHasAccess: (emp: EmployeePerm, key: string) => boolean;
 }) {
   const filtered = useMemo(() => empPerms.filter(emp => {
-    if (fCompany !== "全部" && !emp.roles.some(r => resolveCompanyFilter(fCompany).includes(r.managementGroup || ""))) return false;
+    if (fCompany !== "全部" && !emp.roles.some(r => resolveCompanyFilter(fCompany).includes(r.managementGroup || "" || ""))) return false;
     if (fDept !== "全部" && !emp.roles.some(r => r.dept1 === fDept)) return false;
     if (fKeyword && !matchEmployee(emp, fKeyword)) return false;
     return true;
@@ -217,7 +217,7 @@ export default function ByPermissionTab({ user, resources, showToast }: Props) {
   }
 
   const allCompanies = useMemo(() =>
-    ["全部", ...Array.from(new Set(empPerms.flatMap(e => e.roles.map(r => r.managementGroup).filter((c): c is string => !!c))))].sort(),
+    ["全部", ...Array.from(new Set(empPerms.flatMap(e => e.roles.map(r => r.managementGroup || "").filter((c): c is string => !!c))))].sort(),
   [empPerms]);
   const allDepts = useMemo(() =>
     ["全部", ...Array.from(new Set(empPerms.flatMap(e => e.roles.map(r => r.dept1).filter((d): d is string => !!d))))].sort(),

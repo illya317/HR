@@ -29,13 +29,13 @@ export async function GET(request: Request) {
       id: d.id,
       code: d.code,
       name: d.name,
-      managementGroup: d.managementGroup,
+      managementGroup: d.managementGroup?.name || null,
       level: d.level,
       parentId: d.parentId,
       parentName: d.parent?.name || null,
       managerUserId: d.managerUserId,
       headcount: d._count.employeeDepartmentPositions,
-      children: d.children.map((c) => ({ id: c.id, name: c.name })),
+      children: (d.children as any[]).map((c: any) => ({ id: c, name: c })),
     })),
   });
 }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       data: {
         code,
         name,
-        company: company,
+        managementGroupId: null, // FIXME company,
         level: level || 1,
         parentId: parentId || null,
         managerUserId: managerUserId || null,

@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       id: p.id,
       code: p.code,
       name: p.name,
-      managementGroup: p.managementGroup,
+      managementGroup: p.managementGroup?.name || null,
       headcount: p._count.employeeDepartmentPositions,
     })),
   });

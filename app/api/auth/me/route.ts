@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       canSelectAnyWeek: canAnyWeek,
       canAccessHR: hasHR,
       canAccessWorks: hasWorks,
-      managementGroup: null,
+      managementGroupId: null,
       employeeId: null,
     },
   });

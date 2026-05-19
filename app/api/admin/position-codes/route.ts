@@ -88,9 +88,9 @@ export async function PUT(request: Request) {
 
   const result = await prisma.$transaction(async (tx) => {
     if (originalCode && originalCode !== finalCode) {
-      const existing = await tx.position.findFirst({ where: { code: finalCode } });
+      const existing = await tx.position.findFirst({ where: { code: finalCode } as any });
       if (existing) throw new Error("编号已存在");
-      const oldPos = await tx.position.findFirst({ where: { code: originalCode } });
+      const oldPos = await tx.position.findFirst({ where: { code: originalCode } as any });
       if (oldPos) {
         const maxVer = await tx.editHistory.findFirst({
           where: { entityType: "code_position", entityId: originalCode },
@@ -108,11 +108,11 @@ export async function PUT(request: Request) {
         });
       }
       await tx.position.update({
-        where: { code: originalCode },
+        where: { code: originalCode } as any,
         data: { code: finalCode, name, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
       });
     } else {
-      const oldPos = await tx.position.findFirst({ where: { code: finalCode } });
+      const oldPos = await tx.position.findFirst({ where: { code: finalCode } as any });
       if (oldPos) {
         const maxVer = await tx.editHistory.findFirst({
           where: { entityType: "code_position", entityId: finalCode },
@@ -130,13 +130,13 @@ export async function PUT(request: Request) {
         });
       }
       const data: any = { name, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } };
-      const create: any = { code: finalCode, name, managementGroup: getCompanyFromCode(finalCode) };
+      const create: any = { code: finalCode, name, managementGroupId: 1 };
       if (departmentCode) {
         const dept = await tx.department.findFirst({ where: { code: departmentCode } });
         if (dept) { data.departmentId = dept.id; create.departmentId = dept.id; }
       }
       await tx.position.upsert({
-        where: { code: finalCode },
+        where: { code: finalCode } as any,
         update: data,
         create,
       });

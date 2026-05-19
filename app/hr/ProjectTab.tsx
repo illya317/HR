@@ -117,7 +117,7 @@ export default function ProjectTab({ user }: { user: User }) {
                 className="flex-1 border-none bg-transparent px-1 py-1 text-sm focus:outline-none min-w-[120px]"
               >
                 <option value="">+ 关联部门</option>
-                {departments.filter(d => !editDeptIds.includes(d.id)).map((d) => <option key={d.id} value={d.id}>{d.company} - {d.name}</option>)}
+                {departments.filter(d => !editDeptIds.includes(d.id)).map((d) => <option key={d.id} value={d.id}>{d.managementGroup} - {d.name}</option>)}
               </select>
             </div>
             <input value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="说明（可选）" className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none" />

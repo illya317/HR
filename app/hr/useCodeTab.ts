@@ -150,7 +150,7 @@ export function useCodeTab({
       const prefix = c.code.slice(0, 2);
       const allowedCompanies = PREFIX_TO_COMPANIES[prefix] || [];
       const companyEmps = employees.filter((e) =>
-        allowedCompanies.includes(e.company || "")
+        allowedCompanies.includes((e as any).details || "")
       );
       if (type === "department") {
         map[c.code] = new Set(

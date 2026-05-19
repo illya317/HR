@@ -6,7 +6,7 @@ export async function GET() {
     include: {
       department: { select: { name: true } },
     },
-    orderBy: [{ managementGroup: "asc" }, { department: { name: "asc" } }, { code: "asc" }],
+    orderBy: [{ managementGroup: { name: "asc" } }, { department: { name: "asc" } }, { code: "asc" }],
   });
   return NextResponse.json({ positions });
 }

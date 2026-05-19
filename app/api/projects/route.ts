@@ -11,7 +11,6 @@ export async function GET(request: Request) {
   const projects = await prisma.project.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      departments: { include: { department: { select: { id: true, name: true } } } },
       _count: { select: { employees: true } },
     },
   });
@@ -33,9 +32,6 @@ export async function POST(request: Request) {
       type: type || "project",
       description: description || null,
       editedBy: payload.userId,
-      departments: departmentIds?.length ? {
-        create: departmentIds.map((deptId: number) => ({ departmentId: deptId })),
-      } : undefined,
     },
   });
   return NextResponse.json({ project });

@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     include: {
       positions: {
         include: {
-          department: { select: { name: true, managementGroup: true } },
+          department: { select: { name: true, managementGroup: { select: { name: true } } } },
           position: { select: { name: true } },
         },
       },
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     } else {
       for (const pos of emp.positions) {
         item.roles.push({
-          managementGroup: pos.department?.managementGroup || null,
+          managementGroup: pos.department?.managementGroup?.name || null,
           dept1: pos.department?.name || null,
           position: pos.position?.name || null,
         });
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
   const result = Array.from(mergedMap.values()).map((item) => {
     const linkedUser: any =
       userByEmployeeId.get(item.employeeId) || userByName.get(item.name);
-    const rrs = linkedUser?.resourceRoles ?? [];
+    const rrs: any[] = linkedUser?.resourceRoles ?? [];
     return {
       employeeId: item.employeeId,
       name: item.name,
@@ -96,8 +96,8 @@ export async function GET(request: Request) {
       userId: linkedUser?.id ?? null,
       username: linkedUser?.username ?? null,
       // Backward-compat boolean fields
-      isWorkListAdmin: rrs.some((rr: any) => rr.resource.key === "system" && rr.role.key === "admin"),
-      canAccessHR: rrs.some((rr: any) => rr.resource.key === "people" && rr.role.key === "access"),
+      isWorkListAdmin: rrs.some((rr) => rr.resource.key === "system" && rr.role.key === "admin"),
+      canAccessHR: rrs.some((rr) => rr.resource.key === "people" && rr.role.key === "access"),
       // New: resource+role pairs as resourceRoles for UX compatibility
       resourceRoles: rrs,
       // Granted resource+role keys (e.g., "system.admin", "people.access")
