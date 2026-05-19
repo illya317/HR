@@ -26,8 +26,9 @@ interface Model {
   comment: string;
   fields: Field[];
   relations: Relation[];
-  pkFields: string[];   // @id (auto-increment) + @@id compound
-  ukFields: string[];   // @unique single + @@unique compound
+  pkFields: string[];    // @id (auto-increment) + @@id compound
+  ukFields: string[];    // @unique single-field only
+  compUkFields: string[]; // @@unique compound
   inboundFrom: string[];
 }
 
@@ -57,6 +58,7 @@ function parseSchema(schemaPath: string): { models: Model[]; groups: string[] } 
         relations: [],
         pkFields: [],
         ukFields: [],
+        compUkFields: [],
         inboundFrom: [],
       };
       continue;
@@ -82,7 +84,7 @@ function parseSchema(schemaPath: string): { models: Model[]; groups: string[] } 
       const compUniqueMatch = trimmed.match(/^@@unique\s*\(\s*\[([^\]]+)\]\s*\)/);
       if (compUniqueMatch) {
         const keys = compUniqueMatch[1].split(",").map((s) => s.trim());
-        currentModel.ukFields.push(...keys);
+        currentModel.compUkFields.push(...keys);
         continue;
       }
       if (trimmed.startsWith("@@")) continue;
@@ -220,12 +222,11 @@ function generateTablesHTML(models: Model[]): string {
   .dep-link { display: inline-block; background: #f1f5f9; padding: 1px 8px; border-radius: 3px; font-family: "SF Mono", "Menlo", monospace; font-size: 12px; color: #475569; text-decoration: none; }
   .dep-link:hover { background: #e2e8f0; }
   .dep-none { color: #cbd5e1; }
-  .fk-out td { background: #fef9e7; }
-  .fk-out td:first-child { border-left: 3px solid #f59e0b; }
-  .fk-in td { background: #ecfdf5; }
-  .fk-in td:first-child { border-left: 3px solid #10b981; }
-  .uk-in td { background: #ecfeff; }
-  .uk-in td:first-child { border-left: 3px solid #06b6d4; }
+  .pk-border td:first-child { border-left: 3px solid #10b981; }
+  .uk-bg td { background: #ecfeff; }
+  .uk-border td:first-child { border-left: 3px solid #06b6d4; }
+  .fk-underline .field-name { text-decoration: underline; text-decoration-color: #f59e0b; text-underline-offset: 3px; text-decoration-style: solid; }
+  .ref-underline .field-name { text-decoration: underline; text-decoration-color: #f59e0b; text-underline-offset: 3px; text-decoration-style: dashed; }
   .legend { display: flex; gap: 16px; margin-top: 16px; font-size: 11px; color: #94a3b8; }
   .legend span { display: inline-flex; align-items: center; gap: 4px; }
   .legend-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
@@ -287,19 +288,28 @@ function generateTablesHTML(models: Model[]): string {
       }
       const pkSet = new Set(m.pkFields);
       const ukSet = new Set(m.ukFields);
+      const compUkSet = new Set(m.compUkFields);
 
       rows.push(`<table class="field-table"><thead><tr><th style="width:160px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>`);
       for (const f of m.fields) {
         if (f.type.endsWith("[]")) continue;
         if (f.isRelation && !m.relations.some((r) => r.fields.includes(f.name))) continue;
-        const isFK = m.relations.some((r) => r.fields.includes(f.name));
         const rel = m.relations.find((r) => r.fields.includes(f.name));
         const comment = f.comment || (rel ? `→ ${rel.targetModel}.${rel.references[0]}` : "");
         const isPK = pkSet.has(f.name) || (f.name === "id" && f.required);
         const isUK = ukSet.has(f.name) && !isPK;
-        const rowClass = isPK ? "fk-in" : isUK ? "uk-in" : fkOutFields.has(f.name) ? "fk-out" : fkInFields.has(f.name) ? "fk-in" : "";
-        const fkSuffix = isFK && rel ? ` <span style="font-size:11px;color:#d97706">→ <a href="#${rel.targetModel}" class="dep-link">${rel.targetModel}</a></span>` : "";
-        rows.push(`<tr class="${rowClass}">
+        const isCompUK = compUkSet.has(f.name) && !isPK && !isUK;
+        const isFK = fkOutFields.has(f.name) && !isPK && !isUK && !isCompUK;
+        const isRef = fkInFields.has(f.name) && !isPK && !isUK && !isCompUK;
+        const classes = [
+          isPK ? "pk-border" : "",
+          isUK ? "uk-bg" : "",
+          isCompUK ? "uk-bg uk-border" : "",
+          isFK ? "fk-underline" : "",
+          isRef ? "ref-underline" : "",
+        ].filter(Boolean).join(" ");
+        const fkSuffix = (isFK || isRef) && rel ? ` <span style="font-size:11px;color:#d97706">→ <a href="#${rel.targetModel}" class="dep-link">${rel.targetModel}</a></span>` : "";
+        rows.push(`<tr class="${classes}">
           <td><span class="field-name">${f.name}</span>${f.required ? ' <span class="field-required">*</span>' : ""}</td>
           <td><span class="field-type" style="background:${typeColor(f.type)}15;color:${typeColor(f.type)}">${typeBadge(f.type)}</span></td>
           <td class="field-comment">${comment}${fkSuffix}</td>
@@ -380,6 +390,7 @@ function generateTablesMD(models: Model[]): string {
       }
       const pkSet = new Set(m.pkFields);
       const ukSet = new Set(m.ukFields);
+      const compUkSet = new Set(m.compUkFields);
 
       lines.push(`### ${num} ${m.name}\n`);
       lines.push(`| Field | Type | Required | FK | Note |`);
@@ -390,12 +401,13 @@ function generateTablesMD(models: Model[]): string {
         if (f.isRelation && !m.relations.some((r) => r.fields.includes(f.name))) continue;
         const isPK = pkSet.has(f.name) || (f.name === "id" && f.required);
         const isUK = ukSet.has(f.name) && !isPK;
+        const isCompUK = compUkSet.has(f.name) && !isPK && !isUK;
         const isFK = fkOutFields.has(f.name);
         const isRef = fkInFields.has(f.name);
         const rel = m.relations.find((r) => r.fields.includes(f.name));
         const comment = f.comment || (rel ? `→ ${rel.targetModel}.${rel.references[0]}` : "");
-        const fkFlag = isPK ? "PK" : isUK ? "UK" : isFK ? "FK" : isRef ? "REF" : "";
-        lines.push(`| \`${f.name}\` | ${f.type} | ${f.required ? "*" : ""} | ${fkFlag} | ${comment} |`);
+        const flags = [isPK ? "PK" : "", isUK ? "UK" : "", isCompUK ? "cUK" : "", isFK ? "FK" : "", isRef ? "REF" : ""].filter(Boolean).join("+");
+        lines.push(`| \`${f.name}\` | ${f.type} | ${f.required ? "*" : ""} | ${flags} | ${comment} |`);
       }
 
       const outDeps = m.relations.map((r) => r.targetModel).filter((t) => modelMap.has(t));
