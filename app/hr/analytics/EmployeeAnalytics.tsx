@@ -43,6 +43,7 @@ function sortEntries(entries: [string, number][]) {
 
 export default function EmployeeAnalytics({ employees, employments }: { employees: Employee[]; employments: Employment[] }) {
   const [search, setSearch] = useState("");
+  const [feature, setFeature] = useState<"gender" | "age" | "education" | "politics" | "company" | "ethnicity">("gender");
 
   const stats = useMemo(() => {
     const total = employees.length;
@@ -172,54 +173,43 @@ export default function EmployeeAnalytics({ employees, employments }: { employee
         <StatCard label="本月离职" value={stats.leftThisMonth} color="purple" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gender */}
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <SectionTitle>性别分布</SectionTitle>
-          {stats.gender.map(([k, v]) => (
-            <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-blue-400" />
-          ))}
+      {/* Feature selector */}
+      <div className="bg-white rounded-lg shadow-sm p-5">
+        <div className="flex items-center gap-4 mb-4">
+          <h3 className="text-sm font-semibold text-gray-700">员工特征分析</h3>
+          <select
+            value={feature}
+            onChange={(e) => setFeature(e.target.value as any)}
+            className="px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-400"
+          >
+            <option value="gender">性别分布</option>
+            <option value="age">年龄分布</option>
+            <option value="education">学历分布</option>
+            <option value="politics">政治面貌</option>
+            <option value="company">公司分布</option>
+            <option value="ethnicity">民族分布</option>
+          </select>
+          <span className="text-xs text-gray-400">基于 {stats.active} 位在职员工</span>
         </div>
 
-        {/* Age */}
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <SectionTitle>年龄分布</SectionTitle>
-          {stats.age.map(([k, v]) => (
-            <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-emerald-400" />
-          ))}
-        </div>
-
-        {/* Education */}
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <SectionTitle>学历分布</SectionTitle>
-          {stats.education.map(([k, v]) => (
-            <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-amber-400" />
-          ))}
-        </div>
-
-        {/* Politics */}
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <SectionTitle>政治面貌</SectionTitle>
-          {stats.politics.map(([k, v]) => (
-            <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-purple-400" />
-          ))}
-        </div>
-
-        {/* Company */}
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <SectionTitle>公司分布</SectionTitle>
-          {stats.company.map(([k, v]) => (
-            <DistributionBar key={k} label={k} count={v} total={stats.active + stats.inactive} color="bg-sky-400" />
-          ))}
-        </div>
-
-        {/* Ethnicity */}
-        <div className="bg-white rounded-lg shadow-sm p-5">
-          <SectionTitle>民族分布（前10）</SectionTitle>
-          {stats.ethnicity.slice(0, 10).map(([k, v]) => (
-            <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-rose-400" />
-          ))}
-        </div>
+        {feature === "gender" && stats.gender.map(([k, v]) => (
+          <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-blue-400" />
+        ))}
+        {feature === "age" && stats.age.map(([k, v]) => (
+          <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-emerald-400" />
+        ))}
+        {feature === "education" && stats.education.map(([k, v]) => (
+          <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-amber-400" />
+        ))}
+        {feature === "politics" && stats.politics.map(([k, v]) => (
+          <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-purple-400" />
+        ))}
+        {feature === "company" && stats.company.map(([k, v]) => (
+          <DistributionBar key={k} label={k} count={v} total={stats.active + stats.inactive} color="bg-sky-400" />
+        ))}
+        {feature === "ethnicity" && stats.ethnicity.slice(0, 15).map(([k, v]) => (
+          <DistributionBar key={k} label={k} count={v} total={stats.total} color="bg-rose-400" />
+        ))}
       </div>
 
       {/* Recent changes */}
