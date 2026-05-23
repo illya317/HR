@@ -7,22 +7,18 @@ import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
 import { SessionUser } from '@/lib/types';
 
-interface PositionDesc {
-  id: number; code: string; name: string;
-  departmentName: string | null;
-}
-
-interface Group {
-  code: string; name: string;
-  positions: PositionDesc[];
-  children: Group[];
+interface TreeNode {
+  code: string; name: string; level: number;
+  parentCode: string | null;
+  positions: string[];
+  children?: TreeNode[];
 }
 
 export default function GmpPositionsPage() {
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [tree, setTree] = useState<TreeNode[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState(() => {
     if (typeof window !== "undefined") return new URLSearchParams(window.location.search).get("search") || "";
@@ -34,41 +30,30 @@ export default function GmpPositionsPage() {
   }, [router]);
 
   useEffect(() => {
-    fetch("/api/position-descriptions")
+    fetch("/api/position-descriptions?tree=1")
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
-        const all = (data.positionDescriptions || []) as PositionDesc[];
-        // Build tree from codes: GW-XXX-YYY → L1=XXX first 3 chars, L2=full XXX
-        const map = new Map<string, Group>();
-        for (const p of all) {
-          const parts = p.code.split("-");
-          const deptCode = parts[1] || "";
-          const l1 = deptCode.slice(0, 3) + "000"; // e.g. CHM → CHM000
-          const l2 = deptCode; // e.g. CHM100
-
-          if (!map.has(l1)) map.set(l1, { code: l1, name: p.departmentName || l1, positions: [], children: [] });
-          if (l1 !== l2) {
-            if (!map.has(l2)) map.set(l2, { code: l2, name: p.departmentName || l2, positions: [], children: [] });
-            if (!map.get(l1)!.children.find(c => c.code === l2)) {
-              map.get(l1)!.children.push(map.get(l2)!);
-            }
-            map.get(l2)!.positions.push(p);
-          } else {
-            map.get(l1)!.positions.push(p);
-          }
-        }
-        // Set proper names from positions
-        for (const [, g] of map) {
-          if (g.positions.length > 0 && g.name === g.code) {
-            g.name = g.positions[0].departmentName || g.code;
-          }
-          for (const c of g.children) {
-            if (c.positions.length > 0 && c.name === c.code) {
-              c.name = c.positions[0].departmentName || c.code;
+        const allNodes = data.tree as TreeNode[];
+        // Build tree: attach children under their parent
+        for (const n of allNodes) {
+          if (n.parentCode) {
+            const parent = allNodes.find(p => p.code === n.parentCode);
+            if (parent) {
+              if (!parent.children) parent.children = [];
+              parent.children.push(n);
             }
           }
         }
-        setGroups([...map.values()].filter(g => g.code.endsWith("000")));
+        // Sort children by code within each parent
+        for (const n of allNodes) {
+          if (n.children) n.children.sort((a, b) => a.code.localeCompare(b.code));
+        }
+        // Roots = no parentCode
+        const roots = allNodes.filter(n => !n.parentCode);
+        roots.sort((a, b) => a.code.localeCompare(b.code));
+        // Auto-expand roots
+        setExpanded(new Set(roots.map(r => r.code)));
+        setTree(roots);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -82,48 +67,43 @@ export default function GmpPositionsPage() {
     });
   }
 
-  function filter(arr: PositionDesc[]) {
-    if (!search) return arr;
-    const q = search.toLowerCase();
-    return arr.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
-  }
+  function renderNode(node: TreeNode, depth: number): React.ReactNode {
+    const isOpen = expanded.has(node.code);
+    const hasChildren = node.children && node.children.length > 0;
+    const filteredPositions = search
+      ? node.positions.filter(p => p.toLowerCase().includes(search.toLowerCase()))
+      : node.positions;
+    const totalPositions = node.positions.length;
 
-  function renderGroup(g: Group, level: number) {
-    const pos = filter(g.positions);
-    const childMatch = g.children.filter(c => filter(c.positions).length > 0);
-    if (!search && pos.length === 0 && childMatch.length === 0) return null;
-    if (search && pos.length === 0 && childMatch.length === 0) return null;
-
-    const isOpen = expanded.has(g.code) || !!search;
-    const indent = level === 0 ? "" : "ml-4";
-    const size = level === 0 ? "text-base font-bold" : "text-sm font-semibold";
+    const indent = { 0: "ml-0", 1: "ml-6", 2: "ml-12", 3: "ml-16" }[depth] || "ml-16";
+    const textSize = { 0: "text-base font-bold", 1: "text-sm font-semibold", 2: "text-sm", 3: "text-xs" }[depth] || "text-xs";
+    const bg = { 0: "bg-gray-50", 1: "", 2: "", 3: "" }[depth] || "";
 
     return (
-      <div key={g.code} className={indent}>
-        <button
-          onClick={() => toggle(g.code)}
-          className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-lg ${size} text-gray-800 hover:bg-gray-100`}
+      <div key={node.code} className={indent}>
+        <button onClick={() => toggle(node.code)}
+          className={`w-full flex items-center gap-2 px-3 py-2 ${bg} ${textSize} text-gray-800 hover:bg-gray-100 rounded`}
         >
-          <span className="text-gray-400 text-xs">{isOpen ? "▼" : "▶"}</span>
-          {g.name}
-          <span className="text-gray-400 font-normal text-xs">{pos.length} 岗</span>
+          {hasChildren && <span className="text-gray-400 text-xs w-3">{isOpen ? "▼" : "▶"}</span>}
+          {!hasChildren && <span className="w-3" />}
+          {node.name}
+          <span className="text-gray-400 font-normal text-xs">{totalPositions} 岗</span>
         </button>
-        {isOpen && pos.length > 0 && (
-          <div className="divide-y divide-gray-50 border-t border-gray-100 ml-6">
-            {pos.map(p => (
-              <button
-                key={p.code}
-                onClick={() => router.push(`/docs/positions/GMP/${p.code}`)}
-                className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-emerald-50 transition-colors"
+        {isOpen && filteredPositions.length > 0 && (
+          <div className="ml-8 divide-y divide-gray-50 border-l-2 border-gray-100 pl-4">
+            {filteredPositions.sort().map(code => (
+              <button key={code}
+                onClick={() => router.push(`/docs/positions/GMP/${code}`)}
+                className="w-full flex items-center gap-3 py-1.5 text-left hover:bg-emerald-50 transition-colors"
               >
-                <span className="text-xs text-gray-400 font-mono w-20 shrink-0">{p.code}</span>
-                <span className="text-sm text-gray-700 flex-1">{p.name}</span>
+                <span className="text-xs text-gray-400 font-mono w-20 shrink-0">{code}</span>
+                <span className="text-sm text-gray-700 flex-1">{code}</span>
                 <span className="text-gray-300 text-xs">→</span>
               </button>
             ))}
           </div>
         )}
-        {isOpen && g.children.map(c => renderGroup(c, level + 1))}
+        {isOpen && hasChildren && node.children!.map(c => renderNode(c, depth + 1))}
       </div>
     );
   }
@@ -152,17 +132,17 @@ export default function GmpPositionsPage() {
           <span>/</span><span className="text-gray-700">岗位说明书</span>
         </div>
 
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800">岗位说明书</h1>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="搜索岗位..." className="w-full sm:w-64 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none" />
+            placeholder="搜索岗位..." className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none" />
         </div>
 
-        {groups.length === 0 ? (
+        {tree.length === 0 ? (
           <div className="rounded-lg bg-white py-16 text-center shadow-sm"><p className="text-gray-500">暂无数据</p></div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm p-2 space-y-1">
-            {groups.map(g => renderGroup(g, 0))}
+          <div className="bg-white rounded-lg shadow-sm p-4 space-y-1">
+            {tree.map(n => renderNode(n, 0))}
           </div>
         )}
       </main>

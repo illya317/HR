@@ -6,71 +6,63 @@ import { getInitials } from "@/lib/search";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
-  if (!payload) {
-    return NextResponse.json({ error: "未登录" }, { status: 401 });
-  }
+  if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const group = searchParams.get("group");
   const search = searchParams.get("search") || "";
+  const tree = searchParams.get("tree") === "1";
 
-  // 查询单个详情
-  if (code) {
-    const desc = await prisma.positionDescription.findUnique({
-      where: { code },
+  // Department tree for docs page
+  if (tree) {
+    const departments = await prisma.department.findMany({
+      where: { level: { in: [1, 2] } },
+      select: { id: true, code: true, name: true, level: true, parentId: true },
+      orderBy: { code: "asc" },
     });
-
-    if (!desc) {
-      return NextResponse.json({ error: "未找到" }, { status: 404 });
+    const deptMap: Record<string, any> = {};
+    for (const d of departments) {
+      const parent = departments.find(p => p.id === d.parentId);
+      deptMap[d.code] = { code: d.code, name: d.name, level: d.level, parentCode: parent?.code || null, positions: [] as string[] };
     }
+    const pds = await prisma.positionDescription.findMany({ select: { code: true }, orderBy: { code: "asc" } });
+    for (const d of pds) {
+      const dc = (d.code.split("-")[1] || "");
+      let match: string | null = null;
+      for (const key of Object.keys(deptMap).sort((a, b) => b.length - a.length)) {
+        if (dc.startsWith(key)) { match = key; break; }
+      }
+      if (match && deptMap[match]) deptMap[match].positions.push(d.code);
+    }
+    return NextResponse.json({ tree: Object.values(deptMap) });
+  }
+
+  // Single detail
+  if (code) {
+    const desc = await prisma.positionDescription.findUnique({ where: { code } });
+    if (!desc) return NextResponse.json({ error: "未找到" }, { status: 404 });
 
     let details = null;
-    if (desc.details) {
-      try {
-        details = JSON.parse(desc.details);
-      } catch {
-        details = null;
-      }
-    }
+    if (desc.details) { try { details = JSON.parse(desc.details); } catch { details = null; } }
 
     return NextResponse.json({
       positionDescription: {
-        id: desc.id,
-        code: desc.code,
-        name: desc.name,
-        departmentName: desc.departmentName,
-        reportTo: desc.reportTo,
-        positionPurpose: desc.positionPurpose,
-        summary: desc.summary,
-        headcount: desc.headcount,
-        version: desc.version,
-        effectiveDate: desc.effectiveDate,
-        sourceFile: desc.sourceFile,
+        id: desc.id, code: desc.code, name: desc.name,
+        departmentName: desc.departmentName, reportTo: desc.reportTo,
+        positionPurpose: desc.positionPurpose, summary: desc.summary,
+        headcount: desc.headcount, version: desc.version,
+        effectiveDate: desc.effectiveDate, sourceFile: desc.sourceFile,
         managementGroup: isPharma(desc.code) ? "GMP" : "常规体系",
         details,
       },
     });
   }
 
-  // 查询列表
-  const where: any = {};
-
-  if (group) {
-    // group-based filtering removed with ManagementGroup table; no-op for now
-  }
-
+  // List
   const descriptions = await prisma.positionDescription.findMany({
-    where,
     select: {
-      id: true,
-      code: true,
-      name: true,
-      departmentName: true,
-      reportTo: true,
-      positionPurpose: true,
-      version: true,
-      effectiveDate: true,
+      id: true, code: true, name: true, departmentName: true,
+      reportTo: true, positionPurpose: true, version: true, effectiveDate: true,
     },
     orderBy: { code: "asc" },
   });
@@ -78,17 +70,11 @@ export async function GET(request: Request) {
   let result = descriptions;
   if (search) {
     const q = search.toLowerCase();
-    result = descriptions.filter((d) => {
-      if (d.code.toLowerCase().includes(q)) return true;
-      if (d.name.toLowerCase().includes(q)) return true;
-      if ((d.departmentName || "").toLowerCase().includes(q)) return true;
-      if (getInitials(d.name).includes(q)) return true;
-      return false;
-    });
+    result = descriptions.filter((d) =>
+      d.code.toLowerCase().includes(q) || d.name.toLowerCase().includes(q) ||
+      (d.departmentName || "").toLowerCase().includes(q) || getInitials(d.name).includes(q)
+    );
   }
 
-  return NextResponse.json({
-    positionDescriptions: result,
-    total: result.length,
-  });
+  return NextResponse.json({ positionDescriptions: result, total: result.length });
 }
