@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { matchAnyField } from "@/lib/search";
+import { snapshotHistory } from "@/lib/history";
 import { isPharma } from "@/lib/company";
 
 export async function GET(request: Request) {
@@ -107,12 +108,16 @@ export async function PUT(request: Request) {
   if (level !== undefined) data.level = level;
   if (parentId !== undefined) data.parentId = parentId || null;
   if (managerUserId !== undefined) data.managerUserId = managerUserId || null;
+  data.editedBy = payload.userId;
+  data.editedAt = new Date();
+  data.version = { increment: 1 };
 
   try {
     const updated = await prisma.department.update({
       where: { id },
       data,
     });
+    await snapshotHistory("Department", id, payload.userId);
     return NextResponse.json({ success: true, department: updated });
   } catch (e: any) {
     if (e.code === "P2002") {
