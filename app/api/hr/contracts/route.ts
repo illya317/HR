@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { matchEmployee } from "@/lib/search";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -9,6 +10,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const company = searchParams.get("company") || "";
+  const keyword = searchParams.get("keyword") || "";
 
   const where: any = {};
   if (company) where.currentCompany = company;
@@ -56,6 +58,19 @@ export async function GET(request: Request) {
         endDate: c.endDate || null,
       });
     }
+  }
+
+  if (keyword) {
+    const query = keyword.toLowerCase();
+    const filtered = contracts.filter((c: any) => {
+      if (matchEmployee({ name: c.employeeName, employeeId: c.employeeId }, keyword)) return true;
+      if ((c.company || "").toLowerCase().includes(query)) return true;
+      if ((c.legalRelation || "").toLowerCase().includes(query)) return true;
+      if ((c.contractType || "").toLowerCase().includes(query)) return true;
+      if ((c.employmentForm || "").toLowerCase().includes(query)) return true;
+      return false;
+    });
+    return NextResponse.json({ contracts: filtered });
   }
 
   return NextResponse.json({ contracts });
