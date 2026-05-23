@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   // Department tree for docs page
   if (tree) {
     const departments = await prisma.department.findMany({
-      where: { level: { in: [1, 2] } },
+      where: {},
       select: { id: true, code: true, name: true, level: true, parentId: true },
       orderBy: { code: "asc" },
     });
@@ -33,6 +33,17 @@ export async function GET(request: Request) {
         if (dc.startsWith(key)) { match = key; break; }
       }
       if (match && deptMap[match]) deptMap[match].positions.push(d.code + "|" + d.name);
+    }
+    // Aggregate: each node shows own + all descendants' positions
+    function subtreePositions(deptCode: string): string[] {
+      const own = [...deptMap[deptCode].positions];
+      for (const d of Object.values(deptMap) as any[]) {
+        if (d.parentCode === deptCode) own.push(...subtreePositions(d.code));
+      }
+      return [...new Set(own)].sort();
+    }
+    for (const d of Object.values(deptMap) as any[]) {
+      d.positions = subtreePositions(d.code);
     }
     return NextResponse.json({ tree: Object.values(deptMap) });
   }
