@@ -40,3 +40,17 @@ export async function PUT(
 
   return NextResponse.json({ success: true });
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const payload = await authenticate(request);
+  if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
+  if (!(await checkHRAccess(payload.userId))) return NextResponse.json({ error: "无权限" }, { status: 403 });
+
+  const { id } = await params;
+  await snapshotHistory("Employee", parseInt(id), payload.userId);
+  await prisma.employee.delete({ where: { id: parseInt(id) } });
+  return NextResponse.json({ success: true });
+}

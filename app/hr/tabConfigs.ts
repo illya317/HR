@@ -39,7 +39,7 @@ export const employeeConfig: TabConfig = {
   entityType: "Employee",
   fields: employeeFields,
   canCreate: false, // Employee 由导入或专门流程创建，暂不开放前台新建
-  canDelete: false,
+  canDelete: true,
   listGetter: (d) => d.employees,
 };
 
