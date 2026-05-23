@@ -93,13 +93,13 @@ export async function PUT(request: Request) {
       const oldPos = await tx.position.findFirst({ where: { code: originalCode } as any });
       if (oldPos) {
         const maxVer = await tx.editHistory.findFirst({
-          where: { entityType: "code_position", entityId: originalCode },
+          where: { entityType: "Position", entityId: originalCode },
           orderBy: { version: "desc" },
           select: { version: true },
         });
         await tx.editHistory.create({
           data: {
-            entityType: "code_position",
+            entityType: "Position",
             entityId: originalCode,
             version: (maxVer?.version || 0) + 1,
             dataJson: JSON.stringify(oldPos),
@@ -115,13 +115,13 @@ export async function PUT(request: Request) {
       const oldPos = await tx.position.findFirst({ where: { code: finalCode } as any });
       if (oldPos) {
         const maxVer = await tx.editHistory.findFirst({
-          where: { entityType: "code_position", entityId: finalCode },
+          where: { entityType: "Position", entityId: finalCode },
           orderBy: { version: "desc" },
           select: { version: true },
         });
         await tx.editHistory.create({
           data: {
-            entityType: "code_position",
+            entityType: "Position",
             entityId: finalCode,
             version: (maxVer?.version || 0) + 1,
             dataJson: JSON.stringify(oldPos),

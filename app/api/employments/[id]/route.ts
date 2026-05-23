@@ -3,7 +3,7 @@ import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { snapshotHistory } from "@/lib/history";
 
-const ALLOWED = ["employeeId", "status", "currentCompany", "joinDate", "leaveDate", "leaveReason", "officeLocation", "attendanceType", "contracts"];
+const ALLOWED = ["employeeId", "isActive", "currentCompany", "joinDate", "leaveDate", "leaveReason", "officeLocation", "attendanceType", "contracts"];
 
 export async function PUT(
   request: Request,
@@ -22,7 +22,7 @@ export async function PUT(
   }
 
   const old = await prisma.employment.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("employment", String(id), old, payload.userId);
+  if (old) await snapshotHistory("Employment", String(id), old, payload.userId);
 
   let finalValue: any = value;
   if (field === "employeeId" && typeof value === "string") {

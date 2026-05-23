@@ -38,7 +38,7 @@ export async function PUT(
   }
 
   const oldData = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
-  if (oldData) await snapshotHistory("employee", String(oldData.id), oldData, payload.userId);
+  if (oldData) await snapshotHistory("Employee", String(oldData.id), oldData, payload.userId);
 
   await prisma.employee.update({
     where: { id: parseInt(id) },

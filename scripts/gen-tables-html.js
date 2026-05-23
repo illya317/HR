@@ -11,7 +11,7 @@ const GROUPS = [
   { title: '4. Tasks', models: ['WorkItem', 'WorkParticipant'] },
   { title: '5. Roster & Org', models: ['Employee', 'Employment', 'Company', 'CompanyRelation', 'Department', 'Position', 'EDP', 'Project', 'EmployeeProject'] },
   { title: '6. 岗位说明书', models: ['PositionDescription'] },
-  { title: '7. Edit History', models: ['HistoryEntity', 'EditHistory'] },
+  { title: '7. Edit History', models: ['EditHistory'] },
 ];
 
 // ─── Parse schema.prisma ──────────────────────────────────

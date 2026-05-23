@@ -31,7 +31,7 @@ export async function PUT(
   if (!ALLOWED.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
 
   const old = await prisma.department.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("code_department", String(id), old, payload.userId);
+  if (old) await snapshotHistory("Department", String(id), old, payload.userId);
 
   let finalValue: any = value;
   if (field === "parentId" && typeof value === "string") {

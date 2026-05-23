@@ -36,7 +36,7 @@ const employeeFields: FieldConfig[] = [
 export const employeeConfig: TabConfig = {
   title: "员工信息",
   apiPath: "/api/hr/employees",
-  entityType: "employee",
+  entityType: "Employee",
   fields: employeeFields,
   canCreate: false, // Employee 由导入或专门流程创建，暂不开放前台新建
   canDelete: false,
@@ -46,20 +46,20 @@ export const employeeConfig: TabConfig = {
 // ─── 5-2 雇佣关系 ──────────────────────────────────────────
 const employmentFields: FieldConfig[] = [
   { key: "employeeId", label: "员工", type: "fk", editable: true },
-  { key: "status", label: "状态", editable: true },
+  { key: "isActive", label: "在职", editable: true, type: "boolean" },
   { key: "currentCompany", label: "当前公司", editable: true },
   { key: "joinDate", label: "入职日期", editable: true, type: "date" },
-  { key: "leaveDate", label: "离职日期", editable: true, type: "date" },
-  { key: "leaveReason", label: "离职原因", editable: true },
+  { key: "leaveDate", label: "离职日期", editable: true, type: "date", hidden: true },
+  { key: "leaveReason", label: "离职原因", editable: true, hidden: true },
   { key: "officeLocation", label: "办公地点", editable: true },
   { key: "attendanceType", label: "考勤类型", editable: true },
-  { key: "contracts", label: "合同记录", editable: true, type: "textarea" },
+  // 合同已单独拆分为「合同」Tab
 ];
 
 export const employmentConfig: TabConfig = {
   title: "雇佣关系",
   apiPath: "/api/hr/employments",
-  entityType: "employment",
+  entityType: "Employment",
   fields: employmentFields,
   fkFields: {
     employeeId: fk("employee", "employeeName"),
@@ -87,7 +87,7 @@ const companyFields: FieldConfig[] = [
 export const companyConfig: TabConfig = {
   title: "公司信息",
   apiPath: "/api/hr/companies",
-  entityType: "code_company",
+  entityType: "Company",
   fields: companyFields,
   canCreate: true,
   canDelete: true,
@@ -99,13 +99,13 @@ const companyRelationFields: FieldConfig[] = [
   { key: "parentId", label: "持股方", type: "fk", editable: true },
   { key: "childId", label: "被持股方", type: "fk", editable: true },
   { key: "shareRatio", label: "持股比例", editable: true, type: "number" },
-  { key: "isConsolidated", label: "是否并表", editable: true, type: "boolean" },
+  { key: "isConsolidated", label: "并表", editable: true, type: "boolean" },
 ];
 
 export const companyRelationConfig: TabConfig = {
   title: "公司关系",
   apiPath: "/api/hr/company-relations",
-  entityType: "company_relation",
+  entityType: "CompanyRelation",
   fields: companyRelationFields,
   fkFields: {
     parentId: fk("company", "parentName"),
@@ -121,9 +121,8 @@ export const companyRelationConfig: TabConfig = {
 const departmentFields: FieldConfig[] = [
   { key: "code", label: "编码", editable: true },
   { key: "name", label: "名称", editable: true },
-  { key: "alias", label: "别名", editable: true },
+  { key: "alias", label: "别名", editable: true, hidden: true },
   { key: "level", label: "层级", editable: true, type: "number" },
-  { key: "levelLabel", label: "层级标签", editable: true },
   { key: "parentId", label: "上级部门", type: "fk", editable: true },
   { key: "managerUserId", label: "负责人", type: "fk", editable: true },
 ];
@@ -131,7 +130,7 @@ const departmentFields: FieldConfig[] = [
 export const departmentConfig: TabConfig = {
   title: "部门",
   apiPath: "/api/hr/departments",
-  entityType: "code_department",
+  entityType: "Department",
   fields: departmentFields,
   fkFields: {
     parentId: fk("department", "parentName"),
@@ -147,7 +146,7 @@ export const departmentConfig: TabConfig = {
 const positionFields: FieldConfig[] = [
   { key: "code", label: "编码", editable: true },
   { key: "name", label: "名称", editable: true },
-  { key: "alias", label: "别名", editable: true },
+  { key: "alias", label: "别名", editable: true, hidden: true },
   { key: "departmentId", label: "所属部门", type: "fk", editable: true },
   { key: "positionDescriptionId", label: "岗位说明书", type: "fk", editable: true },
 ];
@@ -155,7 +154,7 @@ const positionFields: FieldConfig[] = [
 export const positionConfig: TabConfig = {
   title: "岗位",
   apiPath: "/api/hr/positions",
-  entityType: "code_position",
+  entityType: "Position",
   fields: positionFields,
   fkFields: {
     departmentId: fk("department", "departmentName"),
@@ -181,13 +180,13 @@ const edpFields: FieldConfig[] = [
   { key: "reportTo", label: "直接上级", editable: true },
   { key: "reportTo2", label: "第二汇报线", editable: true },
   { key: "workPercent", label: "工作占比", editable: true },
-  { key: "isResearch", label: "是否研发", editable: true },
+  { key: "isResearch", label: "研发", editable: true, type: "boolean" },
 ];
 
 export const edpConfig: TabConfig = {
   title: "EDP",
   apiPath: "/api/hr/edps",
-  entityType: "employee_position",
+  entityType: "EDP",
   fields: edpFields,
   fkFields: {
     employeeId: fk("employee", "employeeName"),
@@ -211,7 +210,7 @@ const projectFields: FieldConfig[] = [
 export const projectConfig: TabConfig = {
   title: "项目",
   apiPath: "/api/hr/projects",
-  entityType: "project",
+  entityType: "Project",
   fields: projectFields,
   canCreate: true,
   canDelete: true,
@@ -227,10 +226,43 @@ const employeeProjectFields: FieldConfig[] = [
   { key: "endDate", label: "结束日期", editable: true, type: "date" },
 ];
 
+// ─── 5-10 合同 ─────────────────────────────────────────────
+const contractFields: FieldConfig[] = [
+  { key: "employeeId", label: "员工编号", editable: false },
+  { key: "employeeName", label: "姓名", editable: false },
+  { key: "company", label: "公司", editable: false },
+  { key: "isPrimary", label: "主合同", type: "boolean", editable: false },
+  { key: "isInsuredHere", label: "参保", type: "boolean", editable: false },
+  { key: "legalRelation", label: "法律关系", editable: false },
+  { key: "contractType", label: "合同类型", editable: false },
+  { key: "employmentForm", label: "用工形式", editable: false },
+  { key: "firstContractStartDate", label: "首签开始", editable: false, type: "date" },
+  { key: "firstContractEndDate", label: "首签结束", editable: false, type: "date" },
+  { key: "secondContractStartDate", label: "续签一开始", editable: false, type: "date" },
+  { key: "secondContractEndDate", label: "续签一结束", editable: false, type: "date" },
+  { key: "thirdContractStartDate", label: "续签二开始", editable: false, type: "date" },
+  { key: "thirdContractEndDate", label: "续签二结束", editable: false, type: "date" },
+  { key: "permanentContractDate", label: "无固定期限", editable: false, type: "date" },
+  { key: "confidentialityDate", label: "保密协议", editable: false, type: "date" },
+  { key: "nonCompeteDate", label: "竞业限制", editable: false, type: "date" },
+  { key: "endDate", label: "终止日期", editable: false, type: "date" },
+];
+
+export const contractConfig: TabConfig = {
+  title: "合同",
+  apiPath: "/api/hr/contracts",
+  entityType: "contract",
+  fields: contractFields,
+  canCreate: false,
+  canDelete: false,
+  listGetter: (d) => d.contracts,
+};
+
+// ─── 5-9 项目员工 ──────────────────────────────────────────
 export const employeeProjectConfig: TabConfig = {
   title: "项目员工",
   apiPath: "/api/hr/employee-projects",
-  entityType: "employee_project",
+  entityType: "EmployeeProject",
   fields: employeeProjectFields,
   fkFields: {
     employeeId: fk("employee", "employeeName"),

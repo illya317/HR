@@ -66,13 +66,13 @@ export async function PUT(request: Request) {
     const oldDept = await prisma.department.findFirst({ where: { code: originalCode } });
     if (oldDept) {
       const maxVer = await prisma.editHistory.findFirst({
-        where: { entityType: "code_department", entityId: originalCode },
+        where: { entityType: "Department", entityId: originalCode },
         orderBy: { version: "desc" },
         select: { version: true },
       });
       await prisma.editHistory.create({
         data: {
-          entityType: "code_department",
+          entityType: "Department",
           entityId: originalCode,
           version: (maxVer?.version || 0) + 1,
           dataJson: JSON.stringify(oldDept),
@@ -88,13 +88,13 @@ export async function PUT(request: Request) {
     const oldDept = await prisma.department.findFirst({ where: { code: finalCode } });
     if (oldDept) {
       const maxVer = await prisma.editHistory.findFirst({
-        where: { entityType: "code_department", entityId: finalCode },
+        where: { entityType: "Department", entityId: finalCode },
         orderBy: { version: "desc" },
         select: { version: true },
       });
       await prisma.editHistory.create({
         data: {
-          entityType: "code_department",
+          entityType: "Department",
           entityId: finalCode,
           version: (maxVer?.version || 0) + 1,
           dataJson: JSON.stringify(oldDept),

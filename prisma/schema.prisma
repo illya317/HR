@@ -408,26 +408,16 @@ model PositionDescription {
   updatedAt         DateTime         @updatedAt       // 更新时间
 }
 
-// ─── 编辑历史实体登记 ─────────────────────────────────────
-// 任何有审计字段的表如需 EditHistory 支持，必须在此登记 entityType
-model HistoryEntity {
-  id           Int            @id @default(autoincrement()) // 主键
-  entityType   String         @unique // "employee" | "employment" | "code_company" | ...
-  description  String         // 中文说明
-  histories    EditHistory[]
-}
-
 // ─── 编辑历史 ─────────────────────────────────────────────
 model EditHistory {
-  id         Int            @id @default(autoincrement()) // 主键
-  entityType String         // FK → HistoryEntity
-  entityId   String         // 实体主键
-  version    Int            // 版本号
-  dataJson   String         // 编辑前快照
-  editedBy   Int            // 编辑人用户ID
-  editor     User           @relation("EditHistoryEditor", fields: [editedBy], references: [id])
-  entity     HistoryEntity  @relation(fields: [entityType], references: [entityType])
-  createdAt  DateTime       @default(now()) // 创建时间
+  id         Int      @id @default(autoincrement()) // 主键
+  entityType String   // Prisma 模型名（如 Employee, Employment, Department...）
+  entityId   String   // 实体主键
+  version    Int      // 版本号
+  dataJson   String   // 编辑前快照
+  editedBy   Int      // 编辑人用户ID
+  editor     User     @relation("EditHistoryEditor", fields: [editedBy], references: [id])
+  createdAt  DateTime @default(now()) // 创建时间
 
   @@unique([entityType, entityId, version])
 }

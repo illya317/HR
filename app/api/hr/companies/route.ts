@@ -90,13 +90,13 @@ export async function PUT(request: Request) {
     const old = await prisma.company.findUnique({ where: { id } });
     if (old) {
       const maxVer = await prisma.editHistory.findFirst({
-        where: { entityType: "code_company", entityId: String(id) },
+        where: { entityType: "Company", entityId: String(id) },
         orderBy: { version: "desc" },
         select: { version: true },
       });
       await prisma.editHistory.create({
         data: {
-          entityType: "code_company",
+          entityType: "Company",
           entityId: String(id),
           version: (maxVer?.version || 0) + 1,
           dataJson: JSON.stringify(old),

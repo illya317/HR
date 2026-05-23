@@ -20,7 +20,7 @@ export async function PUT(
   if (body.field === undefined) {
     const { role, startDate, endDate } = body;
     const old = await prisma.employeeProject.findUnique({ where: { id: parseInt(id) } });
-    if (old) await snapshotHistory("employee_project", String(id), old, payload.userId);
+    if (old) await snapshotHistory("EmployeeProject", String(id), old, payload.userId);
     const entry = await prisma.employeeProject.update({
       where: { id: parseInt(id) },
       data: {
@@ -40,7 +40,7 @@ export async function PUT(
   if (!ALLOWED.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
 
   const old = await prisma.employeeProject.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("employee_project", String(id), old, payload.userId);
+  if (old) await snapshotHistory("EmployeeProject", String(id), old, payload.userId);
 
   let finalValue: any = value;
   if (field === "employeeId" && typeof value === "string") {

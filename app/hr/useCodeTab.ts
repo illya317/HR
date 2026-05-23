@@ -97,7 +97,7 @@ export function useCodeTab({
   );
 
   const entityType =
-    type === "department" ? "code_department" : "code_position";
+    type === "department" ? "Department" : "Position";
 
   function buildFullCode(shortCode: string): string {
     const normalized = companyCode
