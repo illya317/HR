@@ -31,6 +31,7 @@ const employeeFields: FieldConfig[] = [
   { key: "workStartDate", label: "参加工作时间", editable: true, type: "date" },
   { key: "idNumber", label: "身份证号", editable: true },
   { key: "otherId", label: "其他证件号", editable: true },
+  { key: "userId", label: "关联账号", type: "fk", editable: true },
 ];
 
 export const employeeConfig: TabConfig = {

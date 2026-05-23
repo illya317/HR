@@ -9,7 +9,7 @@ function DeptNode({ dept, allDepts, edps, level = 0 }: { dept: Department; allDe
   const hasChildren = children.length > 0;
 
   const deptEdps = edps.filter((e) => e.departmentId === dept.id);
-  const primaryCount = deptEdps.filter((e) => e.isPrimary).length;
+  const primaryCount = new Set(deptEdps.filter((e) => e.isPrimary).map((e) => e.employeeId)).size;
 
   const levelColors = [
     "bg-blue-50 text-blue-700 border-blue-200",
@@ -79,8 +79,14 @@ export default function DepartmentAnalytics({ departments, edps }: { departments
     const pharma = departments.filter((d) => d.company === "丰华制药").length;
     const bio = departments.filter((d) => d.company === "丰华生物").length;
 
+    const deptActualMap = new Map<number, Set<number>>();
+    activeEdps.filter((e) => e.isPrimary && e.departmentId).forEach((e) => {
+      const set = deptActualMap.get(e.departmentId!) || new Set();
+      set.add(e.employeeId);
+      deptActualMap.set(e.departmentId!, set);
+    });
     const deptWithHeadcount = departments
-      .map((d) => ({ ...d, actual: activeEdps.filter((e) => e.departmentId === d.id && e.isPrimary).length }))
+      .map((d) => ({ ...d, actual: deptActualMap.get(d.id)?.size || 0 }))
       .sort((a, b) => b.actual - a.actual);
 
     return { l1, l2, l3, pharma, bio, deptWithHeadcount };
@@ -133,8 +139,8 @@ export default function DepartmentAnalytics({ departments, edps }: { departments
           <div className="mt-1 text-xs text-amber-600">子部门(L3)</div>
         </div>
         <div className="bg-purple-50 rounded-lg p-4">
-          <div className="text-2xl font-bold text-purple-700">{edps.filter((e) => e.isPrimary).length}</div>
-          <div className="mt-1 text-xs text-purple-600">主岗人数</div>
+          <div className="text-2xl font-bold text-purple-700">{new Set(activeEdps.filter((e) => e.isPrimary).map((e) => e.employeeId)).size}</div>
+          <div className="mt-1 text-xs text-purple-600">在职主岗人数</div>
         </div>
       </div>
 

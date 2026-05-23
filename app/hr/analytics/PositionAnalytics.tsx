@@ -27,13 +27,15 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
   const activeEdps = useMemo(() => edps.filter((e) => !e.endDate), [edps]);
 
   const activeHeadcounts = useMemo(() => {
-    const map = new Map<number, number>();
+    const map = new Map<number, Set<number>>();
     activeEdps.forEach((e) => {
       if (e.positionId) {
-        map.set(e.positionId, (map.get(e.positionId) || 0) + 1);
+        const set = map.get(e.positionId) || new Set();
+        set.add(e.employeeId);
+        map.set(e.positionId, set);
       }
     });
-    return map;
+    return new Map([...map.entries()].map(([k, v]) => [k, v.size]));
   }, [activeEdps]);
 
   const positionsWithActive = useMemo(() => {
