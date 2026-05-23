@@ -7,9 +7,11 @@ import { snapshotHistory } from "@/lib/history";
 type PrismaModelKey = keyof typeof prisma;
 
 export interface CrudConfig {
-  entityType: string;     // 如 "Employee"
-  modelKey: PrismaModelKey; // 如 "employee"
-  allowedFields?: string[]; // 单字段编辑白名单
+  entityType: string;
+  modelKey: PrismaModelKey;
+  allowedFields?: string[];
+  /** 自定义校验/转换：返回 { field, value } 继续，返回 null 拒绝 */
+  onBeforeUpdate?: (field: string, value: unknown) => Promise<{ field: string; value: unknown } | null>;
 }
 
 /** 通用单字段编辑 PUT /api/xxx/[id] */
@@ -24,7 +26,15 @@ export async function handleUpdateField(
 
   const { id } = await params;
   const body = await request.json();
-  const { field, value } = body as { field: string; value: unknown };
+  let { field, value } = body as { field: string; value: unknown };
+
+  // 自定义转换（如兼容旧字段名、类型转换）
+  if (config.onBeforeUpdate) {
+    const result = await config.onBeforeUpdate(field, value);
+    if (!result) return NextResponse.json({ error: "非法字段" }, { status: 400 });
+    field = result.field;
+    value = result.value;
+  }
 
   const allowed = config.allowedFields || [];
   if (!allowed.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
