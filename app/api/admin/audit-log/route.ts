@@ -78,104 +78,85 @@ export async function GET(request: Request) {
     return NextResponse.json({ tags: tags.map((t) => t.tag) });
   }
 
-  const where: any = { entityType };
-  if (tag) where.tag = tag;
+  const showAll = !!tag;
+  const pageWhere: any = { entityType, tag: showAll ? tag : null };
 
-  // 拉当前页 + 同记录 V0（用于 diff）
   const pageVersions = await prisma.editHistory.findMany({
-    where: tag ? where : { entityType, tag: null },
+    where: pageWhere,
     orderBy: { createdAt: "desc" },
     take: pageSize,
     skip: (page - 1) * pageSize,
     include: { editor: { select: { name: true } } },
   });
-  const total = await prisma.editHistory.count({ where: tag ? where : { entityType, tag: null } });
+  const total = await prisma.editHistory.count({ where: pageWhere });
 
-  // 补上当前页记录的 V0 用于 diff
   const recordIds = [...new Set(pageVersions.map((v) => parseInt(v.entityId)))];
-  const v0s = tag ? [] : await prisma.editHistory.findMany({
-    where: { entityType, entityId: { in: recordIds.map(String) }, tag: { not: null } },
+  const recordIdStrs = recordIds.map(String);
+
+  // 拉取这些记录的全部版本（含 V0），用于准确 diff
+  const allVersions = await prisma.editHistory.findMany({
+    where: { entityType, entityId: { in: recordIdStrs } },
+    orderBy: { version: "asc" },
     include: { editor: { select: { name: true } } },
   });
-  const versions = [...pageVersions, ...v0s];
-  const recordMap: Record<string, string> = {};
 
+  // 按 record 分组，每组内按 version 排序，建立 当前版本→前一个版本 的映射
+  const prevMap = new Map<number, any>();
+  const groupMap = new Map<string, any[]>();
+  for (const v of allVersions) {
+    const k = `${v.entityType}:${v.entityId}`;
+    if (!groupMap.has(k)) groupMap.set(k, []);
+    groupMap.get(k)!.push(v);
+  }
+  for (const [, group] of groupMap) {
+    for (let i = 1; i < group.length; i++) {
+      prevMap.set(group[i].id, group[i - 1]);
+    }
+  }
+
+  // 记录名称
+  const recordMap: Record<string, string> = {};
   if (resolver) {
     const records = await (prisma as any)[resolver.model].findMany({
       where: { id: { in: recordIds } },
       select: { id: true, [resolver.field]: true },
     });
-    for (const r of records) {
-      recordMap[String(r.id)] = String(r[resolver.field] ?? resolver.fallback);
-    }
+    for (const r of records) recordMap[String(r.id)] = String(r[resolver.field] ?? resolver.fallback);
   }
 
   const AUDIT_FIELDS = new Set(["editedBy", "editedAt", "version", "editor", "createdAt", "updatedAt", "id"]);
 
-  // Group by record, sort by version within each group, build diffs
-  const grouped: Record<string, any[]> = {};
-  for (const v of versions) {
-    const key = `${v.entityType}:${v.entityId}`;
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(v);
-  }
-
-  const prevMap: Record<number, any> = {};
-  for (const key of Object.keys(grouped)) {
-    const group = grouped[key].sort((a, b) => b.version - a.version); // version desc
-    for (let i = 0; i < group.length; i++) {
-      prevMap[group[i].id] = group[i + 1] || null; // next in group = previous version
-    }
-  }
-
-  const entries = versions.map((v) => {
-    const prev = prevMap[v.id];
-    const isFirst = !prev;
+  const entries = pageVersions.map((v) => {
+    const prev = prevMap.get(v.id) || null;
     const changes: Array<{ field: string; from?: string; to: string }> = [];
-
     try {
       const currData = JSON.parse(v.dataJson);
-      if (isFirst) {
-        for (const key of Object.keys(currData)) {
-          if (AUDIT_FIELDS.has(key)) continue;
-          const val = currData[key];
-          if (val !== null && val !== undefined && val !== "") {
-            changes.push({ field: key, to: typeof val === "object" ? JSON.stringify(val) : String(val) });
-          }
+      const prevData = prev ? JSON.parse(prev.dataJson) : null;
+      const keys = new Set([...Object.keys(currData), ...(prevData ? Object.keys(prevData) : [])]);
+      for (const key of keys) {
+        if (AUDIT_FIELDS.has(key)) continue;
+        const curr = currData[key];
+        const old = prevData?.[key];
+        if (JSON.stringify(old) !== JSON.stringify(curr)) {
+          changes.push({
+            field: key,
+            from: old != null ? (typeof old === "object" ? JSON.stringify(old) : String(old)) : "(空)",
+            to: curr != null ? (typeof curr === "object" ? JSON.stringify(curr) : String(curr)) : "(空)",
+          });
         }
-      } else {
-        try {
-          const prevData = JSON.parse(prev!.dataJson);
-          for (const key of Object.keys(currData)) {
-            if (AUDIT_FIELDS.has(key)) continue;
-            const curr = currData[key];
-            const old = prevData[key];
-            if (JSON.stringify(old) !== JSON.stringify(curr)) {
-              changes.push({
-                field: key,
-                from: old != null ? (typeof old === "object" ? JSON.stringify(old) : String(old)) : "(空)",
-                to: curr != null ? (typeof curr === "object" ? JSON.stringify(curr) : String(curr)) : "(空)",
-              });
-            }
-          }
-        } catch {}
       }
     } catch {}
 
     return {
-      id: v.id,
-      entityId: v.entityId,
+      id: v.id, entityId: v.entityId,
       entityName: recordMap[v.entityId] || v.entityId,
       version: v.version,
       editorName: v.editor?.name || `用户#${v.editedBy}`,
       createdAt: v.createdAt,
       tag: v.tag || null,
-      isFirst,
       changes,
     };
   });
 
-  // 默认隐藏 V0 基线条目，仅展示编辑版本
-  const visible = tag ? entries : entries.filter((e) => !e.tag);
-  return NextResponse.json({ entries: visible, total, page, pageSize });
+  return NextResponse.json({ entries, total, page, pageSize });
 }
