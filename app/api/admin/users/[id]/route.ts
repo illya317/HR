@@ -12,23 +12,31 @@ export async function PUT(
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  if (!(await isAdmin(request))) {
+  const { id } = await params;
+  const isSelf = payload.userId === parseInt(id);
+
+  if (!isSelf && !(await isAdmin(request))) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
-  const { id } = await params;
   const body = await request.json();
 
-  // Single field update (e.g. canLogin, name, username)
+  // Single field update
   if (body.field && body.value !== undefined) {
     const { field, value } = body;
-    const ALLOWED = ["canLogin", "name", "username", "employeeId"];
-    if (!ALLOWED.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
+    const SELF_ALLOWED = ["username"];
+    const ADMIN_ALLOWED = ["canLogin", "name", "username", "employeeId"];
+    const allowed = isSelf ? SELF_ALLOWED : ADMIN_ALLOWED;
+    if (!allowed.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
     await prisma.user.update({
       where: { id: parseInt(id) },
       data: { [field]: field === "canLogin" ? !!value : value || null },
     });
     return NextResponse.json({ success: true });
+  }
+
+  if (!(await isAdmin(request))) {
+    return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
   const { resourceKey, roleKey, value } = body;
