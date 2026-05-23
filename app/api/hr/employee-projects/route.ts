@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { snapshotHistory } from "@/lib/history";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -60,5 +61,6 @@ export async function POST(request: Request) {
       editedBy: payload.userId,
     },
   });
+  await snapshotHistory("EmployeeProject", entry.id, payload.userId);
   return NextResponse.json({ entry });
 }

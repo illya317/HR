@@ -80,6 +80,7 @@ export async function POST(request: Request) {
         positionDescriptionId: positionDescriptionId || null,
       },
     });
+  await snapshotHistory("Position", created.id, payload.userId);
     return NextResponse.json({ success: true, position: created });
   } catch (e: any) {
     if (e.code === "P2002") {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { matchEmployee } from "@/lib/search";
+import { matchEmployee, getInitials } from "@/lib/search";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -63,17 +63,30 @@ export async function GET(request: Request) {
   if (keyword) {
     const query = keyword.toLowerCase();
     const searchFields = [
-      "employeeName", "employeeId", "company", "legalRelation",
-      "contractType", "employmentForm",
-      "firstContractStartDate", "firstContractEndDate",
-      "secondContractStartDate", "secondContractEndDate",
-      "thirdContractStartDate", "thirdContractEndDate",
-      "permanentContractDate", "confidentialityDate",
-      "nonCompeteDate", "endDate",
+      "company", "legalRelation", "contractType", "employmentForm",
     ];
-    const filtered = contracts.filter((c: any) =>
-      searchFields.some((f) => (c[f] || "").toLowerCase().includes(query))
-    );
+    const filtered = contracts.filter((c: any) => {
+      // employee info matching (name, pinyin initials, employeeId)
+      if (matchEmployee({ name: c.employeeName, employeeId: c.employeeId }, keyword)) return true;
+      // contract fields: includes + pinyin initials
+      for (const f of searchFields) {
+        const val = String(c[f] || "").toLowerCase();
+        if (val.includes(query)) return true;
+        if (getInitials(c[f] || "").includes(query)) return true;
+      }
+      // date fields: simple includes
+      const dateFields = [
+        "firstContractStartDate", "firstContractEndDate",
+        "secondContractStartDate", "secondContractEndDate",
+        "thirdContractStartDate", "thirdContractEndDate",
+        "permanentContractDate", "confidentialityDate",
+        "nonCompeteDate", "endDate",
+      ];
+      for (const f of dateFields) {
+        if ((c[f] || "").toLowerCase().includes(query)) return true;
+      }
+      return false;
+    });
     return NextResponse.json({ contracts: filtered });
   }
 

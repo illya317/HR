@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { snapshotHistory } from "@/lib/history";
 import { matchAnyField } from "@/lib/search-schema";
 
 export async function GET(request: Request) {
@@ -39,5 +40,6 @@ export async function POST(request: Request) {
       editedBy: payload.userId,
     },
   });
+  await snapshotHistory("Project", project.id, payload.userId);
   return NextResponse.json({ project });
 }

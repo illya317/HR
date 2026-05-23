@@ -75,6 +75,7 @@ export async function POST(request: Request) {
         managerUserId: managerUserId || null,
       },
     });
+  await snapshotHistory("Department", created.id, payload.userId);
     return NextResponse.json({ success: true, department: created });
   } catch (e: any) {
     if (e.code === "P2002") {

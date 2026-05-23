@@ -1,0 +1,214 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { Department, EDP } from "./useAnalyticsData";
+
+function DeptNode({ dept, allDepts, edps, level = 0 }: { dept: Department; allDepts: Department[]; edps: EDP[]; level?: number }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const children = allDepts.filter((d) => d.parentId === dept.id);
+  const hasChildren = children.length > 0;
+
+  const deptEdps = edps.filter((e) => e.departmentId === dept.id);
+  const primaryCount = deptEdps.filter((e) => e.isPrimary).length;
+
+  const levelColors = [
+    "bg-blue-50 text-blue-700 border-blue-200",
+    "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "bg-amber-50 text-amber-700 border-amber-200",
+  ];
+  const badgeColors = [
+    "bg-blue-100 text-blue-700",
+    "bg-emerald-100 text-emerald-700",
+    "bg-amber-100 text-amber-700",
+  ];
+  const colorCls = levelColors[level] || levelColors[2];
+  const badgeCls = badgeColors[level] || badgeColors[2];
+
+  return (
+    <div className={`${level > 0 ? "ml-6 border-l-2 border-gray-200 pl-4" : ""}`}>
+      <div className={`flex items-center gap-3 rounded-lg border p-3 my-2 ${colorCls} ${hasChildren ? "cursor-pointer" : ""}`}
+        onClick={() => hasChildren && setCollapsed(!collapsed)}>
+        {hasChildren && (
+          <span className="text-xs text-gray-500 w-4 text-center select-none">{collapsed ? "▸" : "▾"}</span>
+        )}
+        {!hasChildren && <span className="w-4" />}
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeCls}`}>
+          L{level + 1}
+        </span>
+        <span className="text-sm font-medium flex-1">{dept.name}</span>
+        {dept.alias && <span className="text-xs opacity-60">({dept.alias})</span>}
+        <span className="text-xs font-mono opacity-60">{dept.code}</span>
+        <span className="text-xs opacity-80">{dept.company}</span>
+        <div className="flex gap-2">
+          {dept.headcount > 0 && (
+            <span className="text-xs bg-white/60 px-2 py-0.5 rounded font-medium">
+              编制 {dept.headcount}
+            </span>
+          )}
+          {primaryCount > 0 && (
+            <span className="text-xs bg-white/60 px-2 py-0.5 rounded font-medium">
+              主岗 {primaryCount}
+            </span>
+          )}
+        </div>
+        {dept.managerName && (
+          <span className="text-xs opacity-60">负责人: {dept.managerName}</span>
+        )}
+      </div>
+
+      {!collapsed && hasChildren && (
+        <div>
+          {children.map((child) => (
+            <DeptNode key={child.id} dept={child} allDepts={allDepts} edps={edps} level={level + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function DepartmentAnalytics({ departments, edps }: { departments: Department[]; edps: EDP[] }) {
+  const [search, setSearch] = useState("");
+
+  const stats = useMemo(() => {
+    const l1 = departments.filter((d) => d.level === 1).length;
+    const l2 = departments.filter((d) => d.level === 2).length;
+    const l3 = departments.filter((d) => d.level === 3).length;
+    const pharma = departments.filter((d) => d.company === "丰华制药").length;
+    const bio = departments.filter((d) => d.company === "丰华生物").length;
+
+    const deptWithHeadcount = departments
+      .map((d) => ({ ...d, actual: edps.filter((e) => e.departmentId === d.id && e.isPrimary).length }))
+      .sort((a, b) => b.actual - a.actual);
+
+    return { l1, l2, l3, pharma, bio, deptWithHeadcount };
+  }, [departments, edps]);
+
+  const rootDepts = useMemo(() => {
+    let roots = departments.filter((d) => !d.parentId);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const matched = new Set<number>();
+      departments.forEach((d) => {
+        if (
+          d.name.toLowerCase().includes(q) ||
+          (d.alias || "").toLowerCase().includes(q) ||
+          d.code.toLowerCase().includes(q)
+        ) {
+          matched.add(d.id);
+          let curr = d;
+          while (curr.parentId) {
+            matched.add(curr.parentId);
+            const parent = departments.find((p) => p.id === curr.parentId);
+            if (!parent) break;
+            curr = parent;
+          }
+        }
+      });
+      roots = roots.filter((d) => matched.has(d.id));
+    }
+    return roots;
+  }, [departments, search]);
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="text-2xl font-bold text-gray-800">{departments.length}</div>
+          <div className="mt-1 text-xs text-gray-500">部门总数</div>
+        </div>
+        <div className="bg-blue-50 rounded-lg p-4">
+          <div className="text-2xl font-bold text-blue-700">{stats.l1}</div>
+          <div className="mt-1 text-xs text-blue-600">事业部(L1)</div>
+        </div>
+        <div className="bg-emerald-50 rounded-lg p-4">
+          <div className="text-2xl font-bold text-emerald-700">{stats.l2}</div>
+          <div className="mt-1 text-xs text-emerald-600">部门(L2)</div>
+        </div>
+        <div className="bg-amber-50 rounded-lg p-4">
+          <div className="text-2xl font-bold text-amber-700">{stats.l3}</div>
+          <div className="mt-1 text-xs text-amber-600">子部门(L3)</div>
+        </div>
+        <div className="bg-purple-50 rounded-lg p-4">
+          <div className="text-2xl font-bold text-purple-700">{edps.filter((e) => e.isPrimary).length}</div>
+          <div className="mt-1 text-xs text-purple-600">主岗人数</div>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className="text-sm font-semibold text-gray-700">部门架构</h3>
+          <input
+            type="text"
+            placeholder="搜索部门名称、编码、别名..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 max-w-sm px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-400"
+          />
+          <span className="text-xs text-gray-400">制药 {stats.pharma} | 生物 {stats.bio}</span>
+        </div>
+
+        <div className="max-h-[600px] overflow-y-auto pr-2">
+          {rootDepts.map((d) => (
+            <DeptNode key={d.id} dept={d} allDepts={departments} edps={edps} level={0} />
+          ))}
+          {rootDepts.length === 0 && (
+            <p className="text-center text-gray-400 py-8 text-sm">无匹配部门</p>
+          )}
+        </div>
+      </div>
+
+      {/* Dept headcount table */}
+      <div className="bg-white rounded-lg shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">部门人数排行（主岗）</h3>
+        <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-white">
+              <tr className="border-b text-gray-500">
+                <th className="text-left py-2 px-2">部门</th>
+                <th className="text-left py-2 px-2">层级</th>
+                <th className="text-left py-2 px-2">公司</th>
+                <th className="text-right py-2 px-2">实际人数</th>
+                <th className="text-right py-2 px-2">编制</th>
+                <th className="text-left py-2 px-2">差异</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.deptWithHeadcount.slice(0, 30).map((d) => {
+                const diff = d.actual - (d.headcount || 0);
+                return (
+                  <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="py-2 px-2 font-medium">{d.name}</td>
+                    <td className="py-2 px-2">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        d.level === 1 ? "bg-blue-100 text-blue-700" :
+                        d.level === 2 ? "bg-emerald-100 text-emerald-700" :
+                        "bg-amber-100 text-amber-700"
+                      }`}>
+                        L{d.level}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2 text-gray-500">{d.company}</td>
+                    <td className="py-2 px-2 text-right font-medium">{d.actual}</td>
+                    <td className="py-2 px-2 text-right text-gray-500">{d.headcount || "—"}</td>
+                    <td className="py-2 px-2">
+                      {diff > 0 ? (
+                        <span className="text-rose-600">+{diff} 超编</span>
+                      ) : diff < 0 ? (
+                        <span className="text-amber-600">{diff} 缺编</span>
+                      ) : (
+                        <span className="text-emerald-600">✓ 正常</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

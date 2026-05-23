@@ -45,7 +45,7 @@ export const employeeConfig: TabConfig = {
 
 // ─── 5-2 雇佣关系 ──────────────────────────────────────────
 const employmentFields: FieldConfig[] = [
-  { key: "employeeId", label: "员工", type: "fk", editable: true },
+  { key: "employeeId", label: "员工", type: "fk", editable: true, required: true },
   { key: "isActive", label: "在职", editable: true, type: "boolean" },
   { key: "currentCompany", label: "当前公司", editable: true },
   { key: "joinDate", label: "入职日期", editable: true, type: "date" },
@@ -71,8 +71,8 @@ export const employmentConfig: TabConfig = {
 
 // ─── 5-3 公司信息 ──────────────────────────────────────────
 const companyFields: FieldConfig[] = [
-  { key: "code", label: "编码", editable: true },
-  { key: "name", label: "简称", editable: true },
+  { key: "code", label: "编码", editable: true, required: true },
+  { key: "name", label: "简称", editable: true, required: true },
   { key: "fullName", label: "全称", editable: true },
   { key: "registeredCapital", label: "注册资本", editable: true },
   { key: "unifiedCode", label: "统一社会信用代码", editable: true },
@@ -96,8 +96,8 @@ export const companyConfig: TabConfig = {
 
 // ─── 5-4 公司关系 ──────────────────────────────────────────
 const companyRelationFields: FieldConfig[] = [
-  { key: "parentId", label: "持股方", type: "fk", editable: true },
-  { key: "childId", label: "被持股方", type: "fk", editable: true },
+  { key: "parentId", label: "持股方", type: "fk", editable: true, required: true },
+  { key: "childId", label: "被持股方", type: "fk", editable: true, required: true },
   { key: "shareRatio", label: "持股比例", editable: true, type: "number" },
   { key: "isConsolidated", label: "并表", editable: true, type: "boolean" },
 ];
@@ -119,8 +119,8 @@ export const companyRelationConfig: TabConfig = {
 
 // ─── 5-5 部门 ──────────────────────────────────────────────
 const departmentFields: FieldConfig[] = [
-  { key: "code", label: "编码", editable: true },
-  { key: "name", label: "名称", editable: true },
+  { key: "code", label: "编码", editable: true, required: true },
+  { key: "name", label: "名称", editable: true, required: true },
   { key: "alias", label: "别名", editable: true, hidden: true },
   { key: "level", label: "层级", editable: true, type: "number" },
   { key: "parentId", label: "上级部门", type: "fk", editable: true },

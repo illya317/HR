@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { snapshotHistory } from "@/lib/history";
 import { matchEmployee } from "@/lib/search";
 import { matchAnyField } from "@/lib/search-schema";
 import { FENGHUA_BIO_GROUP, resolveCompanyFilter } from "@/lib/company";
@@ -96,5 +97,6 @@ export async function POST(request: Request) {
       editedBy: payload.userId,
     },
   });
+  await snapshotHistory("EDP", item.id, payload.userId);
   return NextResponse.json({ item });
 }
