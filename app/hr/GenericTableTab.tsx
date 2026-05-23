@@ -219,7 +219,7 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
             <div className="grid grid-cols-2 gap-3">
               {config.fields.filter((f) => !f.hidden).map((f) => (
                 <div key={f.key} className={f.type === "textarea" ? "col-span-2" : ""}>
-                  <label className="mb-1 block text-xs text-gray-600">{f.label}</label>
+                  <label className="mb-1 block text-xs text-gray-600">{f.label}{f.required && <span className="text-red-400 ml-0.5">*</span>}</label>
                   {f.type === "fk" && config.fkFields?.[f.key] ? (
                     <FKInput
                       value={(createForm[f.key] as any)?.id ?? null}

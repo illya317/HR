@@ -24,7 +24,7 @@ interface Props {
 
 export default function HRToolbar({
   rosterFilter, onRosterChange,
-  keyword, onKeywordChange, keywordPlaceholder = "姓名筛选", onKeywordEnter,
+  keyword, onKeywordChange, keywordPlaceholder = "搜索...", onKeywordEnter,
   onReset, children, showEdit, editProps,
 }: Props) {
   return (

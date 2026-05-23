@@ -49,6 +49,7 @@ export interface FieldConfig {
   type?: FieldType;
   width?: string;
   createOnly?: boolean;
+  required?: boolean; // 新建时必填，显示*号
   hidden?: boolean; // 不展示在表格中，但新建时可用
   displayField?: string; // 表格显示用的字段路径（如 "codeRaw"）
 }

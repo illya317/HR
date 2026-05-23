@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   const existing = await prisma.company.findFirst({ where: { code } });
   if (existing) return NextResponse.json({ error: "编码已存在" }, { status: 400 });
 
-  await prisma.company.create({
+  const created = await prisma.company.create({
     data: {
       code, name,
       fullName: fullName ?? null,
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       sortOrder: sortOrder ?? 0,
     },
   });
+  await snapshotHistory("Company", created.id, payload.userId);
   return NextResponse.json({ success: true });
 }
 
