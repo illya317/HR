@@ -86,7 +86,7 @@ export async function GET(request: Request) {
 
   const versions = await prisma.editHistory.findMany({
     where,
-    orderBy: tag ? [{ entityId: "asc" }, { version: "asc" }] : [{ entityId: "asc" }, { version: "desc" }],
+    orderBy: { createdAt: "desc" },
     take: pageSize,
     skip: (page - 1) * pageSize,
     include: { editor: { select: { name: true } } },
@@ -108,10 +108,25 @@ export async function GET(request: Request) {
 
   const AUDIT_FIELDS = new Set(["editedBy", "editedAt", "version", "editor", "createdAt", "updatedAt", "id"]);
 
-  // Build diff: compare with previous version of same record
-  const entries = versions.map((v, i) => {
-    const prev = versions[i + 1]; // next in array = previous version (desc)
-    const isFirst = !prev || prev.entityId !== v.entityId;
+  // Group by record, sort by version within each group, build diffs
+  const grouped: Record<string, any[]> = {};
+  for (const v of versions) {
+    const key = `${v.entityType}:${v.entityId}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(v);
+  }
+
+  const prevMap: Record<number, any> = {};
+  for (const key of Object.keys(grouped)) {
+    const group = grouped[key].sort((a, b) => b.version - a.version); // version desc
+    for (let i = 0; i < group.length; i++) {
+      prevMap[group[i].id] = group[i + 1] || null; // next in group = previous version
+    }
+  }
+
+  const entries = versions.map((v) => {
+    const prev = prevMap[v.id];
+    const isFirst = !prev;
     const changes: Array<{ field: string; from?: string; to: string }> = [];
 
     try {
@@ -126,7 +141,7 @@ export async function GET(request: Request) {
         }
       } else {
         try {
-          const prevData = JSON.parse(prev.dataJson);
+          const prevData = JSON.parse(prev!.dataJson);
           for (const key of Object.keys(currData)) {
             if (AUDIT_FIELDS.has(key)) continue;
             const curr = currData[key];
@@ -134,8 +149,8 @@ export async function GET(request: Request) {
             if (JSON.stringify(old) !== JSON.stringify(curr)) {
               changes.push({
                 field: key,
-                from: old !== null && old !== undefined ? (typeof old === "object" ? JSON.stringify(old) : String(old)) : "(空)",
-                to: curr !== null && curr !== undefined ? (typeof curr === "object" ? JSON.stringify(curr) : String(curr)) : "(空)",
+                from: old != null ? (typeof old === "object" ? JSON.stringify(old) : String(old)) : "(空)",
+                to: curr != null ? (typeof curr === "object" ? JSON.stringify(curr) : String(curr)) : "(空)",
               });
             }
           }
