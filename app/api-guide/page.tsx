@@ -108,12 +108,20 @@ export default function ApiGuidePage() {
   const [copyAllCopied, setCopyAllCopied] = useState(false);
 
   function copyForAgent() {
-    const headers = `X-API-Key: ${apiKey || "<your-key>"}
-X-Username: ${user?.username || user?.name || "<your-username>"}
-Base: ${BASE}`;
+    const lines = [
+      `Base URL: ${BASE}`,
+      `X-API-Key: ${apiKey || "<your-key>"}`,
+      `X-Username: ${user?.username || user?.name || "<your-username>"}`,
+      "",
+      "## API Endpoints",
+    ];
+    for (const ep of ENDPOINTS) {
+      lines.push(`- ${ep.method} ${ep.path} — ${ep.note}${ep.perm ? " (需 " + ep.perm + ")" : ""}`);
+    }
+    const text = lines.join("\n");
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(headers).catch(() => fallbackCopy(headers));
-    } else { fallbackCopy(headers); }
+      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    } else { fallbackCopy(text); }
     setCopyAllCopied(true); setTimeout(() => setCopyAllCopied(false), 2000);
   }
 
