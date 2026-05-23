@@ -273,7 +273,7 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
         </div>
       )}
 
-      <AuditLogModal open={showHistory} onClose={() => setShowHistory(false)} entityType={config.entityType} />
+      <AuditLogModal open={showHistory} onClose={() => setShowHistory(false)} entityType={config.entityType} onRestored={load} />
 
       <ConfirmModal
         open={!!confirmDelete}

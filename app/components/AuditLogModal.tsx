@@ -19,6 +19,7 @@ interface AuditLogModalProps {
   open: boolean;
   onClose: () => void;
   entityType: string;
+  onRestored?: () => void;
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -52,7 +53,7 @@ function formatVal(v: string) {
   return v.length > 40 ? v.slice(0, 40) + "..." : v;
 }
 
-export default function AuditLogModal({ open, onClose, entityType }: AuditLogModalProps) {
+export default function AuditLogModal({ open, onClose, entityType, onRestored }: AuditLogModalProps) {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -96,6 +97,7 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
       });
       if (res.ok) {
         load(1, selectedTag); loadTags();
+        onRestored?.();
       }
     } finally { setRestoring(null); }
   }, [load, loadTags, selectedTag]);

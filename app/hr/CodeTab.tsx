@@ -495,7 +495,7 @@ export default function CodeTab({
           </ul>
         )}
       </DetailModal>
-      <AuditLogModal open={showHistory} onClose={() => setShowHistory(false)} entityType={entityType} />
+      <AuditLogModal open={showHistory} onClose={() => setShowHistory(false)} entityType={entityType} onRestored={() => window.location.reload()} />
     </div>
   );
 }
