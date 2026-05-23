@@ -171,9 +171,11 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
                   </td>
                   <td className="px-3 py-2 text-gray-500 font-mono">{u.username || "-"}</td>
                   <td className="px-3 py-2">
-                    <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] ${u.canLogin ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                    <button onClick={() => toggleLogin(u.id, u.canLogin)}
+                      className={`rounded px-2 py-0.5 text-[11px] font-medium cursor-pointer border ${u.canLogin ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"}`}
+                    >
                       {u.canLogin ? "启用" : "停用"}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
@@ -183,12 +185,7 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    <div className="flex gap-2">
-                      <button onClick={() => resetPassword(u.id)} className="text-xs text-blue-500 hover:text-blue-700">重置密码</button>
-                      <button onClick={() => toggleLogin(u.id, u.canLogin)} className={`text-xs ${u.canLogin ? "text-red-500 hover:text-red-700" : "text-emerald-500 hover:text-emerald-700"}`}>
-                        {u.canLogin ? "停用" : "启用"}
-                      </button>
-                    </div>
+                    <button onClick={() => resetPassword(u.id)} className="text-xs text-blue-500 hover:text-blue-700">重置密码</button>
                   </td>
                 </tr>
               ))}
