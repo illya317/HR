@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { matchAnyField } from "@/lib/search";
 import { isPharma } from "@/lib/company";
 
 export async function GET(request: Request) {
@@ -10,6 +11,7 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+  const keyword = searchParams.get("keyword") || "";
   const company = searchParams.get("company") || "";
 
   const where: any = {};
@@ -26,23 +28,23 @@ export async function GET(request: Request) {
     orderBy: { code: "asc" },
   });
 
-  return NextResponse.json({
-    departments: depts.map((d: any) => ({
-      id: d.id,
-      code: d.code,
-      name: d.name,
-      alias: d.alias || null,
-      company: isPharma(d.code) ? '丰华制药' : '丰华生物',
-      level: d.level,
-      levelLabel: d.level === 1 ? '事业部' : d.level === 2 ? '部门' : '子部门',
-      parentId: d.parentId,
-      parentName: d.parent?.name || null,
-      managerUserId: d.managerUserId,
-      managerName: d.manager?.name || null,
-      headcount: d._count.edps,
-      children: (d.children as any[]).map((c: any) => ({ id: c, name: c })),
-    })),
-  });
+  let departments = depts.map((d: any) => ({
+    id: d.id,
+    code: d.code,
+    name: d.name,
+    alias: d.alias || null,
+    company: isPharma(d.code) ? '丰华制药' : '丰华生物',
+    level: d.level,
+    levelLabel: d.level === 1 ? '事业部' : d.level === 2 ? '部门' : '子部门',
+    parentId: d.parentId,
+    parentName: d.parent?.name || null,
+    managerUserId: d.managerUserId,
+    managerName: d.manager?.name || null,
+    headcount: d._count.edps,
+    children: (d.children as any[]).map((c: any) => ({ id: c, name: c })),
+  }));
+  if (keyword) departments = departments.filter((d) => matchAnyField(d, keyword, "Department"));
+  return NextResponse.json({ departments });
 }
 
 export async function POST(request: Request) {

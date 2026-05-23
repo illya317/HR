@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess, checkPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
-import { matchEmployee } from "@/lib/search";
+import { matchEmployee, matchAnyField } from "@/lib/search";
 import { FENGHUA_BIO_GROUP, resolveCompanyFilter, isPharma } from "@/lib/company";
 
 // 字段列表（顺序）
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
   if (raw) {
     const keyword = searchParams.get("keyword") || "";
     let employees = await prisma.employee.findMany({ orderBy: { employeeId: "asc" } });
-    if (keyword) employees = employees.filter((e) => matchEmployee(e, keyword));
+    if (keyword) employees = employees.filter((e) => matchAnyField(e, keyword, "Employee"));
     return NextResponse.json({ employees });
   }
 
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
 
   // 关键词支持拼音首字母搜索
   if (keyword) {
-    baseEmployees = baseEmployees.filter((e) => matchEmployee(e, keyword));
+    baseEmployees = baseEmployees.filter((e) => matchAnyField(e, keyword, "Employee"));
   }
 
   const employeeIds = baseEmployees.map((e) => e.id);

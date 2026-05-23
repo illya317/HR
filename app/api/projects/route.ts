@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { matchAnyField } from "@/lib/search";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -8,12 +9,16 @@ export async function GET(request: Request) {
   if (!(await checkHRAccess(payload.userId)))
     return NextResponse.json({ error: "无权限" }, { status: 403 });
 
-  const projects = await prisma.project.findMany({
+  const { searchParams } = new URL(request.url);
+  const keyword = searchParams.get("keyword") || "";
+
+  let projects = await prisma.project.findMany({
     orderBy: { id: "desc" },
     include: {
       _count: { select: { employees: true } },
     },
   });
+  if (keyword) projects = projects.filter((p) => matchAnyField(p, keyword, "Project"));
   return NextResponse.json({ projects });
 }
 

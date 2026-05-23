@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { matchAnyField } from "@/lib/search";
 import { isPharma } from "@/lib/company";
 
 export async function GET(request: Request) {
@@ -10,6 +11,7 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+  const keyword = searchParams.get("keyword") || "";
   const company = searchParams.get("company") || "";
 
   const where: any = {};
@@ -25,19 +27,19 @@ export async function GET(request: Request) {
     orderBy: { code: "asc" },
   });
 
-  return NextResponse.json({
-    positions: positions.map((p: any) => ({
-      id: p.id,
-      code: p.code,
-      name: p.name,
-      company: isPharma(p.code) ? '丰华制药' : '丰华生物',
-      departmentId: p.departmentId,
-      departmentName: p.department?.name || null,
-      positionDescriptionId: p.positionDescriptionId,
-      positionDescriptionName: p.positionDescription?.name || null,
-      headcount: p._count.edps,
-    })),
-  });
+  let result = positions.map((p: any) => ({
+    id: p.id,
+    code: p.code,
+    name: p.name,
+    company: isPharma(p.code) ? '丰华制药' : '丰华生物',
+    departmentId: p.departmentId,
+    departmentName: p.department?.name || null,
+    positionDescriptionId: p.positionDescriptionId,
+    positionDescriptionName: p.positionDescription?.name || null,
+    headcount: p._count.edps,
+  }));
+  if (keyword) result = result.filter((p) => matchAnyField(p, keyword, "Position"));
+  return NextResponse.json({ positions: result });
 }
 
 export async function POST(request: Request) {

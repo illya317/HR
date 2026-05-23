@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { matchEmployee } from "@/lib/search";
+import { matchEmployee, matchAnyField } from "@/lib/search";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -12,6 +12,6 @@ export async function GET(request: Request) {
   const keyword = searchParams.get("keyword") || "";
 
   let employees = await prisma.employee.findMany({ orderBy: { employeeId: "asc" } });
-  if (keyword) employees = employees.filter((e) => matchEmployee(e, keyword));
+  if (keyword) employees = employees.filter((e) => matchAnyField(e, keyword, "Employee"));
   return NextResponse.json({ employees });
 }
