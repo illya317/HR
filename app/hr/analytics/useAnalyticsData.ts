@@ -7,7 +7,7 @@ export interface Employee {
   employeeId: string;
   name: string;
   alias: string | null;
-  gender: string | null;
+  gender: boolean | null;
   birthDate: string | null;
   ethnicity: string | null;
   hometown: string | null;

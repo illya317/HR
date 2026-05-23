@@ -65,10 +65,10 @@ export default function EmployeeAnalytics({ employees, employments }: { employee
       return d.getFullYear() === thisYear && d.getMonth() === thisMonth;
     }).length;
 
-    // gender
+    // gender (boolean in DB: true=男, false=女)
     const genderMap = new Map<string, number>();
     employees.forEach((e) => {
-      const g = e.gender || "未知";
+      const g = e.gender === true ? "男" : e.gender === false ? "女" : "未知";
       genderMap.set(g, (genderMap.get(g) || 0) + 1);
     });
 
