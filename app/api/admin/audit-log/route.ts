@@ -54,21 +54,42 @@ export async function GET(request: Request) {
     }
   }
 
+  const AUDIT_FIELDS = new Set(["editedBy", "editedAt", "version", "editor", "createdAt", "updatedAt", "id"]);
+
   // Build diff: compare with previous version of same record
   const entries = versions.map((v, i) => {
-    const prev = versions[i + 1]; // next in array = previous version (desc order)
-    const diff: string[] = [];
-    if (prev && prev.entityId === v.entityId && prev.version === v.version - 1) {
-      try {
-        const prevData = JSON.parse(prev.dataJson);
-        const currData = JSON.parse(v.dataJson);
+    const prev = versions[i + 1]; // next in array = previous version (desc)
+    const isFirst = !prev || prev.entityId !== v.entityId;
+    const changes: Array<{ field: string; from?: string; to: string }> = [];
+
+    try {
+      const currData = JSON.parse(v.dataJson);
+      if (isFirst) {
         for (const key of Object.keys(currData)) {
-          if (JSON.stringify(prevData[key]) !== JSON.stringify(currData[key])) {
-            diff.push(key);
+          if (AUDIT_FIELDS.has(key)) continue;
+          const val = currData[key];
+          if (val !== null && val !== undefined && val !== "") {
+            changes.push({ field: key, to: typeof val === "object" ? JSON.stringify(val) : String(val) });
           }
         }
-      } catch {}
-    }
+      } else {
+        try {
+          const prevData = JSON.parse(prev.dataJson);
+          for (const key of Object.keys(currData)) {
+            if (AUDIT_FIELDS.has(key)) continue;
+            const curr = currData[key];
+            const old = prevData[key];
+            if (JSON.stringify(old) !== JSON.stringify(curr)) {
+              changes.push({
+                field: key,
+                from: old !== null && old !== undefined ? (typeof old === "object" ? JSON.stringify(old) : String(old)) : "(空)",
+                to: curr !== null && curr !== undefined ? (typeof curr === "object" ? JSON.stringify(curr) : String(curr)) : "(空)",
+              });
+            }
+          }
+        } catch {}
+      }
+    } catch {}
 
     return {
       id: v.id,
@@ -77,7 +98,8 @@ export async function GET(request: Request) {
       version: v.version,
       editorName: v.editor?.name || `用户#${v.editedBy}`,
       createdAt: v.createdAt,
-      changedFields: diff,
+      isFirst,
+      changes,
     };
   });
 

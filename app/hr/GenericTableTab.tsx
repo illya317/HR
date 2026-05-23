@@ -67,6 +67,7 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
   }
 
   async function handleSave() {
+    if (!editingCell) { setEditMode(false); return; }
     const ok = await saveCell();
     if (ok) showToast("保存成功");
     else showToast("保存失败", "error");
