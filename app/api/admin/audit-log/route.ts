@@ -30,42 +30,6 @@ export async function GET(request: Request) {
 
   if (!entityType) return NextResponse.json({ error: "缺少 entityType" }, { status: 400 });
 
-  // 自动确保今天有 V0（首次打开审计日志时触发）
-  const today = new Date().toISOString().slice(0, 10);
-  const v0Tag = `V0:${today}`;
-  const resolver = RESOLVERS[entityType];
-
-  if (!tag && resolver) {
-    const hasEditsToday = await prisma.editHistory.findFirst({
-      where: { entityType, createdAt: { gte: new Date(today + "T00:00:00+08:00") }, tag: null },
-    });
-    if (hasEditsToday) {
-      const hasV0 = await prisma.editHistory.findFirst({
-        where: { entityType, tag: v0Tag },
-      });
-      if (!hasV0) {
-        // 异步补 V0，不阻塞响应
-        const records = await (prisma as any)[resolver.model].findMany({ select: { id: true } });
-        for (const r of records) {
-          const existing = await prisma.editHistory.findFirst({
-            where: { entityType, entityId: String(r.id), tag: v0Tag },
-          });
-          if (!existing) {
-            const record = await (prisma as any)[resolver.model].findUnique({ where: { id: r.id } });
-            if (record) {
-              await prisma.editHistory.create({
-                data: {
-                  entityType, entityId: String(r.id), version: 0, tag: v0Tag,
-                  dataJson: JSON.stringify(record), editedBy: 0,
-                },
-              });
-            }
-          }
-        }
-      }
-    }
-  }
-
   // List available V0 tags for date filter
   if (searchParams.get("tags") === "1") {
     const tags = await prisma.editHistory.findMany({
@@ -116,6 +80,7 @@ export async function GET(request: Request) {
 
   // 记录名称
   const recordMap: Record<string, string> = {};
+  const resolver = RESOLVERS[entityType];
   if (resolver) {
     const records = await (prisma as any)[resolver.model].findMany({
       where: { id: { in: recordIds } },
