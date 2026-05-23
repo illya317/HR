@@ -43,8 +43,25 @@ export async function snapshotHistory(
   });
   if (!record) return;
 
+  const entityIdStr = String(entityId);
+
+  // 每天首次编辑时自动创建 V0 基线
+  const today = new Date().toISOString().slice(0, 10);
+  const v0Tag = `V0:${today}`;
+  const hasV0 = await prisma.editHistory.findFirst({
+    where: { entityType, entityId: entityIdStr, tag: v0Tag },
+  });
+  if (!hasV0) {
+    await prisma.editHistory.create({
+      data: {
+        entityType, entityId: entityIdStr, version: 0, tag: v0Tag,
+        dataJson: JSON.stringify(record), editedBy: 0,
+      },
+    });
+  }
+
   const maxVer = await prisma.editHistory.findFirst({
-    where: { entityType, entityId: String(entityId) },
+    where: { entityType, entityId: entityIdStr, tag: null },
     orderBy: { version: "desc" },
     select: { version: true },
   });
@@ -52,7 +69,7 @@ export async function snapshotHistory(
   await prisma.editHistory.create({
     data: {
       entityType,
-      entityId: String(entityId),
+      entityId: entityIdStr,
       version: nextVersion,
       dataJson: JSON.stringify(record),
       editedBy: userId,

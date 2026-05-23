@@ -63,6 +63,8 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
 
   const pageSize = 100;
 
+  const [restoring, setRestoring] = useState<number | null>(null);
+
   const loadTags = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/audit-log?entityType=${entityType}&tags=1`);
@@ -83,6 +85,20 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
       }
     } finally { setLoading(false); }
   }, [entityType]);
+
+  const restore = useCallback(async (historyId: number) => {
+    setRestoring(historyId);
+    try {
+      const res = await fetch("/api/admin/audit-log/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ historyId }),
+      });
+      if (res.ok) {
+        load(1, selectedTag); loadTags();
+      }
+    } finally { setRestoring(null); }
+  }, [load, loadTags, selectedTag]);
 
   useEffect(() => {
     if (open) { setPage(1); setSelectedTag(""); load(1, ""); loadTags(); }
@@ -175,6 +191,16 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
 
                   {expandedId === e.id && (
                     <div className="border-t bg-gray-50 rounded-b-lg px-4 py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-500">变更详情</span>
+                        <button
+                          onClick={(ev) => { ev.stopPropagation(); restore(e.id); }}
+                          disabled={restoring === e.id}
+                          className="rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                        >
+                          {restoring === e.id ? "还原中..." : "还原到此版本"}
+                        </button>
+                      </div>
                       <div className="space-y-1.5">
                         {e.changes.map((c) => (
                           <div key={c.field} className="flex items-center gap-2 text-xs">
