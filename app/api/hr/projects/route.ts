@@ -1,4 +1,7 @@
+import { handleCreate } from "@/lib/crud";
 import { NextResponse } from "next/server";
+
+const CONFIG = { entityType: "Project", modelKey: "project" as const };
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { snapshotHistory } from "@/lib/history";
@@ -24,22 +27,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const payload = await authenticate(request);
-  if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
-  if (!(await checkHRAccess(payload.userId)))
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
-
-  const { name, type, departmentIds, description } = await request.json();
-  if (!name) return NextResponse.json({ error: "名称不能为空" }, { status: 400 });
-
-  const project = await prisma.project.create({
-    data: {
-      name,
-      type: type || "project",
-      description: description || null,
-      editedBy: payload.userId,
-    },
+  return handleCreate(request, CONFIG, (body) => {
+    const required = ["name"];
+    for (const f of required) if (!body[f]) return null;
+    return body;
   });
-  await snapshotHistory("Project", project.id, payload.userId);
-  return NextResponse.json({ project });
 }
+
+

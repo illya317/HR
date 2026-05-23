@@ -1,4 +1,7 @@
+import { handleCreate } from "@/lib/crud";
 import { NextResponse } from "next/server";
+
+const CONFIG = { entityType: "Position", modelKey: "position" as const };
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { matchAnyField } from "@/lib/search-schema";
@@ -55,39 +58,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const payload = await authenticate(request);
-  if (!payload) {
-    return NextResponse.json({ error: "未登录" }, { status: 401 });
-  }
-  if (!(await checkHRAccess(payload.userId))) {
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
-  }
-
-  const body = await request.json();
-  const { code, name, alias, departmentId, positionDescriptionId } = body;
-
-  if (!code || !name) {
-    return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
-  }
-
-  try {
-    const created = await prisma.position.create({
-      data: {
-        code,
-        name,
-        alias: alias || null,
-        departmentId: departmentId || null,
-        positionDescriptionId: positionDescriptionId || null,
-      },
-    });
-  await snapshotHistory("Position", created.id, payload.userId);
-    return NextResponse.json({ success: true, position: created });
-  } catch (e: any) {
-    if (e.code === "P2002") {
-      return NextResponse.json({ error: "编码已存在" }, { status: 409 });
-    }
-    throw e;
-  }
+  return handleCreate(request, CONFIG, (body) => {
+    const required = ["code","name"];
+    for (const f of required) if (!body[f]) return null;
+    return body;
+  });
 }
 
 export async function PUT(request: Request) {

@@ -1,4 +1,7 @@
+import { handleCreate } from "@/lib/crud";
 import { NextResponse } from "next/server";
+
+const CONFIG = { entityType: "Company", modelKey: "company" as const };
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { snapshotHistory } from "@/lib/history";
@@ -31,34 +34,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const payload = await authenticate(request);
-  if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
-  if (!(await checkHRAccess(payload.userId))) {
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
-  }
-
-  const body = await request.json();
-  const { code, name, fullName, registeredCapital, unifiedCode, bankName, registeredAddress, registeredDate, legalPerson, sortOrder } = body;
-  if (!code || !name) return NextResponse.json({ error: "缺少 code/name" }, { status: 400 });
-
-  const existing = await prisma.company.findFirst({ where: { code } });
-  if (existing) return NextResponse.json({ error: "编码已存在" }, { status: 400 });
-
-  const created = await prisma.company.create({
-    data: {
-      code, name,
-      fullName: fullName ?? null,
-      registeredCapital: registeredCapital ?? null,
-      unifiedCode: unifiedCode ?? null,
-      bankName: bankName ?? null,
-      registeredAddress: registeredAddress ?? null,
-      registeredDate: registeredDate ?? null,
-      legalPerson: legalPerson ?? null,
-      sortOrder: sortOrder ?? 0,
-    },
+  return handleCreate(request, CONFIG, (body) => {
+    const required = ["code","name"];
+    for (const f of required) if (!body[f]) return null;
+    return body;
   });
-  await snapshotHistory("Company", created.id, payload.userId);
-  return NextResponse.json({ success: true });
 }
 
 export async function PUT(request: Request) {
