@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { getInitials } from "@/lib/search";
 
 interface UserItem {
   id: number;
@@ -147,7 +148,14 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
   }
 
   const filtered = keyword
-    ? users.filter((u) => u.name.includes(keyword) || (u.username || "").includes(keyword) || (u.employeeId || "").includes(keyword))
+    ? users.filter((u) => {
+        const q = keyword.toLowerCase();
+        if (u.name.toLowerCase().includes(q)) return true;
+        if ((u.username || "").toLowerCase().includes(q)) return true;
+        if ((u.employeeId || "").toLowerCase().includes(q)) return true;
+        if (getInitials(u.name).includes(q)) return true;
+        return false;
+      })
     : users;
 
   return (
