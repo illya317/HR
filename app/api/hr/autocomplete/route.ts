@@ -103,25 +103,32 @@ export async function GET(request: Request) {
   }
 
   const model = prisma[config.model] as any;
+  const MAX_RESULTS = 50;
+
+  if (keyword) {
+    // 服务端过滤：用 contains 先在数据库层面筛选
+    const q = keyword.toLowerCase();
+    const where = { OR: config.searchFields.map((f) => ({ [f]: { contains: keyword } })) };
+    const items = await model.findMany({ where, select: config.select, take: MAX_RESULTS, orderBy: { id: "asc" } });
+    const mapped = items.map((item: any) => ({
+      id: item.id,
+      name: item[config.labelField],
+      subtitle: config.subtitleField ? item[config.subtitleField] : undefined,
+    }));
+    // 再拼音过一遍
+    const filtered = mapped.filter((item: any) => matchRecord(item, keyword, config.searchFields));
+    return NextResponse.json({ items: filtered });
+  }
 
   const items = await model.findMany({
     select: config.select,
-    take: config.take,
+    take: MAX_RESULTS,
     orderBy: { id: "asc" },
   });
-
   const mapped = items.map((item: any) => ({
     id: item.id,
     name: item[config.labelField],
     subtitle: config.subtitleField ? item[config.subtitleField] : undefined,
   }));
-
-  if (keyword) {
-    const filtered = mapped.filter((item: any) =>
-      matchRecord(item, keyword, config.searchFields)
-    );
-    return NextResponse.json({ items: filtered });
-  }
-
   return NextResponse.json({ items: mapped });
 }
