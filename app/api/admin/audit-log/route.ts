@@ -14,6 +14,31 @@ const RESOLVERS: Record<string, { model: string; field: string; fallback: string
   EmployeeProject: { model: "employeeProject", field: "id", fallback: "未知关联" },
 };
 
+// Custom name resolvers for models where a single field isn't enough
+async function resolveRecordNames(entityType: string, ids: number[]): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  if (entityType === "EDP") {
+    const edps = await prisma.eDP.findMany({
+      where: { id: { in: ids } },
+      include: { employee: { select: { name: true } } },
+    });
+    for (const e of edps) map[String(e.id)] = e.employee?.name || String(e.id);
+  } else if (entityType === "EmployeeProject") {
+    const eps = await prisma.employeeProject.findMany({
+      where: { id: { in: ids } },
+      include: { employee: { select: { name: true } }, project: { select: { name: true } } },
+    });
+    for (const e of eps) map[String(e.id)] = `${e.employee?.name || "?"} / ${e.project?.name || "?"}`;
+  } else if (entityType === "Employment") {
+    const emps = await prisma.employment.findMany({
+      where: { id: { in: ids } },
+      include: { employee: { select: { name: true } } },
+    });
+    for (const e of emps) map[String(e.id)] = e.employee?.name || String(e.id);
+  }
+  return map;
+}
+
 export async function GET(request: Request) {
   const payload = await authenticate(request);
   if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
@@ -78,15 +103,21 @@ export async function GET(request: Request) {
     for (let i = 1; i < group.length; i++) prevMap.set(group[i].id, group[i - 1]);
   }
 
-  const recordMap: Record<string, string> = {};
+  let recordMap = await resolveRecordNames(entityType, recordIds);
+  // Fallback to generic resolver for unmatched IDs
   const resolver = RESOLVERS[entityType];
   if (resolver) {
-    const records = await (prisma as any)[resolver.model].findMany({
-      where: { id: { in: recordIds } },
-      select: { id: true, [resolver.field]: true },
-    });
-    for (const r of records) recordMap[String(r.id)] = String(r[resolver.field] ?? resolver.fallback);
+    const unresolved = recordIds.filter((id) => !recordMap[String(id)]);
+    if (unresolved.length > 0) {
+      const records = await (prisma as any)[resolver.model].findMany({
+        where: { id: { in: unresolved } },
+        select: { id: true, [resolver.field]: true },
+      });
+      for (const r of records) recordMap[String(r.id)] = String(r[resolver.field] ?? resolver.fallback);
+    }
   }
+  // Last resort
+  for (const id of recordIds) if (!recordMap[String(id)]) recordMap[String(id)] = String(id);
 
   const AUDIT_FIELDS = new Set(["editedBy", "editedAt", "version", "editor", "createdAt", "updatedAt", "id"]);
 
