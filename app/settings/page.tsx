@@ -20,6 +20,11 @@ export default function SettingsPage() {
   const [pwdError, setPwdError] = useState("");
   const [pwdSuccess, setPwdSuccess] = useState("");
 
+  // 修改账号
+  const [newUsername, setNewUsername] = useState("");
+  const [unameError, setUnameError] = useState("");
+  const [unameSuccess, setUnameSuccess] = useState("");
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => {
@@ -59,11 +64,24 @@ export default function SettingsPage() {
     setOldPwd("");
     setNewPwd("");
     setConfirmPwd("");
-    setTimeout(() => {
-      fetch("/api/auth/dev-login", { method: "DELETE" }).catch(() => {});
-      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      router.push("/login");
-    }, 1500);
+    setTimeout(() => { router.push("/login"); }, 1500);
+  }
+
+  async function handleChangeUsername(e: React.FormEvent) {
+    e.preventDefault();
+    setUnameError("");
+    setUnameSuccess("");
+    if (!newUsername.trim()) { setUnameError("用户名不能为空"); return; }
+    if (!user) return;
+    const res = await fetch("/api/admin/users/" + user.id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field: "username", value: newUsername.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setUnameError(data.error || "修改失败"); return; }
+    setUnameSuccess("用户名已修改");
+    setNewUsername("");
   }
 
   if (loading) {
@@ -100,6 +118,28 @@ export default function SettingsPage() {
         <h1 className="mb-6 text-2xl font-bold text-gray-800">设置</h1>
 
         <div className="space-y-6">
+          {/* 修改账号 */}
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-gray-800">修改账号</h2>
+            <form onSubmit={handleChangeUsername} className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">当前用户名</label>
+                <p className="text-sm text-gray-400 mb-2">{user?.username || "(未设置)"}</p>
+                <label className="mb-1 block text-sm text-gray-600">新用户名</label>
+                <input
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                  required
+                />
+              </div>
+              {unameError && <p className="text-sm text-red-500">{unameError}</p>}
+              {unameSuccess && <p className="text-sm text-emerald-600">{unameSuccess}</p>}
+              <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700">确认修改</button>
+            </form>
+          </div>
+
           {/* 修改密码 */}
           <div className="rounded-lg bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-gray-800">修改密码</h2>
