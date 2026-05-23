@@ -23,7 +23,7 @@ interface AuditLogModalProps {
 }
 
 const FIELD_LABELS: Record<string, string> = {
-  name: "名称", alias: "别名", code: "编码", employeeId: "员工编号",
+  name: "名称", alias: "别名", code: "编码", employeeId: "员工姓名",
   idNumber: "身份证号", otherId: "其他证件号", gender: "性别",
   birthDate: "出生年月", ethnicity: "民族", hometown: "籍贯",
   politics: "政治面貌", education: "学历", title: "职称",
