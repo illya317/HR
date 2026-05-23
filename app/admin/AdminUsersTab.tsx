@@ -99,8 +99,8 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
       const res = await fetch("/api/admin/users/" + id, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
-        await navigator.clipboard.writeText(data.password);
-        showToast("新密码 " + data.password + " 已复制到剪贴板", "success");
+        try { await navigator.clipboard.writeText(data.password); } catch {}
+        showToast("新密码: " + data.password, "success");
       } else {
         showToast("重置失败", "error");
       }
@@ -110,7 +110,7 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
   async function toggleLogin(id: number, current: boolean) {
     try {
       const res = await fetch("/api/admin/users/" + id, {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ field: "canLogin", value: !current }),
       });
