@@ -73,14 +73,14 @@ export async function handleCreate(
   request: Request,
   config: CrudConfig,
   /** 可选：从 body 提取 data + 校验 */
-  buildData?: (body: any) => Record<string, unknown> | null
+  buildData?: (body: any) => Promise<Record<string, unknown> | null> | Record<string, unknown> | null
 ) {
   const payload = await authenticate(request);
   if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
   if (!(await checkHRAccess(payload.userId))) return NextResponse.json({ error: "无权限" }, { status: 403 });
 
   const body = await request.json();
-  const data = buildData ? buildData(body) : body;
+  const data = buildData ? await buildData(body) : body;
   if (!data) return NextResponse.json({ error: "数据校验失败" }, { status: 400 });
 
   const model = prisma[config.modelKey] as any;
