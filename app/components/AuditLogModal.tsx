@@ -173,7 +173,6 @@ export default function AuditLogModal({ open, onClose, entityType, onRestored }:
                     <span className="text-xs text-gray-700 w-16 shrink-0">{e.editorName}</span>
                     <span className="text-xs font-medium text-gray-800 truncate">
                       {e.entityName}
-                      <span className="text-gray-400 ml-1">#{e.entityId}</span>
                     </span>
                     <div className="flex flex-wrap gap-1 ml-auto">
                       {e.changes.slice(0, 4).map((c) => (
