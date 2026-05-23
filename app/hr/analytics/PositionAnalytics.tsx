@@ -24,32 +24,48 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
   const [sortKey, setSortKey] = useState<"code" | "name" | "headcount" | "dept">("headcount");
   const [sortDesc, setSortDesc] = useState(true);
 
+  const activeEdps = useMemo(() => edps.filter((e) => !e.endDate), [edps]);
+
+  const activeHeadcounts = useMemo(() => {
+    const map = new Map<number, number>();
+    activeEdps.forEach((e) => {
+      if (e.positionId) {
+        map.set(e.positionId, (map.get(e.positionId) || 0) + 1);
+      }
+    });
+    return map;
+  }, [activeEdps]);
+
+  const positionsWithActive = useMemo(() => {
+    return positions.map((p) => ({ ...p, activeHeadcount: activeHeadcounts.get(p.id) || 0 })) as (Position & { activeHeadcount: number })[];
+  }, [positions, activeHeadcounts]);
+
   const stats = useMemo(() => {
-    const total = positions.length;
-    const occupied = positions.filter((p) => p.headcount > 0).length;
+    const total = positionsWithActive.length;
+    const occupied = positionsWithActive.filter((p) => p.activeHeadcount > 0).length;
     const vacant = total - occupied;
-    const pharma = positions.filter((p) => p.company === "丰华制药").length;
-    const bio = positions.filter((p) => p.company === "丰华生物").length;
+    const pharma = positionsWithActive.filter((p) => p.company === "丰华制药").length;
+    const bio = positionsWithActive.filter((p) => p.company === "丰华生物").length;
 
     // dept distribution
     const deptMap = new Map<string, { count: number; positions: number }>();
-    positions.forEach((p) => {
+    positionsWithActive.forEach((p) => {
       const dn = p.departmentName || "未分配";
       const curr = deptMap.get(dn) || { count: 0, positions: 0 };
       curr.positions++;
-      curr.count += p.headcount;
+      curr.count += p.activeHeadcount;
       deptMap.set(dn, curr);
     });
 
     return { total, occupied, vacant, pharma, bio, deptDistribution: sortEntries([...deptMap.entries()]) };
-  }, [positions]);
+  }, [positionsWithActive]);
 
   function sortEntries(entries: [string, { count: number; positions: number }][]) {
     return entries.sort((a, b) => b[1].count - a[1].count);
   }
 
   const filtered = useMemo(() => {
-    let list = positions;
+    let list: (Position & { activeHeadcount: number })[] = [...positionsWithActive];
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -65,14 +81,14 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
       switch (sortKey) {
         case "code": av = a.code; bv = b.code; break;
         case "name": av = a.name; bv = b.name; break;
-        case "headcount": av = a.headcount; bv = b.headcount; break;
+        case "headcount": av = a.activeHeadcount; bv = b.activeHeadcount; break;
         case "dept": av = a.departmentName || ""; bv = b.departmentName || ""; break;
-        default: av = a.headcount; bv = b.headcount;
+        default: av = a.activeHeadcount; bv = b.activeHeadcount;
       }
       if (typeof av === "string") return sortDesc ? bv.localeCompare(av) : av.localeCompare(bv);
       return sortDesc ? bv - av : av - bv;
     });
-  }, [positions, search, sortKey, sortDesc]);
+  }, [positionsWithActive, search, sortKey, sortDesc]);
 
   const handleSort = (key: typeof sortKey) => {
     if (sortKey === key) setSortDesc(!sortDesc);
@@ -152,7 +168,7 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const isVacant = p.headcount === 0;
+                const isVacant = p.activeHeadcount === 0;
                 return (
                   <tr key={p.id} className={`border-b border-gray-50 hover:bg-gray-50 ${isVacant ? "bg-amber-50/30" : ""}`}>
                     <td className="py-2 px-2 font-mono text-gray-500">{p.code}</td>
@@ -160,7 +176,7 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
                     <td className="py-2 px-2 text-gray-400">{p.alias || "—"}</td>
                     <td className="py-2 px-2 text-gray-500">{p.departmentName || "—"}</td>
                     <td className="py-2 px-2 text-gray-500">{p.company}</td>
-                    <td className="py-2 px-2 text-right font-medium">{p.headcount}</td>
+                    <td className="py-2 px-2 text-right font-medium">{p.activeHeadcount}</td>
                     <td className="py-2 px-2">
                       {isVacant ? (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">空岗</span>

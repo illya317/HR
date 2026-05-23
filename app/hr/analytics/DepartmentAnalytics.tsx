@@ -70,6 +70,8 @@ function DeptNode({ dept, allDepts, edps, level = 0 }: { dept: Department; allDe
 export default function DepartmentAnalytics({ departments, edps }: { departments: Department[]; edps: EDP[] }) {
   const [search, setSearch] = useState("");
 
+  const activeEdps = useMemo(() => edps.filter((e) => !e.endDate), [edps]);
+
   const stats = useMemo(() => {
     const l1 = departments.filter((d) => d.level === 1).length;
     const l2 = departments.filter((d) => d.level === 2).length;
@@ -78,11 +80,11 @@ export default function DepartmentAnalytics({ departments, edps }: { departments
     const bio = departments.filter((d) => d.company === "丰华生物").length;
 
     const deptWithHeadcount = departments
-      .map((d) => ({ ...d, actual: edps.filter((e) => e.departmentId === d.id && e.isPrimary).length }))
+      .map((d) => ({ ...d, actual: activeEdps.filter((e) => e.departmentId === d.id && e.isPrimary).length }))
       .sort((a, b) => b.actual - a.actual);
 
     return { l1, l2, l3, pharma, bio, deptWithHeadcount };
-  }, [departments, edps]);
+  }, [departments, activeEdps]);
 
   const rootDepts = useMemo(() => {
     let roots = departments.filter((d) => !d.parentId);
@@ -152,7 +154,7 @@ export default function DepartmentAnalytics({ departments, edps }: { departments
 
         <div className="max-h-[600px] overflow-y-auto pr-2">
           {rootDepts.map((d) => (
-            <DeptNode key={d.id} dept={d} allDepts={departments} edps={edps} level={0} />
+            <DeptNode key={d.id} dept={d} allDepts={departments} edps={activeEdps} level={0} />
           ))}
           {rootDepts.length === 0 && (
             <p className="text-center text-gray-400 py-8 text-sm">无匹配部门</p>
