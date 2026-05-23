@@ -19,13 +19,13 @@ export async function PUT(
 
   if (!ALLOWED.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
 
-  const old = await prisma.company.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("Company", String(id), old, payload.userId);
+
 
   await prisma.company.update({
     where: { id: parseInt(id) },
     data: { [field]: value ?? null, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
   });
+  await snapshotHistory("Company", parseInt(id), payload.userId);
   return NextResponse.json({ success: true });
 }
 

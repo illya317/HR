@@ -18,14 +18,14 @@ export async function PUT(
 
   if (!ALLOWED.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
 
-  const old = await prisma.companyRelation.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("CompanyRelation", String(id), old, payload.userId);
+
 
   const data: any = { [field]: value ?? null };
   if (field === "shareRatio" && value !== null && value !== "") data[field] = parseFloat(value);
   if (field === "parentId" || field === "childId") data[field] = Number(value);
 
   await prisma.companyRelation.update({ where: { id: parseInt(id) }, data });
+  await snapshotHistory("CompanyRelation", parseInt(id), payload.userId);
   return NextResponse.json({ success: true });
 }
 

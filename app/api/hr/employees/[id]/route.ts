@@ -37,13 +37,13 @@ export async function PUT(
     return NextResponse.json({ error: "非法字段" }, { status: 400 });
   }
 
-  const oldData = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
-  if (oldData) await snapshotHistory("Employee", String(oldData.id), oldData, payload.userId);
+
 
   await prisma.employee.update({
     where: { id: parseInt(id) },
     data: { [field]: value, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
   });
+  await snapshotHistory("Employee", parseInt(id), payload.userId);
 
   return NextResponse.json({ success: true });
 }

@@ -30,8 +30,7 @@ export async function PUT(
 
   if (!ALLOWED.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
 
-  const old = await prisma.department.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("Department", String(id), old, payload.userId);
+
 
   let finalValue: any = value;
   if (field === "parentId" && typeof value === "string") {
@@ -46,6 +45,7 @@ export async function PUT(
     where: { id: parseInt(id) },
     data: { [field]: finalValue ?? null, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
   });
+  await snapshotHistory("Department", parseInt(id), payload.userId);
   return NextResponse.json({ success: true });
 }
 

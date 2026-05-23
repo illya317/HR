@@ -40,13 +40,13 @@ export async function PUT(
   const { field, value } = body;
   if (!ALLOWED.includes(field)) return NextResponse.json({ error: "非法字段" }, { status: 400 });
 
-  const old = await prisma.project.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("Project", String(id), old, payload.userId);
+
 
   const data: any = { [field]: value ?? null, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } };
   if (field === "endDate" && value === "") data.endDate = null;
 
   await prisma.project.update({ where: { id: parseInt(id) }, data });
+  await snapshotHistory("Project", parseInt(id), payload.userId);
   return NextResponse.json({ success: true });
 }
 

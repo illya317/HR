@@ -41,12 +41,11 @@ export async function PUT(
     const deptName = String(value || "");
     const dept = deptName ? await prisma.department.findFirst({ where: { name: deptName } }) : null;
     if (deptName && !dept) return NextResponse.json({ error: `部门"${deptName}"不存在` }, { status: 400 });
-    const old = await prisma.eDP.findUnique({ where: { id: parseInt(id) } });
-    if (old) await snapshotHistory("EDP", String(id), old, payload.userId);
     await prisma.eDP.update({
       where: { id: parseInt(id) },
       data: { departmentId: dept?.id ?? null, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
     });
+    await snapshotHistory("EDP", parseInt(id), payload.userId);
     return NextResponse.json({ success: true });
   }
 
@@ -54,12 +53,11 @@ export async function PUT(
     const posName = String(value || "");
     const pos = posName ? await prisma.position.findFirst({ where: { name: posName } }) : null;
     if (posName && !pos) return NextResponse.json({ error: `岗位"${posName}"不存在` }, { status: 400 });
-    const old = await prisma.eDP.findUnique({ where: { id: parseInt(id) } });
-    if (old) await snapshotHistory("EDP", String(id), old, payload.userId);
     await prisma.eDP.update({
       where: { id: parseInt(id) },
       data: { positionId: pos?.id ?? null, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
     });
+    await snapshotHistory("EDP", parseInt(id), payload.userId);
     return NextResponse.json({ success: true });
   }
 
@@ -67,8 +65,7 @@ export async function PUT(
     return NextResponse.json({ error: "非法字段" }, { status: 400 });
   }
 
-  const old = await prisma.eDP.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("EDP", String(id), old, payload.userId);
+
 
   let finalValue: any = value;
   if (field === "departmentId" && typeof value === "string") {
@@ -82,6 +79,7 @@ export async function PUT(
     where: { id: parseInt(id) },
     data: { [field]: finalValue ?? null, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
   });
+  await snapshotHistory("EDP", parseInt(id), payload.userId);
   return NextResponse.json({ success: true });
 }
 

@@ -21,8 +21,7 @@ export async function PUT(
     return NextResponse.json({ error: "非法字段" }, { status: 400 });
   }
 
-  const old = await prisma.employment.findUnique({ where: { id: parseInt(id) } });
-  if (old) await snapshotHistory("Employment", String(id), old, payload.userId);
+
 
   let finalValue: any = value;
   if (field === "employeeId" && typeof value === "string") {
@@ -34,6 +33,7 @@ export async function PUT(
     where: { id: parseInt(id) },
     data: { [field]: finalValue ?? null, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
   });
+  await snapshotHistory("Employment", parseInt(id), payload.userId);
 
   return NextResponse.json({ success: true });
 }

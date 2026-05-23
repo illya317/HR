@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { snapshotHistory } from "@/lib/history";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -87,27 +88,11 @@ export async function PUT(request: Request) {
     if (existing && existing.id !== id) {
       return NextResponse.json({ error: "编码已存在" }, { status: 400 });
     }
-    const old = await prisma.company.findUnique({ where: { id } });
-    if (old) {
-      const maxVer = await prisma.editHistory.findFirst({
-        where: { entityType: "Company", entityId: String(id) },
-        orderBy: { version: "desc" },
-        select: { version: true },
-      });
-      await prisma.editHistory.create({
-        data: {
-          entityType: "Company",
-          entityId: String(id),
-          version: (maxVer?.version || 0) + 1,
-          dataJson: JSON.stringify(old),
-          editedBy: payload.userId,
-        },
-      });
-    }
     await prisma.company.update({
       where: { id },
       data: { code, name, ...dataFields, editedBy: payload.userId, editedAt: new Date(), version: { increment: 1 } },
     });
+    await snapshotHistory("Company", id, payload.userId);
   } else {
     // Create
     const existing = await prisma.company.findFirst({ where: { code } });
