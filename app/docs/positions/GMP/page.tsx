@@ -11,6 +11,7 @@ interface TreeNode {
   code: string; name: string; level: number;
   parentCode: string | null;
   positions: string[];
+  ownPositions?: string[];
   children?: TreeNode[];
 }
 
@@ -71,7 +72,7 @@ export default function GmpPositionsPage() {
     const isOpen = expanded.has(node.code);
     const hasChildren = node.children && node.children.length > 0;
     const totalPositions = node.positions.length;
-    const isLeaf = !hasChildren;
+    const showPositions = isOpen && totalPositions > 0;
 
     const indent = { 0: "ml-0", 1: "ml-6", 2: "ml-12", 3: "ml-16" }[depth] || "ml-16";
     const textSize = { 0: "text-base font-bold", 1: "text-sm font-semibold", 2: "text-sm", 3: "text-xs" }[depth] || "text-xs";
@@ -87,10 +88,10 @@ export default function GmpPositionsPage() {
           {node.name}
           <span className="text-gray-400 font-normal text-xs">{totalPositions} 岗</span>
         </button>
-        {isOpen && isLeaf && totalPositions > 0 && (
+        {showPositions && (
           <div className="ml-8 divide-y divide-gray-50 border-l-2 border-gray-100 pl-4">
-            {node.positions
-              .filter(p => !search || p.toLowerCase().includes(search.toLowerCase()))
+            {ownPositions
+              .filter((p: string) => !search || p.toLowerCase().includes(search.toLowerCase()))
               .sort()
               .map(entry => {
                 const [code, name] = entry.split("|");

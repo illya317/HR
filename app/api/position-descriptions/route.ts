@@ -34,16 +34,17 @@ export async function GET(request: Request) {
       }
       if (match && deptMap[match]) deptMap[match].positions.push(d.code + "|" + d.name);
     }
-    // Aggregate: each node shows own + all descendants' positions
+    // Aggregate: each node keeps own positions + subtree total
     function subtreePositions(deptCode: string): string[] {
-      const own = [...deptMap[deptCode].positions];
+      const all = [...deptMap[deptCode].positions];
       for (const d of Object.values(deptMap) as any[]) {
-        if (d.parentCode === deptCode) own.push(...subtreePositions(d.code));
+        if (d.parentCode === deptCode) all.push(...subtreePositions(d.code));
       }
-      return [...new Set(own)].sort();
+      return [...new Set(all)].sort();
     }
     for (const d of Object.values(deptMap) as any[]) {
-      d.positions = subtreePositions(d.code);
+      d.ownPositions = d.positions;  // direct positions only
+      d.positions = subtreePositions(d.code); // subtree total
     }
     return NextResponse.json({ tree: Object.values(deptMap) });
   }
