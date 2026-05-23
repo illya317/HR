@@ -5,13 +5,13 @@ const SCHEMA_PATH = path.join(__dirname, '..', 'prisma', 'schema.prisma');
 const OUTPUT_PATH = path.join(__dirname, '..', 'docs', 'tables.html');
 
 const GROUPS = [
-  { title: '1. System', models: ['User', 'SystemConfig'] },
+  { title: '1. System', models: ['User', 'SystemConfig', 'LoginAttempt'] },
   { title: '2. RBAC', models: ['Resource', 'Role', 'UserResourceRole', 'PositionResourceRole', 'DepartmentResourceRole'] },
   { title: '3. Reports', models: ['Report', 'ReportItem', 'ReportHistory'] },
   { title: '4. Tasks', models: ['WorkItem', 'WorkParticipant'] },
   { title: '5. Roster & Org', models: ['Employee', 'Employment', 'Company', 'CompanyRelation', 'Department', 'Position', 'EDP', 'Project', 'EmployeeProject'] },
   { title: '6. 岗位说明书', models: ['PositionDescription'] },
-  { title: '7. Edit History', models: ['EditHistory'] },
+  { title: '7. Edit History', models: ['HistoryEntity', 'EditHistory'] },
 ];
 
 // ─── Parse schema.prisma ──────────────────────────────────

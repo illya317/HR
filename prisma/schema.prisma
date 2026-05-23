@@ -201,7 +201,7 @@ model Employee {
   otherId       String?            // 其他证件号
   name          String // 名称
   alias         String? // 别名
-  gender        String? // 性别
+  gender        Boolean? // 性别（是否男）
   birthDate     String? // 出生年月
   ethnicity     String? // 民族
   hometown      String? // 籍贯
@@ -229,7 +229,7 @@ model Employment {
   id             Int      @id @default(autoincrement()) // 主键
   employeeId     Int                               // 员工ID
   employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  status         String   @default("在职")        // 雇佣状态：在职/离职
+  isActive       Boolean  @default(true)         // 是否在职
   currentCompany String?                           // 当前所属公司
   joinDate       String?                           // 入职日期
   leaveDate      String?                           // 离职日期
@@ -285,8 +285,7 @@ model Department {
   code              String             // 编码
   name              String // 名称
   alias             String?            // 别名
-  level             Int                @default(1) // 层级
-  levelLabel        String             @default("部门") // 层级标签（中心/部门/子部门）
+  level             Int                @default(1) // 层级：1=事业部，2=部门，3=子部门
   parentId          Int? // 上级ID
   parent            Department?        @relation("DeptHierarchy", fields: [parentId], references: [id])
   children          Department[]       @relation("DeptHierarchy")
@@ -341,7 +340,7 @@ model EDP {
   reportTo     String?    // 直接上级
   reportTo2    String?    // 第二汇报线
   workPercent  String?    // 工作占比
-  isResearch   String?    // 是否研发/岗位标签
+  isResearch   Boolean?   // 是否研发
   editedBy     Int? // 编辑人用户ID
   editor       User?         @relation("EmpDeptPositionEditor", fields: [editedBy], references: [id])
   editedAt     DateTime? // 编辑时间
@@ -409,16 +408,27 @@ model PositionDescription {
   updatedAt         DateTime         @updatedAt       // 更新时间
 }
 
+// ─── 编辑历史实体登记 ─────────────────────────────────────
+// 任何有审计字段的表如需 EditHistory 支持，必须在此登记 entityType
+model HistoryEntity {
+  entityType   String         @id // "employee" | "employment" | "code_company" | ...
+  modelName    String         // Prisma 模型名: "Employee" | "Employment" | ...
+  description  String         // 中文说明
+  sortOrder    Int            @default(0)
+  histories    EditHistory[]
+}
+
 // ─── 编辑历史 ─────────────────────────────────────────────
 model EditHistory {
-  id         Int      @id @default(autoincrement()) // 主键
-  entityType String   // "employee" | "employee_position" | "code_department" | "code_position"
-  entityId   String // 实体主键
-  version    Int // 版本号
-  dataJson   String   // 编辑前快照
-  editedBy   Int // 编辑人用户ID
-  editor     User     @relation("EditHistoryEditor", fields: [editedBy], references: [id])
-  createdAt  DateTime @default(now()) // 创建时间
+  id         Int            @id @default(autoincrement()) // 主键
+  entityType String         // FK → HistoryEntity
+  entityId   String         // 实体主键
+  version    Int            // 版本号
+  dataJson   String         // 编辑前快照
+  editedBy   Int            // 编辑人用户ID
+  editor     User           @relation("EditHistoryEditor", fields: [editedBy], references: [id])
+  entity     HistoryEntity  @relation(fields: [entityType], references: [entityType])
+  createdAt  DateTime       @default(now()) // 创建时间
 
   @@unique([entityType, entityId, version])
 }
