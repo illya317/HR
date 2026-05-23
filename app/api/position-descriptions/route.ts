@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isPharma } from "@/lib/company";
+import { getInitials } from "@/lib/search";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -59,14 +60,6 @@ export async function GET(request: Request) {
     // group-based filtering removed with ManagementGroup table; no-op for now
   }
 
-  if (search) {
-    where.OR = [
-      { code: { contains: search } },
-      { name: { contains: search } },
-      { departmentName: { contains: search } },
-    ];
-  }
-
   const descriptions = await prisma.positionDescription.findMany({
     where,
     select: {
@@ -82,8 +75,20 @@ export async function GET(request: Request) {
     orderBy: { code: "asc" },
   });
 
+  let result = descriptions;
+  if (search) {
+    const q = search.toLowerCase();
+    result = descriptions.filter((d) => {
+      if (d.code.toLowerCase().includes(q)) return true;
+      if (d.name.toLowerCase().includes(q)) return true;
+      if ((d.departmentName || "").toLowerCase().includes(q)) return true;
+      if (getInitials(d.name).includes(q)) return true;
+      return false;
+    });
+  }
+
   return NextResponse.json({
-    positionDescriptions: descriptions,
-    total: descriptions.length,
+    positionDescriptions: result,
+    total: result.length,
   });
 }
