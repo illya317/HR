@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface UserItem {
   id: number;
@@ -16,6 +16,10 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const nameRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     setLoading(true);
@@ -29,6 +33,25 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
   }
 
   useEffect(() => { load(); }, []);
+
+  async function handleCreate() {
+    if (!newName.trim()) { showToast("请输入姓名", "error"); return; }
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName.trim(), username: newUsername.trim() || null }),
+      });
+      if (res.ok) {
+        showToast("已创建", "success");
+        setNewName(""); setNewUsername(""); setCreating(false);
+        load();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        showToast(d.error || "创建失败", "error");
+      }
+    } catch { showToast("网络错误", "error"); }
+  }
 
   async function resetPassword(id: number) {
     try {
@@ -70,7 +93,17 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
           className="rounded border border-gray-300 px-3 py-2 text-sm w-64 focus:border-emerald-400 focus:outline-none"
         />
         <span className="text-sm text-gray-400">{users.length} 个用户</span>
+        <button onClick={() => { setCreating(true); setTimeout(() => nameRef.current?.focus(), 50); }} className="rounded-md bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700">新建</button>
       </div>
+
+      {creating && (
+        <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
+          <input ref={nameRef} value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="姓名 *" className="rounded border border-gray-300 px-2 py-1 text-sm w-32 focus:border-emerald-400 focus:outline-none" onKeyDown={(e) => e.key === "Enter" && handleCreate()} />
+          <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="用户名（可选）" className="rounded border border-gray-300 px-2 py-1 text-sm w-40 focus:border-emerald-400 focus:outline-none" onKeyDown={(e) => e.key === "Enter" && handleCreate()} />
+          <button onClick={handleCreate} className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700">保存</button>
+          <button onClick={() => { setCreating(false); setNewName(""); setNewUsername(""); }} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">取消</button>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-gray-500">加载中...</p>
