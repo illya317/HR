@@ -150,7 +150,10 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
               {filtered.map((u) => (
                 <tr key={u.id} className="border-b hover:bg-gray-50">
                   <td className="px-3 py-2 text-gray-500 font-mono">{u.id}</td>
-                  <td className="px-3 py-2 font-medium text-gray-800">{u.name}</td>
+                  <td className="px-3 py-2 font-medium text-gray-800">
+                    {u.name}
+                    {u.employeeId && <span className="text-gray-400 ml-1 text-[11px] font-normal">/ {u.employeeId}</span>}
+                  </td>
                   <td className="px-3 py-2 text-gray-500 font-mono">{u.username || "-"}</td>
                   <td className="px-3 py-2 text-gray-500 font-mono">{u.employeeId || "-"}</td>
                   <td className="px-3 py-2">
