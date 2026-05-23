@@ -376,9 +376,10 @@ model EditHistory {
   dataJson   String   // 编辑后快照
   editedBy   Int      // 编辑人用户ID
   editor     User     @relation("EditHistoryEditor", fields: [editedBy], references: [id])
+  tag         String?  // V0 日期标签: "2026-05-24"，null=普通编辑版本
   createdAt  DateTime @default(now()) // 创建时间
 
-  @@unique([entityType, entityId, version])
+  @@unique([entityType, entityId, version, tag])
 }
 
 // ─── 登录安全 ───────────────────────────────────────────────

@@ -24,16 +24,32 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get("entityType");
+  const tag = searchParams.get("tag") || undefined; // V0 日期筛选
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = Math.min(parseInt(searchParams.get("pageSize") || "50"), 200);
 
   if (!entityType) return NextResponse.json({ error: "缺少 entityType" }, { status: 400 });
 
-  const total = await prisma.editHistory.count({ where: { entityType } });
+  // List available V0 tags for date filter
+  if (searchParams.get("tags") === "1") {
+    const tags = await prisma.editHistory.findMany({
+      where: { entityType, tag: { not: null } },
+      select: { tag: true },
+      orderBy: { tag: "desc" },
+      distinct: ["tag"],
+      take: 30,
+    });
+    return NextResponse.json({ tags: tags.map((t) => t.tag) });
+  }
+
+  const where: any = { entityType };
+  if (tag) where.tag = tag;
+
+  const total = await prisma.editHistory.count({ where });
 
   const versions = await prisma.editHistory.findMany({
-    where: { entityType },
-    orderBy: [{ entityId: "asc" }, { version: "desc" }],
+    where,
+    orderBy: tag ? [{ entityId: "asc" }, { version: "asc" }] : [{ entityId: "asc" }, { version: "desc" }],
     take: pageSize,
     skip: (page - 1) * pageSize,
     include: { editor: { select: { name: true } } },
@@ -98,6 +114,7 @@ export async function GET(request: Request) {
       version: v.version,
       editorName: v.editor?.name || `用户#${v.editedBy}`,
       createdAt: v.createdAt,
+      tag: v.tag || null,
       isFirst,
       changes,
     };

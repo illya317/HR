@@ -10,6 +10,7 @@ interface AuditEntry {
   version: number;
   editorName: string;
   createdAt: string;
+  tag: string | null;
   isFirst: boolean;
   changes: AuditChange[];
 }
@@ -45,8 +46,7 @@ const FIELD_LABELS: Record<string, string> = {
   content: "内容", importance: "重要度", urgency: "紧急度",
 };
 
-function label(field: string) { return FIELD_LABELS[field] || field; }
-
+function label(f: string) { return FIELD_LABELS[f] || f; }
 function formatVal(v: string) {
   if (v === "true") return "是"; if (v === "false") return "否";
   return v.length > 40 ? v.slice(0, 40) + "..." : v;
@@ -58,15 +58,24 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string>("");
 
   const pageSize = 100;
 
-  const load = useCallback(async (p: number) => {
+  const loadTags = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/audit-log?entityType=${entityType}&tags=1`);
+      if (res.ok) { const d = await res.json(); setTags(d.tags || []); }
+    } catch {}
+  }, [entityType]);
+
+  const load = useCallback(async (p: number, t: string) => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/admin/audit-log?entityType=${entityType}&page=${p}&pageSize=${pageSize}`
-      );
+      const params = new URLSearchParams({ entityType, page: String(p), pageSize: String(pageSize) });
+      if (t) params.set("tag", t);
+      const res = await fetch(`/api/admin/audit-log?${params}`);
       if (res.ok) {
         const data = await res.json();
         setEntries(data.entries || []);
@@ -75,8 +84,13 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
     } finally { setLoading(false); }
   }, [entityType]);
 
-  useEffect(() => { if (open) { setPage(1); load(1); } }, [open, load]);
-  useEffect(() => { if (open) load(page); }, [page]); // eslint-disable-line
+  useEffect(() => {
+    if (open) { setPage(1); setSelectedTag(""); load(1, ""); loadTags(); }
+  }, [open, load, loadTags]);
+
+  useEffect(() => {
+    if (open) load(page, selectedTag);
+  }, [page, selectedTag]); // eslint-disable-line
 
   if (!open) return null;
 
@@ -85,12 +99,29 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-xl shadow-2xl w-[max(92vw,900px)] max-h-[88vh] flex flex-col"
+        className="bg-white rounded-xl shadow-2xl w-[max(92vw,900px)] max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
-          <h2 className="text-lg font-semibold text-gray-900">编辑历史 · {entityType}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          <h2 className="text-lg font-semibold text-gray-900">
+            编辑历史 · {entityType}
+            {selectedTag && <span className="text-sm text-gray-400 ml-2">({selectedTag})</span>}
+          </h2>
+          <div className="flex items-center gap-3">
+            {tags.length > 0 && (
+              <select
+                value={selectedTag}
+                onChange={(e) => { setSelectedTag(e.target.value); setPage(1); }}
+                className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+              >
+                <option value="">全部版本</option>
+                {tags.map((t) => (
+                  <option key={t} value={t}>{t.replace("V0:", "V0 ")}</option>
+                ))}
+              </select>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto px-6 py-2">
@@ -106,12 +137,17 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
                   className="border rounded-lg hover:border-gray-300 transition-colors cursor-pointer"
                   onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
                 >
-                  {/* Summary row */}
                   <div className="flex items-center gap-4 px-4 py-2.5">
                     <span className="inline-flex items-center gap-1">
-                      <span className="inline-block bg-gray-100 rounded px-1.5 py-0.5 text-xs font-mono font-medium">
-                        V{e.version}
-                      </span>
+                      {e.tag ? (
+                        <span className="inline-block bg-blue-50 text-blue-600 rounded px-1.5 py-0.5 text-[11px] font-medium">
+                          {e.tag.replace("V0:", "基线 ")}
+                        </span>
+                      ) : (
+                        <span className="inline-block bg-gray-100 rounded px-1.5 py-0.5 text-xs font-mono">
+                          V{e.version}
+                        </span>
+                      )}
                     </span>
                     <span className="text-xs text-gray-500 w-36 shrink-0">
                       {new Date(e.createdAt).toLocaleString("zh-CN")}
@@ -131,13 +167,12 @@ export default function AuditLogModal({ open, onClose, entityType }: AuditLogMod
                         <span className="text-[11px] text-gray-400">+{e.changes.length - 4}</span>
                       )}
                       {e.changes.length === 0 && (
-                        <span className="text-[11px] text-gray-300">无业务字段变更</span>
+                        <span className="text-[11px] text-gray-300">无变更</span>
                       )}
                     </div>
                     <span className="text-gray-300 text-xs">{expandedId === e.id ? "▲" : "▼"}</span>
                   </div>
 
-                  {/* Expanded detail */}
                   {expandedId === e.id && (
                     <div className="border-t bg-gray-50 rounded-b-lg px-4 py-3">
                       <div className="space-y-1.5">

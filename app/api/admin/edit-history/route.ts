@@ -22,14 +22,8 @@ export async function GET(request: Request) {
   }
 
   if (version) {
-    const snapshot = await prisma.editHistory.findUnique({
-      where: {
-        entityType_entityId_version: {
-          entityType,
-          entityId,
-          version: parseInt(version),
-        },
-      },
+    const snapshot = await prisma.editHistory.findFirst({
+      where: { entityType, entityId, version: parseInt(version) },
     });
     if (!snapshot) {
       return NextResponse.json({ error: "版本不存在" }, { status: 404 });
