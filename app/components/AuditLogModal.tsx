@@ -59,25 +59,25 @@ export default function AuditLogModal({ open, onClose, entityType, onRestored }:
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [tags, setTags] = useState<string[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string>("");
+  const [dates, setDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
 
   const pageSize = 100;
 
   const [restoring, setRestoring] = useState<number | null>(null);
 
-  const loadTags = useCallback(async () => {
+  const loadDates = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/audit-log?entityType=${entityType}&tags=1`);
-      if (res.ok) { const d = await res.json(); setTags(d.tags || []); }
+      const res = await fetch(`/api/admin/audit-log?entityType=${entityType}&dates=1`);
+      if (res.ok) { const d = await res.json(); setDates(d.dates || []); }
     } catch {}
   }, [entityType]);
 
-  const load = useCallback(async (p: number, t: string) => {
+  const load = useCallback(async (p: number, d: string) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ entityType, page: String(p), pageSize: String(pageSize) });
-      if (t) params.set("tag", t);
+      if (d) params.set("date", d);
       const res = await fetch(`/api/admin/audit-log?${params}`);
       if (res.ok) {
         const data = await res.json();
@@ -96,19 +96,19 @@ export default function AuditLogModal({ open, onClose, entityType, onRestored }:
         body: JSON.stringify({ historyId }),
       });
       if (res.ok) {
-        load(1, selectedTag); loadTags();
+        load(1, selectedDate); loadDates();
         onRestored?.();
       }
     } finally { setRestoring(null); }
-  }, [load, loadTags, selectedTag]);
+  }, [load, loadDates, selectedDate]);
 
   useEffect(() => {
-    if (open) { setPage(1); setSelectedTag(""); load(1, ""); loadTags(); }
-  }, [open, load, loadTags]);
+    if (open) { setPage(1); setSelectedDate(""); load(1, ""); loadDates(); }
+  }, [open, load, loadDates]);
 
   useEffect(() => {
-    if (open) load(page, selectedTag);
-  }, [page, selectedTag]); // eslint-disable-line
+    if (open) load(page, selectedDate);
+  }, [page, selectedDate]); // eslint-disable-line
 
   if (!open) return null;
 
@@ -123,18 +123,18 @@ export default function AuditLogModal({ open, onClose, entityType, onRestored }:
         <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">
             编辑历史 · {entityType}
-            {selectedTag && <span className="text-sm text-gray-400 ml-2">({selectedTag})</span>}
+            {selectedDate && <span className="text-sm text-gray-400 ml-2">({selectedDate})</span>}
           </h2>
           <div className="flex items-center gap-3">
-            {tags.length > 0 && (
+            {dates.length > 0 && (
               <select
-                value={selectedTag}
-                onChange={(e) => { setSelectedTag(e.target.value); setPage(1); }}
+                value={selectedDate}
+                onChange={(e) => { setSelectedDate(e.target.value); setPage(1); }}
                 className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
               >
-                <option value="">全部版本</option>
-                {tags.map((t) => (
-                  <option key={t} value={t}>{t.replace("V0:", "V0 ")}</option>
+                <option value="">全部日期</option>
+                {dates.map((t) => (
+                  <option key={t} value={t}>{t}</option>
                 ))}
               </select>
             )}

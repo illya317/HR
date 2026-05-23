@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// entityType → 用于 resolve 记录名称的 Prisma model key & display field
 const RESOLVERS: Record<string, { model: string; field: string; fallback: string }> = {
   Employee: { model: "employee", field: "name", fallback: "未知员工" },
   Employment: { model: "employment", field: "id", fallback: "未知雇佣" },
@@ -18,32 +17,36 @@ const RESOLVERS: Record<string, { model: string; field: string; fallback: string
 export async function GET(request: Request) {
   const payload = await authenticate(request);
   if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
-  if (!(await checkHRAccess(payload.userId))) {
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
-  }
+  if (!(await checkHRAccess(payload.userId))) return NextResponse.json({ error: "无权限" }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get("entityType");
-  const tag = searchParams.get("tag") || undefined; // V0 日期筛选
+  const date = searchParams.get("date") || undefined;
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = Math.min(parseInt(searchParams.get("pageSize") || "50"), 200);
 
   if (!entityType) return NextResponse.json({ error: "缺少 entityType" }, { status: 400 });
 
-  // List available V0 tags for date filter
-  if (searchParams.get("tags") === "1") {
-    const tags = await prisma.editHistory.findMany({
-      where: { entityType, tag: { not: null } },
-      select: { tag: true },
-      orderBy: { tag: "desc" },
-      distinct: ["tag"],
-      take: 30,
+  // 列出有编辑记录的日期
+  if (searchParams.get("dates") === "1") {
+    const rows = await prisma.editHistory.findMany({
+      where: { entityType, tag: null },
+      select: { createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 2000,
     });
-    return NextResponse.json({ tags: tags.map((t) => t.tag) });
+    const dates = [...new Set(rows.map((r) => r.createdAt.toISOString().slice(0, 10)))];
+    return NextResponse.json({ dates });
   }
 
-  const showAll = !!tag;
-  const pageWhere: any = { entityType, tag: showAll ? tag : null };
+  // 按日期筛选
+  const pageWhere: any = { entityType, tag: null };
+  if (date) {
+    pageWhere.createdAt = {
+      gte: new Date(date + "T00:00:00+08:00"),
+      lte: new Date(date + "T23:59:59+08:00"),
+    };
+  }
 
   const pageVersions = await prisma.editHistory.findMany({
     where: pageWhere,
@@ -64,7 +67,6 @@ export async function GET(request: Request) {
     include: { editor: { select: { name: true } } },
   });
 
-  // 按 record 分组，每组内按 version 排序，建立 当前版本→前一个版本 的映射
   const prevMap = new Map<number, any>();
   const groupMap = new Map<string, any[]>();
   for (const v of allVersions) {
@@ -73,12 +75,9 @@ export async function GET(request: Request) {
     groupMap.get(k)!.push(v);
   }
   for (const [, group] of groupMap) {
-    for (let i = 1; i < group.length; i++) {
-      prevMap.set(group[i].id, group[i - 1]);
-    }
+    for (let i = 1; i < group.length; i++) prevMap.set(group[i].id, group[i - 1]);
   }
 
-  // 记录名称
   const recordMap: Record<string, string> = {};
   const resolver = RESOLVERS[entityType];
   if (resolver) {
@@ -91,44 +90,42 @@ export async function GET(request: Request) {
 
   const AUDIT_FIELDS = new Set(["editedBy", "editedAt", "version", "editor", "createdAt", "updatedAt", "id"]);
 
-  // 编辑过的记录的 ID 集合
   const editedIds = new Set(pageVersions.map((v) => `${v.entityType}:${v.entityId}`));
-  // 这些记录对应的 V0 基线（用于展示和还原）
   const displayV0s = allVersions.filter((v) => v.tag && editedIds.has(`${v.entityType}:${v.entityId}`));
 
   const entries = [...pageVersions, ...displayV0s]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .map((v) => {
-    const prev = prevMap.get(v.id) || null;
-    const changes: Array<{ field: string; from?: string; to: string }> = [];
-    try {
-      const currData = JSON.parse(v.dataJson);
-      const prevData = prev ? JSON.parse(prev.dataJson) : null;
-      const keys = new Set([...Object.keys(currData), ...(prevData ? Object.keys(prevData) : [])]);
-      for (const key of keys) {
-        if (AUDIT_FIELDS.has(key)) continue;
-        const curr = currData[key];
-        const old = prevData?.[key];
-        if (JSON.stringify(old) !== JSON.stringify(curr)) {
-          changes.push({
-            field: key,
-            from: old != null ? (typeof old === "object" ? JSON.stringify(old) : String(old)) : "(空)",
-            to: curr != null ? (typeof curr === "object" ? JSON.stringify(curr) : String(curr)) : "(空)",
-          });
+      const prev = prevMap.get(v.id) || null;
+      const changes: Array<{ field: string; from?: string; to: string }> = [];
+      try {
+        const currData = JSON.parse(v.dataJson);
+        const prevData = prev ? JSON.parse(prev.dataJson) : null;
+        const keys = new Set([...Object.keys(currData), ...(prevData ? Object.keys(prevData) : [])]);
+        for (const key of keys) {
+          if (AUDIT_FIELDS.has(key)) continue;
+          const curr = currData[key];
+          const old = prevData?.[key];
+          if (JSON.stringify(old) !== JSON.stringify(curr)) {
+            changes.push({
+              field: key,
+              from: old != null ? (typeof old === "object" ? JSON.stringify(old) : String(old)) : "(空)",
+              to: curr != null ? (typeof curr === "object" ? JSON.stringify(curr) : String(curr)) : "(空)",
+            });
+          }
         }
-      }
-    } catch {}
+      } catch {}
 
-    return {
-      id: v.id, entityId: v.entityId,
-      entityName: recordMap[v.entityId] || v.entityId,
-      version: v.version,
-      editorName: v.editor?.name || `用户#${v.editedBy}`,
-      createdAt: v.createdAt,
-      tag: v.tag || null,
-      changes,
-    };
-  });
+      return {
+        id: v.id, entityId: v.entityId,
+        entityName: recordMap[v.entityId] || v.entityId,
+        version: v.version,
+        editorName: v.editor?.name || `用户#${v.editedBy}`,
+        createdAt: v.createdAt,
+        tag: v.tag || null,
+        changes,
+      };
+    });
 
   return NextResponse.json({ entries, total, page, pageSize });
 }
