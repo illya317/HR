@@ -86,7 +86,7 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
       const res = await fetch(`/api/hr/autocomplete?entity=employee&keyword=${encodeURIComponent(q)}`);
       if (res.ok) {
         const data = await res.json();
-        setEmpResults((data.items || []).slice(0, 10));
+        setEmpResults((data.items || []).slice(0, 50));
         setShowEmpDropdown(true);
       }
     } catch {}
@@ -196,7 +196,7 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
             {showEmpDropdown && empResults.length > 0 && (
-              <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border bg-white shadow-lg max-h-40 overflow-y-auto">
+              <div className="absolute left-0 top-full z-20 mt-1 w-full rounded-md border bg-white shadow-lg max-h-80 overflow-y-auto">
                 {empResults.map((e) => (
                   <button key={e.id} onClick={() => selectEmployee(e)} className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50">
                     {e.name} <span className="text-gray-400 text-xs">/ {e.subtitle}</span>
