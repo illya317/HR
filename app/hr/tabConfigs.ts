@@ -15,8 +15,8 @@ const fk = (entity: string, displayField: string): FKFieldConfig => ({ entity, d
 
 // ─── 5-1 员工信息 ──────────────────────────────────────────
 const employeeFields: FieldConfig[] = [
-  { key: "employeeId", label: "员工编号", editable: true },
-  { key: "name", label: "姓名", editable: true },
+  { key: "employeeId", label: "员工编号", editable: true, required: true },
+  { key: "name", label: "姓名", editable: true, required: true },
   { key: "alias", label: "别名", editable: true },
   { key: "gender", label: "性别", editable: true },
   { key: "birthDate", label: "出生年月", editable: true, type: "date" },
@@ -38,7 +38,7 @@ export const employeeConfig: TabConfig = {
   apiPath: "/api/hr/employees",
   entityType: "Employee",
   fields: employeeFields,
-  canCreate: false, // Employee 由导入或专门流程创建，暂不开放前台新建
+  canCreate: true,
   canDelete: true,
   listGetter: (d) => d.employees,
 };
