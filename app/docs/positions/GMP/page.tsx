@@ -70,10 +70,8 @@ export default function GmpPositionsPage() {
   function renderNode(node: TreeNode, depth: number): React.ReactNode {
     const isOpen = expanded.has(node.code);
     const hasChildren = node.children && node.children.length > 0;
-    const filteredPositions = search
-      ? node.positions.filter(p => p.toLowerCase().includes(search.toLowerCase()))
-      : node.positions;
     const totalPositions = node.positions.length;
+    const isLeaf = !hasChildren;
 
     const indent = { 0: "ml-0", 1: "ml-6", 2: "ml-12", 3: "ml-16" }[depth] || "ml-16";
     const textSize = { 0: "text-base font-bold", 1: "text-sm font-semibold", 2: "text-sm", 3: "text-xs" }[depth] || "text-xs";
@@ -84,26 +82,29 @@ export default function GmpPositionsPage() {
         <button onClick={() => toggle(node.code)}
           className={`w-full flex items-center gap-2 px-3 py-2 ${bg} ${textSize} text-gray-800 hover:bg-gray-100 rounded`}
         >
-          {hasChildren && <span className="text-gray-400 text-xs w-3">{isOpen ? "▼" : "▶"}</span>}
-          {!hasChildren && <span className="w-3" />}
+          {(hasChildren || totalPositions > 0) && <span className="text-gray-400 text-xs w-3">{isOpen ? "▼" : "▶"}</span>}
+          {!hasChildren && totalPositions === 0 && <span className="w-3" />}
           {node.name}
           <span className="text-gray-400 font-normal text-xs">{totalPositions} 岗</span>
         </button>
-        {isOpen && filteredPositions.length > 0 && (
+        {isOpen && isLeaf && totalPositions > 0 && (
           <div className="ml-8 divide-y divide-gray-50 border-l-2 border-gray-100 pl-4">
-            {filteredPositions.sort().map(entry => {
-              const [code, name] = entry.split("|");
-              return (
-                <button key={code}
-                  onClick={() => router.push(`/docs/positions/GMP/${code}`)}
-                  className="w-full flex items-center gap-3 py-1.5 text-left hover:bg-emerald-50 transition-colors"
-                >
-                  <span className="text-xs text-gray-400 font-mono w-20 shrink-0">{code}</span>
-                  <span className="text-sm text-gray-700 flex-1">{name || code}</span>
-                  <span className="text-gray-300 text-xs">→</span>
-                </button>
-              );
-            })}
+            {node.positions
+              .filter(p => !search || p.toLowerCase().includes(search.toLowerCase()))
+              .sort()
+              .map(entry => {
+                const [code, name] = entry.split("|");
+                return (
+                  <button key={code}
+                    onClick={() => router.push(`/docs/positions/GMP/${code}`)}
+                    className="w-full flex items-center gap-3 py-1.5 text-left hover:bg-emerald-50 transition-colors"
+                  >
+                    <span className="text-xs text-gray-400 font-mono w-20 shrink-0">{code}</span>
+                    <span className="text-sm text-gray-700 flex-1">{name || code}</span>
+                    <span className="text-gray-300 text-xs">→</span>
+                  </button>
+                );
+              })}
           </div>
         )}
         {isOpen && hasChildren && node.children!.map(c => renderNode(c, depth + 1))}
