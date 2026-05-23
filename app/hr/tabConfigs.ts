@@ -144,8 +144,8 @@ export const departmentConfig: TabConfig = {
 
 // ─── 5-6 岗位 ──────────────────────────────────────────────
 const positionFields: FieldConfig[] = [
-  { key: "code", label: "编码", editable: true },
-  { key: "name", label: "名称", editable: true },
+  { key: "code", label: "编码", editable: true, required: true },
+  { key: "name", label: "名称", editable: true, required: true },
   { key: "alias", label: "别名", editable: true, hidden: true },
   { key: "departmentId", label: "所属部门", type: "fk", editable: true },
   { key: "positionDescriptionId", label: "岗位说明书", type: "fk", editable: true },
@@ -168,7 +168,7 @@ export const positionConfig: TabConfig = {
 
 // ─── 5-7 EDP ───────────────────────────────────────────────
 const edpFields: FieldConfig[] = [
-  { key: "employeeId", label: "员工", type: "fk", editable: false },
+  { key: "employeeId", label: "员工", type: "fk", editable: false, required: true },
   { key: "departmentId", label: "部门", type: "fk", editable: true },
   { key: "positionId", label: "岗位", type: "fk", editable: true },
   { key: "isPrimary", label: "主岗", editable: true, type: "boolean" },
@@ -201,7 +201,7 @@ export const edpConfig: TabConfig = {
 
 // ─── 5-8 项目 ──────────────────────────────────────────────
 const projectFields: FieldConfig[] = [
-  { key: "name", label: "项目名称", editable: true },
+  { key: "name", label: "项目名称", editable: true, required: true },
   { key: "type", label: "类型", editable: true },
   { key: "description", label: "说明", editable: true, type: "textarea" },
   { key: "endDate", label: "截止时间", editable: true, type: "date" },
@@ -219,8 +219,8 @@ export const projectConfig: TabConfig = {
 
 // ─── 5-9 项目员工 ──────────────────────────────────────────
 const employeeProjectFields: FieldConfig[] = [
-  { key: "employeeId", label: "员工", type: "fk", editable: true },
-  { key: "projectId", label: "项目", type: "fk", editable: true },
+  { key: "employeeId", label: "员工", type: "fk", editable: true, required: true },
+  { key: "projectId", label: "项目", type: "fk", editable: true, required: true },
   { key: "role", label: "角色", editable: true },
   { key: "startDate", label: "开始日期", editable: true, type: "date" },
   { key: "endDate", label: "结束日期", editable: true, type: "date" },
@@ -228,7 +228,7 @@ const employeeProjectFields: FieldConfig[] = [
 
 // ─── 5-10 合同 ─────────────────────────────────────────────
 const contractFields: FieldConfig[] = [
-  { key: "employeeId", label: "员工编号", type: "fk", editable: false },
+  { key: "employeeId", label: "员工编号", type: "fk", editable: false, required: true },
   { key: "employeeName", label: "姓名", editable: false },
   { key: "company", label: "公司", editable: true },
   { key: "isPrimary", label: "主合同", type: "boolean", editable: true },
