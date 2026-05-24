@@ -86,12 +86,36 @@ export interface Employment {
   contracts: any;
 }
 
+export interface Contract {
+  id: number;
+  employmentId: number;
+  employeeId: string;
+  employeeName: string;
+  company: string;
+  isPrimary: boolean;
+  isInsuredHere: boolean;
+  legalRelation: string;
+  contractType: string;
+  employmentForm: string;
+  firstContractStartDate: string | null;
+  firstContractEndDate: string | null;
+  secondContractStartDate: string | null;
+  secondContractEndDate: string | null;
+  thirdContractStartDate: string | null;
+  thirdContractEndDate: string | null;
+  permanentContractDate: string | null;
+  confidentialityDate: string | null;
+  nonCompeteDate: string | null;
+  endDate: string | null;
+}
+
 export interface AnalyticsData {
   employees: Employee[];
   departments: Department[];
   positions: Position[];
   edps: EDP[];
   employments: Employment[];
+  contracts: Contract[];
   loading: boolean;
   error: string | null;
 }
@@ -103,6 +127,7 @@ export function useAnalyticsData() {
     positions: [],
     edps: [],
     employments: [],
+    contracts: [],
     loading: true,
     error: null,
   });
@@ -110,12 +135,13 @@ export function useAnalyticsData() {
   useEffect(() => {
     async function load() {
       try {
-        const [empRes, deptRes, posRes, edpRes, emtRes] = await Promise.all([
+        const [empRes, deptRes, posRes, edpRes, emtRes, conRes] = await Promise.all([
           fetch("/api/hr/employees").then((r) => r.json()),
           fetch("/api/hr/departments").then((r) => r.json()),
           fetch("/api/hr/positions").then((r) => r.json()),
           fetch("/api/hr/edps").then((r) => r.json()),
           fetch("/api/hr/employments").then((r) => r.json()),
+          fetch("/api/hr/contracts").then((r) => r.json()),
         ]);
 
         setData({
@@ -124,6 +150,7 @@ export function useAnalyticsData() {
           positions: posRes.positions || [],
           edps: edpRes.positions || [],
           employments: emtRes.items || [],
+          contracts: conRes.contracts || [],
           loading: false,
           error: null,
         });

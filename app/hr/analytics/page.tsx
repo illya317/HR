@@ -9,13 +9,17 @@ import { useAnalyticsData } from "./useAnalyticsData";
 import EmployeeAnalytics from "./EmployeeAnalytics";
 import DepartmentAnalytics from "./DepartmentAnalytics";
 import PositionAnalytics from "./PositionAnalytics";
+import TurnoverAnalytics from "./TurnoverAnalytics";
+import ContractAnalytics from "./ContractAnalytics";
 
-type AnalyticsTab = "employee" | "department" | "position";
+type AnalyticsTab = "employee" | "department" | "position" | "turnover" | "contract";
 
 const tabs: { key: AnalyticsTab; label: string; desc: string }[] = [
   { key: "employee", label: "员工信息", desc: "员工分布与统计" },
   { key: "department", label: "部门架构", desc: "部门层级与编制" },
   { key: "position", label: "岗位分析", desc: "岗位配置与空岗" },
+  { key: "turnover", label: "离职分析", desc: "离职率与原因" },
+  { key: "contract", label: "合同预警", desc: "合同到期提醒" },
 ];
 
 export default function AnalyticsPage() {
@@ -128,6 +132,12 @@ export default function AnalyticsPage() {
             )}
             {activeTab === "position" && (
               <PositionAnalytics positions={data.positions} edps={data.edps} departments={data.departments} />
+            )}
+            {activeTab === "turnover" && (
+              <TurnoverAnalytics employees={data.employees} employments={data.employments} />
+            )}
+            {activeTab === "contract" && (
+              <ContractAnalytics contracts={data.contracts} />
             )}
           </>
         )}
