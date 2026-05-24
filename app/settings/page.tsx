@@ -119,72 +119,47 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
           {/* 修改账号 */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-800">修改账号</h2>
-            <form onSubmit={handleChangeUsername} className="space-y-3">
-              <div>
-                <label className="mb-1 block text-sm text-gray-600">当前用户名</label>
-                <p className="text-sm text-gray-400 mb-2">{user?.username || "(未设置)"}</p>
-                <label className="mb-1 block text-sm text-gray-600">新用户名</label>
-                <input
-                  type="text"
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                  required
-                />
+          <div className="rounded-lg bg-white px-5 py-4 shadow-sm">
+            <h2 className="mb-3 text-sm font-semibold text-gray-700">修改账号</h2>
+            <form onSubmit={handleChangeUsername} className="flex items-end gap-3">
+              <div className="flex-1">
+                <label className="mb-1 block text-xs text-gray-500">当前用户名</label>
+                <p className="text-sm text-gray-700">{user?.username || "(未设置)"}</p>
               </div>
-              {unameError && <p className="text-sm text-red-500">{unameError}</p>}
-              {unameSuccess && <p className="text-sm text-emerald-600">{unameSuccess}</p>}
-              <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700">确认修改</button>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">新用户名</label>
+                <input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)}
+                  className="w-44 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none" required />
+              </div>
+              <button type="submit" className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm text-white hover:bg-emerald-700 shrink-0">确认</button>
             </form>
+            {unameError && <p className="mt-2 text-xs text-red-500">{unameError}</p>}
+            {unameSuccess && <p className="mt-2 text-xs text-emerald-600">{unameSuccess}</p>}
           </div>
 
           {/* 修改密码 */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-800">修改密码</h2>
-            <form onSubmit={handleChangePassword} className="space-y-3">
+          <div className="rounded-lg bg-white px-5 py-4 shadow-sm">
+            <h2 className="mb-3 text-sm font-semibold text-gray-700">修改密码</h2>
+            <form onSubmit={handleChangePassword} className="flex items-end gap-3">
               <div>
-                <label className="mb-1 block text-sm text-gray-600">旧密码</label>
-                <input
-                  type="password"
-                  value={oldPwd}
-                  onChange={(e) => setOldPwd(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                  required
-                />
+                <label className="mb-1 block text-xs text-gray-500">旧密码</label>
+                <input type="password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)}
+                  className="w-32 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none" required />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-gray-600">新密码</label>
-                <input
-                  type="password"
-                  value={newPwd}
-                  onChange={(e) => setNewPwd(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                  required
-                  minLength={4}
-                />
+                <label className="mb-1 block text-xs text-gray-500">新密码</label>
+                <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
+                  className="w-32 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none" required minLength={4} />
               </div>
               <div>
-                <label className="mb-1 block text-sm text-gray-600">确认新密码</label>
-                <input
-                  type="password"
-                  value={confirmPwd}
-                  onChange={(e) => setConfirmPwd(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                  required
-                  minLength={4}
-                />
+                <label className="mb-1 block text-xs text-gray-500">确认</label>
+                <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)}
+                  className="w-32 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none" required minLength={4} />
               </div>
-              {pwdError && <p className="text-sm text-red-500">{pwdError}</p>}
-              {pwdSuccess && <p className="text-sm text-emerald-600">{pwdSuccess}</p>}
-              <button
-                type="submit"
-                className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700"
-              >
-                确认修改
-              </button>
+              <button type="submit" className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm text-white hover:bg-emerald-700 shrink-0">确认</button>
             </form>
+            {pwdError && <p className="mt-2 text-xs text-red-500">{pwdError}</p>}
+            {pwdSuccess && <p className="mt-2 text-xs text-emerald-600">{pwdSuccess}</p>}
           </div>
 
           {/* API 接入 */}
