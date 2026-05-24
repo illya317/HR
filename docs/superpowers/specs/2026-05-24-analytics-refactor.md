@@ -1,79 +1,162 @@
-# Analytics 模块耦合优化
+# HR 全项目耦合优化（>300行拆分）
 
-## 现状
+## 超300行文件（共10个）
 
-| 文件 | 行数 | 超300 |
-|------|------|-------|
-| EmployeeAnalytics.tsx | 455 | Yes |
-| PositionAnalytics.tsx | 410 | Yes |
-| ContractAnalytics.tsx | 293 | No |
-| TurnoverAnalytics.tsx | 239 | No |
-| DepartmentAnalytics.tsx | 222 | No |
-| useAnalyticsData.ts | 165 | No |
-| page.tsx | 147 | No |
+| # | 文件 | 行数 | 目录 | 拆分数 |
+|---|------|------|------|--------|
+| 1 | CodeTab.tsx | 473 | app/hr/ | 2 |
+| 2 | EmployeeAnalytics.tsx | 455 | app/hr/analytics/ | 4 |
+| 3 | PositionAnalytics.tsx | 410 | app/hr/analytics/ | 4 |
+| 4 | works/page.tsx | 401 | app/works/ | 2-3 |
+| 5 | reports/page.tsx | 399 | app/reports/ | 2-3 |
+| 6 | useCodeTab.ts | 358 | app/hr/ | 2 |
+| 7 | ByUserTab.tsx | 343 | app/admin/ | 2 |
+| 8 | settings/page.tsx | 325 | app/settings/ | 2 |
+| 9 | GenericTableTab.tsx | 324 | app/hr/ | 2 |
+| 10 | ByPermissionTab.tsx | 306 | app/admin/ | 2 |
 
-## 问题#1：StatCard 三份重复
+## 通用问题：StatCard 重复 4 处
 
-4 个 tab 组件各有自己的 `StatCard` 定义，功能相同，仅 `EmployeeAnalytics` 版缺少 `sub` prop。
+| 文件 | 行 | 差异 |
+|------|-----|------|
+| EmployeeAnalytics.tsx:6 | ~20 | 无 `sub` prop |
+| PositionAnalytics.tsx:6 | ~20 | 有 `sub` |
+| TurnoverAnalytics.tsx:6 | ~20 | 有 `sub` |
+| ContractAnalytics.tsx:6 | ~20 | 有 `sub` |
 
-**修复**：提取 `app/hr/analytics/shared/StatCard.tsx`，统一接口，全部引用。
+**修** → `app/hr/analytics/shared/StatCard.tsx`
 
-## 问题#2：EmployeeAnalytics.tsx（455行）
+---
 
-**拆分方案**：
+## 逐文件拆分方案
 
-```
-app/hr/analytics/
-├── shared/
-│   ├── StatCard.tsx          # 共享统计卡片 (~20行)
-│   └── DistributionBar.tsx   # 共享分布条 (~20行)
-├── employee/
-│   ├── EmployeeAnalytics.tsx  # 主组件，只负责 layout 和状态 (~120行)
-│   ├── useEmployeeData.ts     # enriched + stats 计算逻辑 (~150行)
-│   ├── CrossMatrix.tsx        # 交叉分析矩阵 (表格渲染) (~100行)
-│   └── constants.ts           # DIM_LABELS/COLORS/ORDER (~50行)
-```
-
-**拆分逻辑**：
-- `useEmployeeData` — 纯数据 hook：在职筛选、特征绑定、分布计算、交叉矩阵
-- `CrossMatrix` — 纯 UI：热力图表格渲染（接收 matrix 数据、heatColor、DIM_LABELS）
-- `EmployeeAnalytics` — 只保留：状态管理、StatCar 行、特征下拉、两个子组件调用、最近入职/离职表
-- `constants` — DIM_LABELS, DIM_COLORS, DIM_ORDER 三张表
-
-## 问题#3：PositionAnalytics.tsx（410行）
-
-**拆分方案**：
+### 1. EmployeeAnalytics.tsx (455→~120)
 
 ```
-app/hr/analytics/
-├── position/
-│   ├── PositionAnalytics.tsx  # 主组件 (~80行)
-│   ├── usePositionData.ts     # enriched + stats + subtree + filter 逻辑 (~200行)
-│   ├── DeptBarChart.tsx       # LevelSection + DeptBarRow + 图例 (~120行)
-│   └── PositionTable.tsx      # 岗位明细表 (排序/搜索/状态标签) (~120行)
+app/hr/analytics/employee/
+├── EmployeeAnalytics.tsx    # 主组件：StatCard行 + 分布选择器 + 子组件调用 + 入职/离职表 (~120)
+├── useEmployeeData.ts       # 纯数据：在职筛选、特征绑定、分布计算、交叉矩阵 (enriched+stats+crossMatrix, ~200)
+├── CrossMatrix.tsx          # 纯UI：热力图表格 (含heatColor, ~100)
+└── constants.ts             # DIM_LABELS/COLORS/ORDER 三表 (~40)
 ```
 
-**拆分逻辑**：
-- `usePositionData` — 纯数据 hook：实际人数计算、部门子树汇总、L1 筛选
-- `DeptBarChart` — 纯 UI：LevelSection + DeptBarRow + 图例（接收 filteredDept、globalMax）
-- `PositionTable` — 纯 UI：可排序表头 + 状态标签 + 搜索栏
-- `PositionAnalytics` — 只剩：StatCard 行 + 调用三个子块
+### 2. PositionAnalytics.tsx (410→~80)
 
-## 问题#4：ContractAnalytics + TurnoverAnalytics 的 StatCard
+```
+app/hr/analytics/position/
+├── PositionAnalytics.tsx    # 主组件：StatCard行 + 子组件调用 (~80)
+├── usePositionData.ts       # 纯数据：实际人数、子树汇总、L1筛选 (enriched+stats+filteredDept, ~220)
+├── DeptBarChart.tsx         # 纯UI：LevelSection + DeptBarRow + 图例 (~120)
+└── PositionTable.tsx        # 纯UI：可排序表头 + 搜索 + 状态标签 (~120)
+```
 
-两者都有独立 StatCard 定义，改完 shared/StatCard 后删除各自的重复定义。
+### 3. CodeTab.tsx (473→~120+~370)
 
-## 执行顺序
+```
+app/hr/code/
+├── CodeTab.tsx              # 主组件：渲染 + 使用 useCodeTab hook (~120)
+└── CodeTable.tsx            # 代码表格渲染：搜索/排序/详情弹框/编辑行 (~370)
+```
 
-1. 创建 `shared/StatCard.tsx`，4 个组件引用它
-2. 拆分 `EmployeeAnalytics` → shared + employee/ + constants
-3. 拆分 `PositionAnalytics` → position/
-4. 清理各组件内重复的 StatCard
-5. 编译 → 功能验证
+**现状**：`useCodeTab.ts` 已提取数据逻辑（358行），但 `CodeTab.tsx` 仍有 473 行的 UI 渲染，主要是一大段 JSX（表格、弹框、编辑行）。
 
-## 不改的范围
+**拆分**：表格渲染部分（编辑行、搜索栏、排序头、详情弹框）提为 `CodeTable.tsx`。
 
-- DepartmentAnalytics (222行) — 不超 300
-- TurnoverAnalytics (239行) — 不超 300
-- ContractAnalytics (293行) — 不超 300
-- useAnalyticsData.ts, page.tsx — 结构合理
+### 4. works/page.tsx (401→~120+~200+~100)
+
+```
+app/works/
+├── page.tsx                 # 主组件：状态 + 数据加载 + 子组件调用 (~120)
+├── WorksList.tsx            # 工作列表：三个折叠区 + 工作卡片 + 分页 (~200)
+└── WorkFormModal.tsx        # 新建/编辑弹窗 (~100)
+```
+
+**现状**：page.tsx 包含大量展开/折叠逻辑、工作过滤、表单弹窗 JSX，与 WorkCard/WorkForm 子组件混在一起。
+
+### 5. reports/page.tsx (399→~120+~200+~100)
+
+```
+app/reports/
+├── page.tsx                 # 主组件：状态 + 数据加载 + 布局 (~120)
+├── ReportEditor.tsx         # 汇报编辑区：任务名 + Notes + 周期选择器 + 工作项 (~200)
+└── VersionViewer.tsx        # 历史版本查看器 (~100)
+```
+
+**现状**：页面混入大量编辑 UI（周期选择、工作项增删改、版本切换），与 WorkSection 组件逻辑交叉。
+
+### 6. useCodeTab.ts (358→~180+~200)
+
+```
+app/hr/code/
+├── useCodeTab.ts            # 数据 hook：加载/搜索/提交 (~180)
+└── useCodeSort.ts           # 排序 + 过滤 + 详情逻辑 (~200)
+```
+
+**现状**：useCodeTab 混合了数据加载、排序、过滤、详情列表、职位-部门弹框等多组独立逻辑。
+
+### 7. ByUserTab.tsx (343→~120+~240)
+
+```
+app/admin/
+├── ByUserTab.tsx            # 主组件：搜索 + UserCard调用 (~120)
+└── UserCard.tsx             # 用户授权卡片 + 子资源展开 (~240)
+```
+
+**现状**：ByUserTab 的主渲染是一个复杂的用户卡片列表，每张卡片内有权限树展开逻辑，可独立提取。
+
+### 8. GenericTableTab.tsx (324→~120+~220)
+
+```
+app/hr/
+├── GenericTableTab.tsx      # 主组件：数据加载 + 表格壳 (~120)
+└── EditableTable.tsx        # 可编辑表格：renderCell + 编辑态 + 删除确认 (~220)
+```
+
+**现状**：GenericTableTab 包含 renderCell 函数、FK 渲染逻辑、编辑输入框渲染、行操作等。
+
+### 9. settings/page.tsx (325→~60+~120+~120)
+
+```
+app/settings/
+├── page.tsx                 # 主组件：加载 + 子组件调用 (~60)
+├── UsernameModal.tsx        # 修改用户名弹窗 (~120)
+└── PasswordModal.tsx        # 修改密码弹窗 (~120)
+```
+
+**现状**：页面上内联了两个完整的 Modal 表单（表单状态、验证、提交），各约 120 行。
+
+### 10. ByPermissionTab.tsx (306→~120+~200)
+
+```
+app/admin/
+├── ByPermissionTab.tsx      # 主组件：筛选 + 卡片调用 (~120)
+└── PermissionCard.tsx       # 权限卡片：展开/折叠 + 员工列表 (~200)
+```
+
+---
+
+## 不改范围
+
+| 文件 | 行数 | 原因 |
+|------|------|------|
+| ContractAnalytics.tsx | 293 | <300 |
+| tabConfigs.ts | 292 | <300，纯配置 |
+| lib/auth.ts | 294 | <300，lib 模块 |
+| lib/period.ts | 287 | <300 |
+| DepartmentAnalytics.tsx | 222 | <300 |
+| TurnoverAnalytics.tsx | 239 | <300 |
+| useAnalyticsData.ts | 165 | 结构合理 |
+| useGenericTab.ts | 190 | 结构合理 |
+
+---
+
+## 执行顺序（按影响范围）
+
+1. **StatCard 提取** — 改动 4 个 analytics 组件，影响面小
+2. **Analytics 拆分** — EmployeeAnalytics + PositionAnalytics（与 StatCard 相关联）
+3. **settings 拆分** — 单纯弹窗提取，简单
+4. **admin 拆分** — ByUserTab + ByPermissionTab
+5. **CodeTab + useCodeTab 拆分** — 改动量大，最后做
+6. **works + reports 拆分** — 涉及业务页面，最后做
+
+> 每步完成后：`npm run build` → commit
