@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const company = searchParams.get("company") || "";
   const keyword = searchParams.get("keyword") || "";
 
-  const where: any = {};
+  const where: any = { isActive: true };
   if (company) where.currentCompany = company;
 
   const employments = await prisma.employment.findMany({
