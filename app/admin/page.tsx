@@ -7,11 +7,11 @@ import NavLink from "@/app/components/NavLink";
 import UserMenu from "@/app/components/UserMenu";
 import Toast from "@/app/components/Toast";
 import { useToast } from "@/app/hooks/useToast";
-import AdminUsersTab from "./AdminUsersTab";
-import ByUserTab from "./ByUserTab";
-import ByPositionTab from "./ByPositionTab";
-import ByDepartmentTab from "./ByDepartmentTab";
-import ByPermissionTab from "./ByPermissionTab";
+import AdminUsersTab from "./tabs/AdminUsersTab";
+import ByUserTab from "./tabs/ByUserTab";
+import ByPositionTab from "./tabs/ByPositionTab";
+import ByDepartmentTab from "./tabs/ByDepartmentTab";
+import ByPermissionTab from "./tabs/ByPermissionTab";
 
 import type { ResourceItem, DeptItem } from "./types";
 import { flattenTree } from "./lib";

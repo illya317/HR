@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import UserMenu from "@/app/components/UserMenu";
 
-import EmployeeTab from "./EmployeeTab";
-import EmploymentTab from "./EmploymentTab";
-import CompanyTab from "./CompanyTab";
-import CompanyRelationTab from "./CompanyRelationTab";
-import DepartmentTab from "./DepartmentTab";
-import PositionTab from "./PositionTab";
-import EDPTab from "./EDPTab";
-import ProjectTab from "./ProjectTab";
-import EmployeeProjectTab from "./EmployeeProjectTab";
-import ContractTab from "./ContractTab";
+import EmployeeTab from "./tabs/EmployeeTab";
+import EmploymentTab from "./tabs/EmploymentTab";
+import CompanyTab from "./tabs/CompanyTab";
+import CompanyRelationTab from "./tabs/CompanyRelationTab";
+import DepartmentTab from "./tabs/DepartmentTab";
+import PositionTab from "./tabs/PositionTab";
+import EDPTab from "./tabs/EDPTab";
+import ProjectTab from "./tabs/ProjectTab";
+import EmployeeProjectTab from "./tabs/EmployeeProjectTab";
+import ContractTab from "./tabs/ContractTab";
 
 
 // 花名册代码保留但不展示

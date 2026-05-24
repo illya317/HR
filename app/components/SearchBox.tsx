@@ -1,7 +1,7 @@
 "use client";
 
-import { useSearch } from "@/lib/useSearch";
-import type { SearchConfig, SearchFilters } from "@/lib/useSearch";
+import { useSearch } from "@/app/hooks/useSearch";
+import type { SearchConfig, SearchFilters } from "@/app/hooks/useSearch";
 
 // ─── Props ────────────────────────────────────────────────
 

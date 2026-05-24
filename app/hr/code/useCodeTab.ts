@@ -4,9 +4,14 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import {
   NAME_TO_CODE,
-  SHARED_GROUP_CODES,
   resolveCompanyFilter,
 } from "@/lib/company";
+import {
+  buildFullCode,
+  getDetailList as getDetailListFromEmployees,
+  getSortedCodes as sortCodeList,
+  toggleSort as getNextSortState,
+} from "./useCodeHelpers";
 
 import type { HRUser as User } from "../types";
 
@@ -93,15 +98,6 @@ export function useCodeTab({
   const entityType =
     type === "department" ? "Department" : "Position";
 
-  function buildFullCode(shortCode: string): string {
-    const normalized = companyCode
-      ? SHARED_GROUP_CODES.includes(companyCode)
-        ? "01"
-        : companyCode
-      : "";
-    return normalized ? normalized + shortCode : shortCode;
-  }
-
   async function load() {
     setLoading(true);
     const codesParam = selectedCompany
@@ -162,28 +158,13 @@ export function useCodeTab({
     setStats(map);
   }, [codes, employees, type]);
 
-  function toggleSort(field: "code" | "name" | "count") {
-    if (sortField === field) {
-      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
+  function toggleSortHandler(field: "code" | "name" | "count") {
+    const next = getNextSortState(sortField, sortDirection, field);
+    setSortField(next.sortField);
+    setSortDirection(next.sortDirection);
   }
 
-  const sortedCodes = [...codes].sort((a, b) => {
-    if (sortField === "count") {
-      const aVal = stats[a.code] || 0;
-      const bVal = stats[b.code] || 0;
-      if (aVal !== bVal) return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
-      return a.code.localeCompare(b.code);
-    }
-    const aVal = sortField === "code" ? a.code : a.name;
-    const bVal = sortField === "code" ? b.code : b.name;
-    if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
-    return 0;
-  });
+  const sortedCodes = sortCodeList(codes, stats, sortField, sortDirection);
 
   function startEditRow(item: CodeItem) {
     if (!user.canAccessHR) return;
@@ -197,7 +178,7 @@ export function useCodeTab({
       showToast("编号必须为3位数字", "error");
       return;
     }
-    const newFullCode = buildFullCode(editCodeValue);
+    const newFullCode = buildFullCode(editCodeValue, companyCode);
 
     if (
       newFullCode !== originalCode &&
@@ -242,7 +223,7 @@ export function useCodeTab({
       showToast("名称不能为空", "error");
       return;
     }
-    const fullCode = buildFullCode(newCode);
+    const fullCode = buildFullCode(newCode, companyCode);
     if (codes.some((c) => c.code === fullCode)) {
       showToast("编号已存在", "error");
       return;
@@ -274,13 +255,8 @@ export function useCodeTab({
     }
   }
 
-  function getDetailList(codeItem: CodeItem): Employee[] {
-    if (type === "department") {
-      return employees.filter((e) => e.dept1 === codeItem.name);
-    }
-    return employees.filter(
-      (e) => e.position && e.position.includes(codeItem.name)
-    );
+  function getDetailListWrapper(codeItem: CodeItem): Employee[] {
+    return getDetailListFromEmployees(employees, type, codeItem);
   }
 
   async function loadPositionDepts(item: CodeItem) {
@@ -347,11 +323,11 @@ export function useCodeTab({
     // computed
     sortedCodes,
     // actions
-    toggleSort,
+    toggleSort: toggleSortHandler,
     startEditRow,
     saveEditRow,
     handleAdd,
-    getDetailList,
+    getDetailList: getDetailListWrapper,
     loadPositionDepts,
     handleSave,
   };

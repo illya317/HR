@@ -105,11 +105,6 @@ Company → Department → PositionDescription → Position → Employee → Emp
 - 搜索 → `useSearch` hook 或 `<SearchBox>` 组件
 - 当前用户类型 → `import { SessionUser } from "@/lib/types"`，禁止页面内重复定义 `interface User`
 
-## 子 Agent
-
-- 复杂任务优先拆 Sub Agent 并行执行
-- **分配子 Agent 时必须告知 `@SUBAGENT.md`**
-
 ---
 
 # lib/ 工具模块
