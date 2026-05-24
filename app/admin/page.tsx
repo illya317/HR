@@ -34,8 +34,8 @@ export default function AdminPage() {
       .then((r) => r.json())
       .then((data) => {
         const u = data.user;
-        if (!u?.isWorkListAdmin && !u?.isAnyGroupAdmin) {
-          router.push("/reports");
+        if (!u?.canAccessAdmin) {
+          router.push("/portal");
           return;
         }
         setUser(u);

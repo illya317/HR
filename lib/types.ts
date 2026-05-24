@@ -11,6 +11,9 @@ export interface SessionUser {
   canAccessHR?: boolean;
   canAccessWorks?: boolean;
   canAccessFinance?: boolean;
+  canAccessAdmin?: boolean;
+  isActiveEmployee?: boolean;
+  employeeId?: string | null;
   company?: string | null;
   managementGroup?: string | null;
   departmentId?: number;
