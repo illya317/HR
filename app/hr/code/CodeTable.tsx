@@ -1,7 +1,7 @@
 "use client";
 
-import DetailModal from "@/app/components/DetailModal";
 import { isBio, isPharma } from "@/lib/company";
+import { EditRow, PersonListModal, PositionDeptModal } from "./CodeEditRow";
 
 import type { HRUser as User } from "@/app/hr/types";
 import type { Employee, CodeItem } from "@/app/hr/code/useCodeTab";
@@ -87,64 +87,61 @@ export default function CodeTable({
     const isEditing = editRow === item.code;
     const count = stats[item.code] || 0;
     const isSelected = selectedCode === item.code;
+
+    if (isEditing) {
+      return (
+        <EditRow
+          key={item.code}
+          item={item}
+          editCodeValue={editCodeValue}
+          setEditCodeValue={setEditCodeValue}
+          editNameValue={editNameValue}
+          setEditNameValue={setEditNameValue}
+          count={count}
+          selectedCode={selectedCode}
+          setDetailModal={setDetailModal}
+        />
+      );
+    }
+
     return (
       <tr
         key={item.code}
         className={`border-b last:border-0 hover:bg-gray-50 ${isSelected ? "bg-emerald-50" : ""}`}
       >
         <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
-          {isEditing ? (
-            <input
-              value={editCodeValue}
-              onChange={(e) =>
-                setEditCodeValue(e.target.value)
-              }
-              className="w-full rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-            />
-          ) : (
-            <span
-              className={
-                onSelect
-                  ? "cursor-pointer hover:text-emerald-600"
-                  : ""
-              }
-              onClick={() => {
-                if (onSelect) onSelect(item.code);
-              }}
-            >
-              {item.code}
-            </span>
-          )}
+          <span
+            className={
+              onSelect
+                ? "cursor-pointer hover:text-emerald-600"
+                : ""
+            }
+            onClick={() => {
+              if (onSelect) onSelect(item.code);
+            }}
+          >
+            {item.code}
+          </span>
         </td>
         <td className="whitespace-nowrap px-2 py-1.5 text-gray-700">
-          {isEditing ? (
-            <input
-              value={editNameValue}
-              onChange={(e) =>
-                setEditNameValue(e.target.value)
-              }
-              className="w-full rounded border border-emerald-400 px-1 py-0.5 text-xs focus:outline-none"
-            />
-          ) : (
-            <span
-              className="cursor-pointer hover:text-emerald-600"
-              onClick={() =>
-                editMode && user.canAccessHR
-                  ? startEditRow(item)
-                  : onSelect
-                    ? onSelect(item.code)
-                    : type === "position"
-                      ? loadPositionDepts(item)
-                      : setDetailModal({
-                          open: true,
-                          code: item.code,
-                          name: item.name,
-                        })
-              }
-            >
-              {item.name || "-"}
-            </span>
-          )}
+          <span
+            className="cursor-pointer hover:text-emerald-600"
+            onClick={() =>
+              editMode && user.canAccessHR
+                ? startEditRow(item)
+                : onSelect
+                  ? onSelect(item.code)
+                  : type === "position"
+                    ? loadPositionDepts(item)
+                    : setDetailModal({
+                        open: true,
+                        code: item.code,
+                        name: item.name,
+                      })
+            }
+          >
+            {item.name || "-"}
+          </span>
         </td>
         <td className="whitespace-nowrap px-2 py-1.5 text-right text-gray-700">
           <span
@@ -327,77 +324,16 @@ export default function CodeTable({
         </tbody>
       </table>
 
-      <DetailModal
-        open={!!detailModal?.open}
-        title={`${detailModal?.name || ""} — 人员名单`}
-        onClose={() => setDetailModal(null)}
-      >
-        {(() => {
-          if (!detailModal) return null;
-          const list = getDetailList({
-            code: detailModal.code,
-            name: detailModal.name,
-          });
-          if (list.length === 0)
-            return <p className="text-sm text-gray-500">暂无人员</p>;
-          return (
-            <table className="w-full text-xs">
-              <thead className="border-b bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">
-                    姓名
-                  </th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">
-                    部门
-                  </th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">
-                    岗位
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((emp) => (
-                  <tr
-                    key={emp.id}
-                    className="border-b last:border-0 hover:bg-gray-50"
-                  >
-                    <td className="px-3 py-2 text-gray-700">{emp.name}</td>
-                    <td className="px-3 py-2 text-gray-700">
-                      {emp.dept1 || "-"}
-                    </td>
-                    <td className="px-3 py-2 text-gray-700">
-                      {emp.position || "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          );
-        })()}
-      </DetailModal>
+      <PersonListModal
+        detailModal={detailModal}
+        setDetailModal={setDetailModal}
+        getDetailList={getDetailList}
+      />
 
-      <DetailModal
-        open={!!positionDeptModal?.open}
-        title={`${positionDeptModal?.name || ""} — 所属部门`}
-        onClose={() => setPositionDeptModal(null)}
-        maxWidth="max-w-md"
-      >
-        {positionDeptModal &&
-        positionDeptModal.departments.length === 0 ? (
-          <p className="text-sm text-gray-500">暂无关联部门</p>
-        ) : (
-          <ul className="space-y-2">
-            {positionDeptModal?.departments.map((dept) => (
-              <li
-                key={dept}
-                className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700"
-              >
-                {dept}
-              </li>
-            ))}
-          </ul>
-        )}
-      </DetailModal>
+      <PositionDeptModal
+        positionDeptModal={positionDeptModal}
+        setPositionDeptModal={setPositionDeptModal}
+      />
     </>
   );
 }

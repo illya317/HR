@@ -31,6 +31,32 @@
 | `FilterBar` | `@/app/components/FilterBar` |
 | `DataTable` | `@/app/components/DataTable` |
 
+## 代码规范
+
+- **超 300 行必须拆分**：数据逻辑 → `useXxx.ts`，UI 子块 → 独立组件
+- **搜索统一走 `lib/search`**：`matchEmployee` / `getInitials`（自动带拼音），不要直接 import `pinyin-pro`
+
+## 项目结构
+
+```
+app/hr/              人事管理（主模块）
+  analytics/          人力分析（5个tab：员工/部门/岗位/离职/合同）
+    shared/            共享组件（StatCard）
+    employee/          员工分析（useEmployeeData, CrossMatrix, constants）
+    position/          岗位分析（usePositionData, DeptBarChart, PositionTable）
+  code/               编码管理（CodeTab, CodeTable, useCodeTab, useCodeHelpers）
+  tabs/               各实体的Tab组件（*Tab.tsx, GenericTableTab, EditableTable）
+  components/         HR专用UI（FKInput, FilterModal, SearchInput等）
+  hooks/              HR专用hooks（useGenericTab）
+app/admin/           管理后台
+app/works/           工作清单
+app/reports/         工作汇报
+app/settings/        个人设置
+api/hr/              HR API（CRUD）
+api/admin/           管理后台API
+lib/                 共享工具库（auth, search, company, period, prisma等）
+```
+
 ## 部署
 
 ```bash
