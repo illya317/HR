@@ -86,7 +86,7 @@ const companyFields: FieldConfig[] = [
   { key: "registeredDate", label: "注册时间", editable: true, type: "date" },
   { key: "legalPerson", label: "法定代表人", editable: true },
   { key: "queryGroup", label: "查询分组", editable: true, type: "number" },
-  { key: "sortOrder", label: "排序", editable: true, type: "number" },
+
 ];
 
 export const companyConfig: TabConfig = {

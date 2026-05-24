@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get("keyword") || "";
 
-  let employees = await prisma.employee.findMany({ orderBy: { employeeId: "asc" } });
+  let employees = await prisma.employee.findMany({ orderBy: { id: "asc" } });
   if (keyword) employees = employees.filter((e) => matchAnyField(e, keyword, "Employee"));
 
   // FK 显示名填充（关联账号等）

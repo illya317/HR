@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
-  const companies = await prisma.company.findMany({ orderBy: { sortOrder: "asc" } });
+  const companies = await prisma.company.findMany({ orderBy: { id: "asc" } });
   return NextResponse.json({
     companies: companies.map((r: any) => ({
       id: r.id,
@@ -28,7 +28,6 @@ export async function GET(request: Request) {
       registeredAddress: r.registeredAddress,
       registeredDate: r.registeredDate,
       legalPerson: r.legalPerson,
-      sortOrder: r.sortOrder,
     })),
   });
 }
@@ -49,7 +48,7 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json();
-  const { id, code, name, fullName, registeredCapital, unifiedCode, bankName, registeredAddress, registeredDate, legalPerson, sortOrder } = body;
+  const { id, code, name, fullName, registeredCapital, unifiedCode, bankName, registeredAddress, registeredDate, legalPerson } = body;
   if (!code || !name) return NextResponse.json({ error: "缺少 code/name" }, { status: 400 });
 
   const dataFields = {
@@ -60,7 +59,6 @@ export async function PUT(request: Request) {
     registeredAddress: registeredAddress ?? null,
     registeredDate: registeredDate ?? null,
     legalPerson: legalPerson ?? null,
-    sortOrder: sortOrder ?? 0,
   };
 
   if (id) {
