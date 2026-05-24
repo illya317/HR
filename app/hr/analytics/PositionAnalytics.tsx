@@ -134,11 +134,25 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
       curr.positions++;
     });
 
-    // 构建 children 索引用于子树汇总
-    const childrenMap = new Map<number, number[]>();
-    for (const [id] of deptDirect) {
-      childrenMap.set(id, []);
+    // 补全祖先部门（可能有子部门岗位但本身无直接岗位，如 L1 事业部）
+    for (const [id, d] of [...deptDirect.entries()]) {
+      let parentId = d.parentId;
+      while (parentId !== null && !deptDirect.has(parentId)) {
+        const pd = departments.find((dd) => dd.id === parentId);
+        if (!pd) break;
+        deptDirect.set(parentId, {
+          name: pd.name,
+          level: pd.level,
+          parentId: pd.parentId ?? null,
+          actual: 0, headcount: 0, positions: 0,
+        });
+        parentId = pd.parentId ?? null;
+      }
     }
+
+    // 构建 children 索引（包含全部部门，不仅是直接有岗位的）
+    const childrenMap = new Map<number, number[]>();
+    for (const [id] of deptDirect) childrenMap.set(id, []);
     for (const [id, d] of deptDirect) {
       if (d.parentId !== null && deptDirect.has(d.parentId)) {
         childrenMap.get(d.parentId)!.push(id);
@@ -163,6 +177,7 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
       .map(([id, d]) => {
         const subtree = aggregate(id);
         return {
+          id,
           name: d.name,
           level: d.level,
           actual: subtree.actual,
@@ -171,7 +186,7 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
           diff: subtree.actual - subtree.headcount,
         };
       })
-      .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+      .sort((a, b) => a.id - b.id);
 
     const deptByLevel = {
       l1: deptEntries.filter((d) => d.level === 1),
