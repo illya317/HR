@@ -136,7 +136,7 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
             条形宽度与数值成正比，可跨部门对比
           </span>
         </h3>
-        <div className="max-h-[500px] overflow-y-auto space-y-2">
+        <div className="max-h-[500px] overflow-y-auto space-y-3">
           {(() => {
             const globalMax = Math.max(...stats.deptEntries.map(d => Math.max(d.headcount, d.actual)), 1);
             return stats.deptEntries.map((d) => {
@@ -146,24 +146,22 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
               const textColor = d.diff > 0 ? "text-rose-600" : d.diff < 0 ? "text-amber-600" : "text-emerald-600";
               return (
                 <div key={d.name} className="group">
-                  <div className="flex items-center gap-3">
-                    <span className="w-36 shrink-0 text-xs text-gray-700 truncate" title={d.name}>{d.name}</span>
-                    <div className="flex-1 flex items-center gap-3">
-                      {/* 编制条（灰色底） */}
-                      <div className="flex-1 h-5 bg-gray-100 rounded relative overflow-hidden">
+                  <div className="flex items-center gap-4 py-0.5">
+                    <span className="w-36 shrink-0 text-sm text-gray-700 truncate" title={d.name}>{d.name}</span>
+                    <div className="flex-1 flex items-center gap-4">
+                      <div className="flex-1 h-6 bg-gray-100 rounded relative overflow-hidden">
                         {d.headcount > 0 && (
                           <div
                             className="absolute inset-y-0 left-0 border-r-2 border-dashed border-gray-300 bg-gray-200 rounded-l"
                             style={{ width: `${hcPct}%` }}
                           />
                         )}
-                        {/* 实际人数条（彩色叠加） */}
                         <div
                           className={`absolute inset-y-0 left-0 ${barColor} rounded opacity-90`}
                           style={{ width: `${acPct}%` }}
                         />
                       </div>
-                      <span className="w-16 text-right text-xs text-gray-500">
+                      <span className="w-16 text-right text-sm text-gray-500">
                         <span className="font-medium text-gray-700">{d.actual}</span>
                         {d.headcount > 0 && <span className="text-gray-400"> / {d.headcount}</span>}
                       </span>
@@ -179,10 +177,10 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
             });
           })()}
           {stats.deptEntries.length === 0 && (
-            <p className="text-xs text-gray-400 text-center py-8">暂无数据</p>
+            <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>
           )}
         </div>
-        <div className="mt-3 flex items-center gap-4 text-[10px] text-gray-400 border-t pt-3">
+        <div className="mt-3 flex items-center gap-4 text-xs text-gray-400 border-t pt-3">
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-400 inline-block" /> 满编/平衡</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-400 inline-block" /> 缺编</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-rose-400 inline-block" /> 超编</span>
