@@ -20,6 +20,61 @@ function StatCard({ label, value, sub, color = "emerald" }: { label: string; val
   );
 }
 
+const LEVEL_LABEL: Record<number, string> = { 1: "L1 事业部", 2: "L2 部门", 3: "L3 子部门" };
+const LEVEL_COLOR: Record<number, string> = { 1: "text-blue-600", 2: "text-emerald-600", 3: "text-amber-600" };
+
+function DeptBarRow({ d, globalMax }: { d: { name: string; level: number; actual: number; headcount: number; diff: number }; globalMax: number }) {
+  const hcPct = Math.round((d.headcount / globalMax) * 100);
+  const acPct = Math.round((d.actual / globalMax) * 100);
+  const barColor = d.diff > 0 ? "bg-rose-400" : d.diff < 0 ? "bg-amber-400" : "bg-emerald-400";
+  const textColor = d.diff > 0 ? "text-rose-600" : d.diff < 0 ? "text-amber-600" : "text-emerald-600";
+  return (
+    <div className="flex items-center gap-4 py-0.5">
+      <span className="w-36 shrink-0 text-sm text-gray-700 truncate" title={d.name}>{d.name}</span>
+      <div className="flex-1 flex items-center gap-4">
+        <div className="flex-1 h-6 bg-gray-100 rounded relative overflow-hidden">
+          {d.headcount > 0 && (
+            <div
+              className="absolute inset-y-0 left-0 border-r-2 border-dashed border-gray-300 bg-gray-200 rounded-l"
+              style={{ width: `${hcPct}%` }}
+            />
+          )}
+          <div
+            className={`absolute inset-y-0 left-0 ${barColor} rounded opacity-90`}
+            style={{ width: `${acPct}%` }}
+          />
+        </div>
+        <span className="w-16 text-right text-sm text-gray-500">
+          <span className="font-medium text-gray-700">{d.actual}</span>
+          {d.headcount > 0 && <span className="text-gray-400"> / {d.headcount}</span>}
+        </span>
+        <span className={`w-12 text-right text-xs font-medium ${textColor}`}>
+          {d.headcount > 0 ? (
+            d.diff > 0 ? `+${d.diff}` : d.diff === 0 ? "满" : d.diff
+          ) : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LevelSection({ level, entries, globalMax }: { level: number; entries: any[]; globalMax: number }) {
+  if (entries.length === 0) return null;
+  return (
+    <div className="mb-5">
+      <h4 className={`text-sm font-semibold mb-2 ${LEVEL_COLOR[level] || "text-gray-600"}`}>
+        {LEVEL_LABEL[level] || `L${level}`}
+        <span className="ml-2 text-xs font-normal text-gray-400">{entries.length} 个部门</span>
+      </h4>
+      <div className="space-y-2">
+        {entries.map((d: any) => (
+          <DeptBarRow key={d.name} d={d} globalMax={globalMax} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function PositionAnalytics({ positions, edps, departments }: { positions: Position[]; edps: EDP[]; departments: Department[] }) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<"code" | "name" | "actual" | "headcount" | "diff" | "dept">("actual");
@@ -28,7 +83,6 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
   const activeEdps = useMemo(() => edps.filter((e) => !e.endDate), [edps]);
 
   const enriched = useMemo(() => {
-    // 每个岗位的实际人数（仅在职、主岗）
     const actualMap = new Map<number, number>();
     const posPeople = new Map<number, Set<number>>();
     activeEdps.forEach((e) => {
@@ -61,23 +115,34 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
     const underStaffed = enriched.filter((p) => p.headcount > 0 && p.actual < p.headcount).length;
     const hasHeadcount = enriched.filter((p) => p.headcount > 0).length;
 
-    // 部门维度：每个部门的实际人数 vs 编制
-    const deptMap = new Map<string, { actual: number; headcount: number; positions: number }>();
+    // 按部门ID聚合（含层级），用于 L1/L2/L3 分组对比
+    const deptMap = new Map<number, { name: string; level: number; actual: number; headcount: number; positions: number }>();
     enriched.forEach((p) => {
-      const dn = p.departmentName || "未分配";
-      const curr = deptMap.get(dn) || { actual: 0, headcount: 0, positions: 0 };
+      const deptId = p.departmentId || 0;
+      const dept = departments.find((d) => d.id === deptId);
+      const curr = deptMap.get(deptId) || {
+        name: dept?.name || "未分配",
+        level: dept?.level || 0,
+        actual: 0, headcount: 0, positions: 0,
+      };
       curr.actual += p.actual;
       curr.headcount += p.headcount || 0;
       curr.positions++;
-      deptMap.set(dn, curr);
+      deptMap.set(deptId, curr);
     });
 
-    const deptEntries = [...deptMap.entries()]
-      .map(([name, d]) => ({ name, ...d, diff: d.actual - d.headcount }))
-      .sort((a, b) => b.positions - a.positions);
+    const deptEntries = [...deptMap.values()]
+      .map((d) => ({ ...d, diff: d.actual - d.headcount }))
+      .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
 
-    return { total, occupied, vacant, overStaffed, underStaffed, hasHeadcount, deptEntries };
-  }, [enriched]);
+    const deptByLevel = {
+      l1: deptEntries.filter((d) => d.level === 1),
+      l2: deptEntries.filter((d) => d.level === 2),
+      l3: deptEntries.filter((d) => d.level === 3),
+    };
+
+    return { total, occupied, vacant, overStaffed, underStaffed, hasHeadcount, deptByLevel, allDeptEntries: deptEntries };
+  }, [enriched, departments]);
 
   const filtered = useMemo(() => {
     let list = [...enriched];
@@ -117,6 +182,8 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
     return sortDesc ? "↓" : "↑";
   };
 
+  const globalMax = Math.max(...stats.allDeptEntries.map(d => Math.max(d.headcount, d.actual)), 1);
+
   return (
     <div className="space-y-6">
       {/* Stats */}
@@ -128,58 +195,23 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
         <StatCard label="缺编" value={stats.underStaffed} color="purple" sub="实际 < 编制" />
       </div>
 
-      {/* 部门编制对比 */}
+      {/* 部门编制对比 — 按层级分组 */}
       <div className="bg-white rounded-lg shadow-sm p-5">
         <h3 className="text-sm font-semibold text-gray-700 mb-4">
           各部门编制 vs 实际
           <span className="ml-2 text-xs font-normal text-gray-400">
-            条形宽度与数值成正比，可跨部门对比
+            条形宽度跨层级统一比例
           </span>
         </h3>
-        <div className="max-h-[500px] overflow-y-auto space-y-3">
-          {(() => {
-            const globalMax = Math.max(...stats.deptEntries.map(d => Math.max(d.headcount, d.actual)), 1);
-            return stats.deptEntries.map((d) => {
-              const hcPct = Math.round((d.headcount / globalMax) * 100);
-              const acPct = Math.round((d.actual / globalMax) * 100);
-              const barColor = d.diff > 0 ? "bg-rose-400" : d.diff < 0 ? "bg-amber-400" : "bg-emerald-400";
-              const textColor = d.diff > 0 ? "text-rose-600" : d.diff < 0 ? "text-amber-600" : "text-emerald-600";
-              return (
-                <div key={d.name} className="group">
-                  <div className="flex items-center gap-4 py-0.5">
-                    <span className="w-36 shrink-0 text-sm text-gray-700 truncate" title={d.name}>{d.name}</span>
-                    <div className="flex-1 flex items-center gap-4">
-                      <div className="flex-1 h-6 bg-gray-100 rounded relative overflow-hidden">
-                        {d.headcount > 0 && (
-                          <div
-                            className="absolute inset-y-0 left-0 border-r-2 border-dashed border-gray-300 bg-gray-200 rounded-l"
-                            style={{ width: `${hcPct}%` }}
-                          />
-                        )}
-                        <div
-                          className={`absolute inset-y-0 left-0 ${barColor} rounded opacity-90`}
-                          style={{ width: `${acPct}%` }}
-                        />
-                      </div>
-                      <span className="w-16 text-right text-sm text-gray-500">
-                        <span className="font-medium text-gray-700">{d.actual}</span>
-                        {d.headcount > 0 && <span className="text-gray-400"> / {d.headcount}</span>}
-                      </span>
-                      <span className={`w-12 text-right text-xs font-medium ${textColor}`}>
-                        {d.headcount > 0 ? (
-                          d.diff > 0 ? `+${d.diff}` : d.diff === 0 ? "满" : d.diff
-                        ) : "—"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            });
-          })()}
-          {stats.deptEntries.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>
-          )}
-        </div>
+
+        <LevelSection level={1} entries={stats.deptByLevel.l1} globalMax={globalMax} />
+        <LevelSection level={2} entries={stats.deptByLevel.l2} globalMax={globalMax} />
+        <LevelSection level={3} entries={stats.deptByLevel.l3} globalMax={globalMax} />
+
+        {stats.allDeptEntries.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>
+        )}
+
         <div className="mt-3 flex items-center gap-4 text-xs text-gray-400 border-t pt-3">
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-400 inline-block" /> 满编/平衡</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-400 inline-block" /> 缺编</span>
@@ -202,7 +234,7 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
           <span className="text-xs text-gray-400">共 {filtered.length} 个岗位</span>
         </div>
 
-        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-white">
               <tr className="border-b text-gray-500">
