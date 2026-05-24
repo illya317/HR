@@ -7,8 +7,15 @@ export async function GET(request: Request) {
   const { error, status } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
-  // 获取所有员工（含岗位信息）
+  // 仅获取在职员工（含岗位信息）
+  const activeEmpIds = new Set(
+    (await prisma.employment.findMany({
+      where: { isActive: true },
+      select: { employeeId: true },
+    })).map((e) => e.employeeId)
+  );
   const employees = await prisma.employee.findMany({
+    where: { id: { in: [...activeEmpIds] } },
     orderBy: [{ employeeId: "asc" }],
     include: {
       positions: {
