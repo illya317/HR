@@ -79,6 +79,7 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<"code" | "name" | "actual" | "headcount" | "diff" | "dept">("actual");
   const [sortDesc, setSortDesc] = useState(true);
+  const [filterL1, setFilterL1] = useState<number | null>(null);
 
   const activeEdps = useMemo(() => edps.filter((e) => !e.endDate), [edps]);
 
@@ -197,6 +198,49 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
     return { total, occupied, vacant, overStaffed, underStaffed, hasHeadcount, deptByLevel, deptEntries };
   }, [enriched, departments]);
 
+  // L1 子树索引 + 筛选
+  const { l1List, filteredDept } = useMemo(() => {
+    const l1Depts = stats.deptByLevel.l1;
+    // 为每个 L1 构建子树 ID 集合
+    const subtreeOf = new Map<number, Set<number>>();
+    for (const l1 of l1Depts) {
+      const subtree = new Set<number>();
+      function collect(ids: number[]) {
+        for (const id of ids) subtree.add(id);
+      }
+      // 从 deptEntries 中找所有在该 L1 子树下的部门（父链追溯）
+      for (const d of stats.deptEntries) {
+        // 查找该部门是否在 L1 子树下
+        const allDeptIds = new Set(stats.deptEntries.map(e => e.id));
+        if (d.id === l1.id) { subtree.add(d.id); continue; }
+        if (d.level > 1 && allDeptIds.has(d.id)) {
+          // 通过 departments 的 parentId 追溯，检查是否属于该 L1
+          let curr = departments.find(dd => dd.id === d.id);
+          while (curr?.parentId) {
+            if (curr.parentId === l1.id) { subtree.add(d.id); break; }
+            curr = departments.find(dd => dd.id === curr!.parentId);
+          }
+        }
+      }
+      subtreeOf.set(l1.id, subtree);
+    }
+
+    if (filterL1 !== null) {
+      const subtree = subtreeOf.get(filterL1) || new Set();
+      subtree.add(filterL1);
+      return {
+        l1List: l1Depts,
+        filteredDept: {
+          l1: l1Depts.filter(d => d.id === filterL1),
+          l2: stats.deptByLevel.l2.filter(d => subtree.has(d.id)),
+          l3: stats.deptByLevel.l3.filter(d => subtree.has(d.id)),
+          entries: stats.deptEntries.filter(d => subtree.has(d.id)),
+        },
+      };
+    }
+    return { l1List: l1Depts, filteredDept: { ...stats.deptByLevel, entries: stats.deptEntries } };
+  }, [stats, filterL1, departments]);
+
   const filtered = useMemo(() => {
     let list = [...enriched];
     if (search.trim()) {
@@ -235,7 +279,7 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
     return sortDesc ? "↓" : "↑";
   };
 
-  const globalMax = Math.max(...stats.deptEntries.map(d => Math.max(d.headcount, d.actual)), 1);
+  const globalMax = Math.max(...filteredDept.entries.map(d => Math.max(d.headcount, d.actual)), 1);
 
   return (
     <div className="space-y-6">
@@ -250,18 +294,30 @@ export default function PositionAnalytics({ positions, edps, departments }: { po
 
       {/* 部门编制对比 — 按层级分组 */}
       <div className="bg-white rounded-lg shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">
-          各部门编制 vs 实际
-          <span className="ml-2 text-xs font-normal text-gray-400">
-            条形宽度跨层级统一比例
-          </span>
-        </h3>
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className="text-sm font-semibold text-gray-700">
+            各部门编制 vs 实际
+            <span className="ml-2 text-xs font-normal text-gray-400">
+              条形宽度跨层级统一比例
+            </span>
+          </h3>
+          <select
+            value={filterL1 ?? ""}
+            onChange={(e) => setFilterL1(e.target.value ? Number(e.target.value) : null)}
+            className="ml-auto px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-400"
+          >
+            <option value="">全部事业部</option>
+            {l1List.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
 
-        <LevelSection level={1} entries={stats.deptByLevel.l1} globalMax={globalMax} />
-        <LevelSection level={2} entries={stats.deptByLevel.l2} globalMax={globalMax} />
-        <LevelSection level={3} entries={stats.deptByLevel.l3} globalMax={globalMax} />
+        <LevelSection level={1} entries={filteredDept.l1} globalMax={globalMax} />
+        <LevelSection level={2} entries={filteredDept.l2} globalMax={globalMax} />
+        <LevelSection level={3} entries={filteredDept.l3} globalMax={globalMax} />
 
-        {stats.deptEntries.length === 0 && (
+        {filteredDept.entries.length === 0 && (
           <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>
         )}
 
