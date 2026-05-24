@@ -5,7 +5,7 @@ import type { Department, EDP } from "./useAnalyticsData";
 
 function DeptNode({ dept, allDepts, edps, level = 0 }: { dept: Department; allDepts: Department[]; edps: EDP[]; level?: number }) {
   const [collapsed, setCollapsed] = useState(false);
-  const children = allDepts.filter((d) => d.parentId === dept.id).sort((a, b) => a.code.localeCompare(b.code));
+  const children = allDepts.filter((d) => d.parentId === dept.id).sort((a, b) => a.id - b.id);
   const hasChildren = children.length > 0;
 
   const deptEdps = edps.filter((e) => e.departmentId === dept.id);
@@ -93,9 +93,7 @@ export default function DepartmentAnalytics({ departments, edps }: { departments
   }, [departments, activeEdps]);
 
   const rootDepts = useMemo(() => {
-    // 根节点：EXC（轮执委员会）优先，其余按code排序
-    const rootOrder = (code: string) => (code.startsWith("EXC") ? 0 : 1);
-    let roots = departments.filter((d) => !d.parentId).sort((a, b) => rootOrder(a.code) - rootOrder(b.code) || a.code.localeCompare(b.code));
+    let roots = departments.filter((d) => !d.parentId).sort((a, b) => a.id - b.id);
     if (search.trim()) {
       const q = search.toLowerCase();
       const matched = new Set<number>();
