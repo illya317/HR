@@ -21,47 +21,62 @@
 | `@/lib/period` | 周期计算 | `getCurrentPeriod`, `getPeriodRange`, `getPreviousPeriod`, `getPeriodOptions`, `getPeriodTypeName`, `PeriodType` |
 | `@/lib/prisma` | 数据库 | `import { prisma } from "@/lib/prisma"` |
 
-## 共享 UI 组件
+## 共享模块
 
-| 组件 | 导入 |
-|------|------|
-| `ConfirmModal` | `@/app/components/ConfirmModal` |
-| `EditToolbar` | `@/app/components/EditToolbar` |
-| `Toast` + `useToast` | `@/app/components/Toast` + `@/app/hooks/useToast` |
-| `FilterBar` | `@/app/components/FilterBar` |
-| `DataTable` | `@/app/components/DataTable` |
+| 模块 | 用途 | 关键导出 |
+|------|------|----------|
+| `lib/company` | 公司常量 | `isPharma`, `isBio`, `CODE_TO_NAME`, `resolveCompanyFilter` |
+| `lib/search` | 拼音搜索 | `matchEmployee`, `getInitials`（唯一 import `pinyin-pro` 的地方） |
+| `lib/auth` | 认证鉴权 | `authenticate`, `checkPermission`, `checkHRAccess` |
+| `lib/period` | 周期计算 | `getCurrentPeriod`, `getPeriodRange`, `getPeriodOptions` |
+| `lib/crud` | CRUD模板 | `handleCreate`, `handleUpdate`, `handleDelete` |
+| `lib/prisma` | 数据库 | `import { prisma } from "@/lib/prisma"` |
+| `lib/types` | 共享类型 | `SessionUser`（全站统一，禁止各处重复定义） |
+
+## 共享组件/ Hooks
+
+| 位置 | 导入示例 |
+|------|----------|
+| `app/components/` | ConfirmModal, DetailModal, EditToolbar, Toast, SearchBox, FilterBar, AutoSizeInput, EntitySearchInput... |
+| `app/hooks/` | `useToast`, `useSearch` |
 
 ## 代码规范
 
-- **超 300 行必须拆分**：数据逻辑 → `useXxx.ts`，UI 子块 → 独立组件
-- **搜索统一走 `lib/search`**：`matchEmployee` / `getInitials`（自动带拼音），不要直接 import `pinyin-pro`
+- **超 300 行必须拆分**：数据逻辑 → `useXxx.ts`，UI → 子组件
+- **搜索统一走 `lib/search`**：自带拼音，禁止直接 import `pinyin-pro`
+- **API 路由统一走 `api/hr/`**（11 个子模块），旧 `api/employees/` 等已删
 
 ## 项目结构
 
 ```
-app/hr/              人事管理（主模块）
-  analytics/          人力分析（5个tab：员工/部门/岗位/离职/合同）
-    shared/            共享组件（StatCard）
-    employee/          员工分析（useEmployeeData, CrossMatrix, constants）
-    position/          岗位分析（usePositionData, DeptBarChart, PositionTable）
-  code/               编码管理（CodeTab, CodeTable, useCodeTab, useCodeHelpers）
-  tabs/               各实体的Tab组件（*Tab.tsx, GenericTableTab, EditableTable）
-  components/         HR专用UI（FKInput, FilterModal, SearchInput等）
-  hooks/              HR专用hooks（useGenericTab）
-app/admin/           管理后台
-app/works/           工作清单
-app/reports/         工作汇报
-app/settings/        个人设置
-api/hr/              HR API（CRUD）
-api/admin/           管理后台API
-lib/                 共享工具库（auth, search, company, period, prisma等）
+app/
+├── hr/                         人事管理（主模块）
+│   ├── page.tsx, tabConfigs.ts, types.ts
+│   ├── tabs/           (15)    EmployeeTab, GenericTableTab, EditableTable...
+│   ├── components/      (6)    FKInput, FilterModal, AutoSizeInput...
+│   ├── hooks/           (1)    useGenericTab
+│   ├── code/            (5)    CodeTab, CodeTable, useCodeTab, useCodeHelpers...
+│   └── analytics/       (5 tab) employee/, position/, shared/StatCard
+├── admin/                      管理后台
+│   ├── page.tsx, types.ts, lib.ts
+│   ├── tabs/           (6)    ByUserTab, ByPermissionTab...
+│   ├── components/     (2)    UserPermCard, PermissionDrilldown
+│   └── hooks/          (5)    useByUserTab, useByPermissionTab...
+├── components/         (13)   项目通用组件 (Toast, SearchBox, ConfirmModal...)
+├── hooks/               (2)   useToast, useSearch
+├── works/ reports/ settings/  各独立页面
+├── api/
+│   ├── hr/            (11)   HR CRUD 路由（主入口）
+│   ├── admin/          (9)   管理后台路由
+│   └── auth/ works/ reports/  其他路由
+└── lib/                      服务端工具 (auth, search, company, period, prisma)
 ```
 
 ## 部署
 
 ```bash
-npm run build && ./deploy.sh          # 普通部署
-npm run build && ./deploy.sh --push-db  # schema变更时
+npm run build && ./deploy.sh              # 普通
+npm run build && ./deploy.sh --push-db     # schema变更
 ```
 
-Schema 改了必须先 `npx prisma db push`，再 `npm run build`。
+Schema 变更：先 `npx prisma db push`，再 build。
