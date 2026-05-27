@@ -1,0 +1,22 @@
+#!/bin/sh
+# Pre-commit hook: block commit if lint / type-check / build fails
+
+echo "→ Running lint (max-warnings=0)..."
+npm run lint -- --max-warnings=0 || {
+  echo "✗ Lint failed. Commit aborted."
+  exit 1
+}
+
+echo "→ Running type check..."
+npx tsc --noEmit || {
+  echo "✗ Type check failed. Commit aborted."
+  exit 1
+}
+
+echo "→ Running build..."
+npm run build || {
+  echo "✗ Build failed. Commit aborted."
+  exit 1
+}
+
+echo "✓ Pre-commit checks passed."
