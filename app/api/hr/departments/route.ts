@@ -7,11 +7,14 @@ import { prisma } from "@/lib/prisma";
 import { matchAnyField } from "@/lib/search-schema";
 import { snapshotHistory } from "@/lib/history";
 import { isPharma } from "@/lib/company";
+import { DepartmentCreateSchema, parseJson } from "@/lib/schemas";
 
 export const GET = withHRAccess(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get("keyword") || "";
   const company = searchParams.get("company") || "";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(500, Math.max(1, parseInt(searchParams.get("pageSize") || "50", 10)));
 
   const where: any = {};
   if (company) where.company = company;
@@ -43,7 +46,11 @@ export const GET = withHRAccess(async (request: Request) => {
     children: (d.children as any[]).map((c: any) => ({ id: c, name: c })),
   }));
   if (keyword) departments = departments.filter((d) => matchAnyField(d, keyword, "Department"));
-  return NextResponse.json({ departments });
+
+  const total = departments.length;
+  const start = (page - 1) * pageSize;
+  const paged = departments.slice(start, start + pageSize);
+  return NextResponse.json({ departments: paged, total });
 });
 
 export async function POST(request: Request) {

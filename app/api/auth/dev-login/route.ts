@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createToken, checkPermission } from "@/lib/auth";
 import { checkBruteForce, recordAttempt } from "@/lib/security";
+import { LoginSchema, parseJson } from "@/lib/schemas";
 
 export async function POST(request: Request) {
   // 非浏览器拦截
@@ -12,7 +13,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "仅限浏览器访问" }, { status: 403 });
   }
 
-  const { username, password } = await request.json();
+  const parsed = await parseJson(request, LoginSchema);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+  const { username, password } = parsed.data;
   const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
 
   // 暴力破解检测
@@ -76,9 +81,10 @@ export async function POST(request: Request) {
     },
   });
 
+  const isProduction = process.env.NODE_ENV === "production";
   response.cookies.set("token", token, {
     httpOnly: true,
-    secure: false,
+    secure: isProduction,
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
@@ -89,9 +95,10 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const response = NextResponse.json({ success: true });
+  const isProduction = process.env.NODE_ENV === "production";
   response.cookies.set("token", "", {
     httpOnly: true,
-    secure: false,
+    secure: isProduction,
     sameSite: "lax",
     expires: new Date(0),
     path: "/",

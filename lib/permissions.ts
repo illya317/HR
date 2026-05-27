@@ -27,6 +27,21 @@ export const RES = {
   },
   finance: {
     root: "finance",
+    account: "finance.account",
+    voucher: "finance.voucher",
+    report: "finance.report",
+  },
+  inventory: {
+    root: "inventory",
+    raw: "inventory.raw",
+    packaging: "inventory.packaging",
+    finished: "inventory.finished",
+    report: "inventory.report",
+  },
+  contract: {
+    root: "contract",
+    list: "contract.list",
+    edit: "contract.edit",
   },
 } as const;
 

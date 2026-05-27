@@ -6,6 +6,7 @@ import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { snapshotHistory } from "@/lib/history";
 import { matchAnyField } from "@/lib/search-schema";
+import { ProjectCreateSchema, parseJson } from "@/lib/schemas";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -27,11 +28,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  return handleCreate(request, CONFIG, (body) => {
-    const required = ["name"];
-    for (const f of required) if (!body[f]) return null;
-    return body;
-  });
+  const payload = await authenticate(request);
+  if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
+  if (!(await checkHRAccess(payload.userId))) return NextResponse.json({ error: "无权限" }, { status: 403 });
+
+  const parsed = await parseJson(request, ProjectCreateSchema);
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  return handleCreate(request, CONFIG, () => parsed.data);
 }
 
 

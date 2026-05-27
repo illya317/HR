@@ -1,25 +1,72 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const SCHEMA_PATH = path.join(__dirname, '..', 'prisma', 'schema.prisma');
-const OUTPUT_PATH = path.join(__dirname, '..', 'docs', 'tables.html');
+const SCHEMA_PATH = path.join(__dirname, "..", "prisma", "schema.prisma");
+const OUTPUT_PATH = path.join(__dirname, "..", "docs", "tables.html");
 
 const GROUPS = [
-  { title: '1. System', models: ['User', 'SystemConfig', 'LoginAttempt'] },
-  { title: '2. RBAC', models: ['Resource', 'Role', 'UserResourceRole', 'PositionResourceRole', 'DepartmentResourceRole'] },
-  { title: '3. Reports', models: ['Report', 'ReportItem', 'ReportHistory'] },
-  { title: '4. Tasks', models: ['WorkItem', 'WorkParticipant'] },
-  { title: '5. Roster & Org', models: ['Employee', 'Employment', 'Company', 'CompanyRelation', 'Department', 'Position', 'EDP', 'Project', 'EmployeeProject'] },
-  { title: '6. 岗位说明书', models: ['PositionDescription'] },
-  { title: '7. Edit History', models: ['EditHistory'] },
+  { title: "1. System", models: ["User", "SystemConfig", "LoginAttempt"] },
+  {
+    title: "2. RBAC",
+    models: [
+      "Resource",
+      "Role",
+      "UserResourceRole",
+      "PositionResourceRole",
+      "DepartmentResourceRole",
+    ],
+  },
+  { title: "3. Reports", models: ["Report", "ReportItem", "ReportHistory"] },
+  { title: "4. Tasks", models: ["WorkItem", "WorkParticipant"] },
+  {
+    title: "5. Roster & Org",
+    models: [
+      "Employee",
+      "Employment",
+      "Company",
+      "CompanyRelation",
+      "Department",
+      "Position",
+      "EDP",
+      "Project",
+      "EmployeeProject",
+    ],
+  },
+  { title: "6. 岗位说明书", models: ["PositionDescription"] },
+  { title: "7. Edit History", models: ["EditHistory"] },
+  {
+    title: "8. Finance",
+    models: [
+      "FinanceAccount",
+      "FinancePeriod",
+      "FinanceVoucher",
+      "FinanceVoucherItem",
+      "FinanceAccountBalance",
+    ],
+  },
+  {
+    title: "9. Inventory",
+    models: [
+      "StockRawMaterial",
+      "StockPackaging",
+      "StockFinishedGoods",
+      "StockBatch",
+      "StockOperation",
+      "StockReturn",
+    ],
+  },
+  {
+    title: "10. Contract",
+    models: ["Contract"],
+  },
 ];
 
 // ─── Parse schema.prisma ──────────────────────────────────
 
-const schemaText = fs.readFileSync(SCHEMA_PATH, 'utf8');
+const schemaText = fs.readFileSync(SCHEMA_PATH, "utf8");
 
 // Remove comments that are on their own line (keep inline comments)
-const lines = schemaText.split('\n');
+const lines = schemaText.split("\n");
 
 const models = {};
 let currentModel = null;
@@ -33,31 +80,33 @@ for (let i = 0; i < lines.length; i++) {
       name: modelMatch[1],
       fields: [],
       uniqueConstraints: [], // @@unique
-      indexConstraints: [],  // @@index
+      indexConstraints: [], // @@index
     };
     models[currentModel.name] = currentModel;
     modelOrder.push(currentModel.name);
     continue;
   }
-  if (currentModel && line.trim() === '}') {
+  if (currentModel && line.trim() === "}") {
     currentModel = null;
     continue;
   }
   if (!currentModel) continue;
 
   const trimmed = line.trim();
-  if (!trimmed || trimmed.startsWith('//')) continue;
+  if (!trimmed || trimmed.startsWith("//")) continue;
 
   // Table-level constraints
   const uniqueMatch = trimmed.match(/@@unique\(\[(.*?)\]\)/);
   if (uniqueMatch) {
-    const fields = uniqueMatch[1].split(',').map(s => s.trim());
+    const fields = uniqueMatch[1].split(",").map((s) => s.trim());
     currentModel.uniqueConstraints.push(fields);
     continue;
   }
   const indexMatch = trimmed.match(/@@index\(\[(.*?)\]\)/);
   if (indexMatch) {
-    currentModel.indexConstraints.push(indexMatch[1].split(',').map(s => s.trim()));
+    currentModel.indexConstraints.push(
+      indexMatch[1].split(",").map((s) => s.trim()),
+    );
     continue;
   }
 
@@ -71,16 +120,16 @@ for (let i = 0; i < lines.length; i++) {
   let rest = fieldMatch[3];
 
   // Extract inline comment
-  let comment = '';
-  const commentIdx = rest.indexOf('//');
+  let comment = "";
+  const commentIdx = rest.indexOf("//");
   if (commentIdx !== -1) {
     comment = rest.slice(commentIdx + 2).trim();
     rest = rest.slice(0, commentIdx).trim();
   }
 
   // Check nullable
-  const isRequired = !rawType.endsWith('?');
-  const baseType = rawType.replace(/\?$/, '');
+  const isRequired = !rawType.endsWith("?");
+  const baseType = rawType.replace(/\?$/, "");
 
   const field = {
     name: fieldName,
@@ -100,10 +149,12 @@ for (let i = 0; i < lines.length; i++) {
   };
 
   // Parse @relation for FK
-  const relationMatch = rest.match(/@relation\([^)]*fields:\s*\[([^\]]+)\][^)]*references:\s*\[([^\]]+)\]/);
+  const relationMatch = rest.match(
+    /@relation\([^)]*fields:\s*\[([^\]]+)\][^)]*references:\s*\[([^\]]+)\]/,
+  );
   if (relationMatch) {
-    const fkFields = relationMatch[1].split(',').map(s => s.trim());
-    const refParts = relationMatch[2].split(',').map(s => s.trim());
+    const fkFields = relationMatch[1].split(",").map((s) => s.trim());
+    const refParts = relationMatch[2].split(",").map((s) => s.trim());
     // refParts like ['id'] or ['OtherModel.field'] ?
     // In Prisma, references usually points to fields in the target model
     // If single field, it's just the field name in the target model
@@ -139,7 +190,7 @@ for (let i = 0; i < lines.length; i++) {
     // We need to know the target model. The field type gives us that!
     // In this case, the field `parent` has type `Resource?`, so target model is `Resource`.
 
-    const targetModel = baseType.replace(/\[\]$/, '').replace(/\?$/, '');
+    const targetModel = baseType.replace(/\[\]$/, "").replace(/\?$/, "");
     const targetField = refParts[0];
 
     // We don't mark the relation field as FK; we mark the scalar fields in `fields: [...]`
@@ -161,13 +212,18 @@ for (const modelName of modelOrder) {
 
   // Map field name -> field index
   const fieldMap = {};
-  model.fields.forEach((f, idx) => { fieldMap[f.name] = idx; });
+  model.fields.forEach((f, idx) => {
+    fieldMap[f.name] = idx;
+  });
 
   // Assign CUK
   model.uniqueConstraints.forEach((fields, cukIdx) => {
     fields.forEach((fn, fIdx) => {
       if (fieldMap[fn] !== undefined) {
-        model.fields[fieldMap[fn]].cukIndices.push({ constraintIndex: cukIdx, fieldIndex: fIdx });
+        model.fields[fieldMap[fn]].cukIndices.push({
+          constraintIndex: cukIdx,
+          fieldIndex: fIdx,
+        });
       }
     });
   });
@@ -179,7 +235,8 @@ for (const modelName of modelOrder) {
         const scalarIdx = fieldMap[scalarName];
         if (scalarIdx !== undefined) {
           model.fields[scalarIdx].isFk = true;
-          model.fields[scalarIdx].fkTarget = `${field._fkTargetModel}.${field._fkTargetField}`;
+          model.fields[scalarIdx].fkTarget =
+            `${field._fkTargetModel}.${field._fkTargetField}`;
         }
       }
       delete field._fkScalarFields;
@@ -197,7 +254,7 @@ for (const modelName of modelOrder) {
   const model = models[modelName];
   for (const field of model.fields) {
     if (field.fkTarget) {
-      const [targetModel, targetField] = field.fkTarget.split('.');
+      const [targetModel, targetField] = field.fkTarget.split(".");
       const key = `${targetModel}.${targetField}`;
       if (!refMap[key]) refMap[key] = [];
       refMap[key].push({ sourceModel: modelName, sourceField: field.name });
@@ -220,21 +277,38 @@ for (const modelName of modelOrder) {
 
 function escapeHtml(str) {
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function typeBadge(type) {
   const t = type.toLowerCase();
-  let bg = '#05966915', color = '#059669';
-  if (t === 'int') { bg = '#2563eb15'; color = '#2563eb'; }
-  else if (t === 'boolean' || t === 'bool') { bg = '#7c3aed15'; color = '#7c3aed'; }
-  else if (t === 'datetime' || t === 'time') { bg = '#d9770615'; color = '#d97706'; }
-  else if (t === 'float') { bg = '#6b728015'; color = '#6b7280'; }
-  let label = t === 'datetime' ? 'time' : t === 'boolean' ? 'bool' : t === 'string' ? 'str' : t;
-  if (type.endsWith('[]')) label = t.replace('[]', '') + '[]';
+  let bg = "#05966915",
+    color = "#059669";
+  if (t === "int") {
+    bg = "#2563eb15";
+    color = "#2563eb";
+  } else if (t === "boolean" || t === "bool") {
+    bg = "#7c3aed15";
+    color = "#7c3aed";
+  } else if (t === "datetime" || t === "time") {
+    bg = "#d9770615";
+    color = "#d97706";
+  } else if (t === "float") {
+    bg = "#6b728015";
+    color = "#6b7280";
+  }
+  let label =
+    t === "datetime"
+      ? "time"
+      : t === "boolean"
+        ? "bool"
+        : t === "string"
+          ? "str"
+          : t;
+  if (type.endsWith("[]")) label = t.replace("[]", "") + "[]";
   return `<span class="field-type" style="background:${bg};color:${color}">${label}</span>`;
 }
 
@@ -242,16 +316,16 @@ function buildFieldRow(field, model) {
   const classes = [];
 
   // Determine border color priority: PK > UK/CUK > REF
-  if (field.isPk) classes.push('pk-border');
-  else if (field.isUk || field.cukIndices.length > 0) classes.push('uk-border');
-  else if (field.isRef) classes.push('ref-border');
+  if (field.isPk) classes.push("pk-border");
+  else if (field.isUk || field.cukIndices.length > 0) classes.push("uk-border");
+  else if (field.isRef) classes.push("ref-border");
 
   // Background for UK/CUK
-  if (field.isUk || field.cukIndices.length > 0) classes.push('uk-bg');
+  if (field.isUk || field.cukIndices.length > 0) classes.push("uk-bg");
 
   // Underline for FK / REF
-  if (field.isFk) classes.push('fk-underline');
-  if (field.isRef) classes.push('ref-underline');
+  if (field.isFk) classes.push("fk-underline");
+  if (field.isRef) classes.push("ref-underline");
 
   // Badges
   const badges = [];
@@ -263,10 +337,13 @@ function buildFieldRow(field, model) {
   if (field.cukIndices.length > 0) {
     // Sort by constraint index, then field index, take the first
     const cuk = field.cukIndices.sort((a, b) => {
-      if (a.constraintIndex !== b.constraintIndex) return a.constraintIndex - b.constraintIndex;
+      if (a.constraintIndex !== b.constraintIndex)
+        return a.constraintIndex - b.constraintIndex;
       return a.fieldIndex - b.fieldIndex;
     })[0];
-    const sub = ['₁','₂','₃','₄','₅','₆','₇','₈','₉'][cuk.fieldIndex] || (cuk.fieldIndex + 1);
+    const sub =
+      ["₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"][cuk.fieldIndex] ||
+      cuk.fieldIndex + 1;
     badges.push(`<span class="kb uk">U${sub}</span>`);
   }
 
@@ -278,20 +355,22 @@ function buildFieldRow(field, model) {
   }
 
   // Description with FK link
-  let desc = field.comment || '';
+  let desc = field.comment || "";
   if (field.isFk && field.fkTarget) {
-    const [tModel] = field.fkTarget.split('.');
+    const [tModel] = field.fkTarget.split(".");
     const targetNum = tableNum(tModel);
-    const link = targetNum ? `<a href="#${tModel}" class="dep-link">${targetNum} ${tModel}</a>` : `<a href="#${tModel}" class="dep-link">${tModel}</a>`;
-    if (desc) desc += ' ';
+    const link = targetNum
+      ? `<a href="#${tModel}" class="dep-link">${targetNum} ${tModel}</a>`
+      : `<a href="#${tModel}" class="dep-link">${tModel}</a>`;
+    if (desc) desc += " ";
     desc += `<span style="font-size:11px;color:#d97706">→ ${link}</span>`;
   }
 
-  const cls = classes.length ? ` class="${classes.join(' ')}"` : '';
-  const req = field.isRequired ? ' <span class="field-required">*</span>' : '';
+  const cls = classes.length ? ` class="${classes.join(" ")}"` : "";
+  const req = field.isRequired ? ' <span class="field-required">*</span>' : "";
 
   return `  <tr${cls}>
-    <td><span class="field-name">${field.name}</span>${req}${badges.join('')}</td>
+    <td><span class="field-name">${field.name}</span>${req}${badges.join("")}</td>
     <td>${typeBadge(field.type)}</td>
     <td class="field-comment">${desc}</td>
   </tr>`;
@@ -299,7 +378,7 @@ function buildFieldRow(field, model) {
 
 const numMap = {};
 let globalNum = 1;
-GROUPS.forEach(g => {
+GROUPS.forEach((g) => {
   g.models.forEach((m, idx) => {
     numMap[m] = `${globalNum}-${idx + 1}`;
   });
@@ -307,33 +386,35 @@ GROUPS.forEach(g => {
 });
 
 function tableNum(modelName) {
-  return numMap[modelName] || '';
+  return numMap[modelName] || "";
 }
 
 function buildConstraints(model) {
   const items = [];
 
   // PK
-  const pkFields = model.fields.filter(f => f.isPk).map(f => f.name);
-  if (pkFields.length) items.push(`PK: ${pkFields.join(', ')}`);
+  const pkFields = model.fields.filter((f) => f.isPk).map((f) => f.name);
+  if (pkFields.length) items.push(`PK: ${pkFields.join(", ")}`);
 
   // Single UK
-  const ukFields = model.fields.filter(f => f.isUk && !f.cukIndices.length).map(f => f.name);
-  if (ukFields.length) items.push(`UK: ${ukFields.join(', ')}`);
+  const ukFields = model.fields
+    .filter((f) => f.isUk && !f.cukIndices.length)
+    .map((f) => f.name);
+  if (ukFields.length) items.push(`UK: ${ukFields.join(", ")}`);
 
   // CUK
   model.uniqueConstraints.forEach((fields, idx) => {
-    items.push(`Unique[${idx + 1}]: (${fields.join(', ')})`);
+    items.push(`Unique[${idx + 1}]: (${fields.join(", ")})`);
   });
 
   // FK
-  const fkFields = model.fields.filter(f => f.isFk);
+  const fkFields = model.fields.filter((f) => f.isFk);
   if (fkFields.length) {
-    const fkStrs = fkFields.map(f => {
-      const [tm] = f.fkTarget.split('.');
+    const fkStrs = fkFields.map((f) => {
+      const [tm] = f.fkTarget.split(".");
       return `${f.name} → ${tm}`;
     });
-    items.push(`FK: ${fkStrs.join(', ')}`);
+    items.push(`FK: ${fkStrs.join(", ")}`);
   }
 
   return items;
@@ -341,37 +422,37 @@ function buildConstraints(model) {
 
 // ─── Generate HTML ────────────────────────────────────────
 
-let navLinks = '';
-let mainContent = '';
+let navLinks = "";
+let mainContent = "";
 
-GROUPS.forEach(g => {
+GROUPS.forEach((g) => {
   navLinks += `\n<div class="group"><div class="group-title">${g.title}</div>\n`;
-  g.models.forEach(m => {
+  g.models.forEach((m) => {
     const num = tableNum(m);
     navLinks += `<a href="#${m}">${num} ${m}</a>\n`;
   });
   navLinks += `</div>`;
 
   mainContent += `\n<div class="section"><div class="section-title">${g.title}</div>\n`;
-  g.models.forEach(m => {
+  g.models.forEach((m) => {
     const model = models[m];
     if (!model) return;
     const num = tableNum(m);
 
     // Depends on
     const deps = new Set();
-    model.fields.forEach(f => {
+    model.fields.forEach((f) => {
       if (f.fkTarget) {
-        const [tm] = f.fkTarget.split('.');
+        const [tm] = f.fkTarget.split(".");
         deps.add(tm);
       }
     });
 
     // Referenced by
     const refs = new Set();
-    model.fields.forEach(f => {
+    model.fields.forEach((f) => {
       if (f.refSources) {
-        f.refSources.forEach(s => refs.add(s.sourceModel));
+        f.refSources.forEach((s) => refs.add(s.sourceModel));
       }
     });
 
@@ -380,7 +461,7 @@ GROUPS.forEach(g => {
     mainContent += `<div class="table-block" id="${m}">\n`;
     mainContent += `<div class="table-header"><h3><span class="table-num">${num}</span> ${m}</h3></div>\n`;
     mainContent += `<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>\n`;
-    model.fields.forEach(f => {
+    model.fields.forEach((f) => {
       // Skip relation fields (fields whose type is a model name and have no scalar purpose)
       // In Prisma, relation fields have type = OtherModel or OtherModel[] and don't map to DB columns directly
       // But some fields like `parent` with @relation ARE relation fields.
@@ -401,11 +482,11 @@ GROUPS.forEach(g => {
       // These are model names, not scalar types.
       //
       // Skip relation fields (type is another model name, with or without @relation)
-      const baseTypeClean = f.type.replace(/\?$/, '').replace(/\[\]$/, '');
+      const baseTypeClean = f.type.replace(/\?$/, "").replace(/\[\]$/, "");
       const isRelationField = !!models[baseTypeClean];
       if (isRelationField) return;
 
-      mainContent += buildFieldRow(f, model) + '\n';
+      mainContent += buildFieldRow(f, model) + "\n";
     });
     mainContent += `</tbody></table>\n`;
 
@@ -413,14 +494,14 @@ GROUPS.forEach(g => {
     mainContent += `<div class="table-footer">\n`;
 
     if (constraintItems.length) {
-      mainContent += `<div class="constraints">${constraintItems.map(c => `<span class="constraint-tag">${escapeHtml(c)}</span>`).join('')}</div>\n`;
+      mainContent += `<div class="constraints">${constraintItems.map((c) => `<span class="constraint-tag">${escapeHtml(c)}</span>`).join("")}</div>\n`;
     }
 
     mainContent += `<div class="dep-out"><span class="dep-label">Depends on:</span>\n`;
     if (deps.size === 0) {
       mainContent += `<span class="dep-none">无</span>\n`;
     } else {
-      Array.from(deps).forEach(d => {
+      Array.from(deps).forEach((d) => {
         const dn = tableNum(d);
         mainContent += `<a href="#${d}" class="dep-link">${dn} ${d}</a>\n`;
       });
@@ -431,7 +512,7 @@ GROUPS.forEach(g => {
     if (refs.size === 0) {
       mainContent += `<span class="dep-none">无</span>\n`;
     } else {
-      Array.from(refs).forEach(r => {
+      Array.from(refs).forEach((r) => {
         const rn = tableNum(r);
         mainContent += `<a href="#${r}" class="dep-link">${rn} ${r}</a>\n`;
       });

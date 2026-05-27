@@ -2,8 +2,12 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "./prisma";
 
+const secretRaw = process.env.NEXTAUTH_SECRET;
+if (!secretRaw && process.env.NODE_ENV === "production") {
+  throw new Error("NEXTAUTH_SECRET is required in production");
+}
 const secret = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "weekly-report-secret-key-2026"
+  secretRaw || "weekly-report-secret-key-2026-dev-only",
 );
 
 export async function createToken(payload: {
@@ -61,7 +65,9 @@ async function getUserPositionIds(userId: number): Promise<number[]> {
     where: { employee: { userId } },
     select: { positionId: true },
   });
-  return eps.map((e: any) => e.positionId).filter((id: any): id is number => id !== null);
+  return eps
+    .map((e: any) => e.positionId)
+    .filter((id: any): id is number => id !== null);
 }
 
 async function getUserDepartmentIds(userId: number): Promise<number[]> {
@@ -69,13 +75,25 @@ async function getUserDepartmentIds(userId: number): Promise<number[]> {
     where: { employee: { userId } },
     select: { departmentId: true },
   });
-  return [...new Set(eps.map((e: any) => e.departmentId).filter((id: any): id is number => id !== null))];
+  return [
+    ...new Set(
+      eps
+        .map((e: any) => e.departmentId)
+        .filter((id: any): id is number => id !== null),
+    ),
+  ];
 }
 
 let resourceCache: { id: number; parentId: number | null }[] | null = null;
 
+export function invalidateResourceCache() {
+  resourceCache = null;
+}
+
 // Get all descendant resource IDs (for batch granting)
-export async function getResourceDescendants(resourceId: number): Promise<number[]> {
+export async function getResourceDescendants(
+  resourceId: number,
+): Promise<number[]> {
   if (!resourceCache) {
     resourceCache = await prisma.resource.findMany({
       select: { id: true, parentId: true },
@@ -105,10 +123,75 @@ export async function getResourceDescendants(resourceId: number): Promise<number
 // RULE: system.admin bypasses everything.
 // Union strategy: any of UserRole | PositionRole | DepartmentRole = allowed.
 // Descendant inference: having a child resource permission implies parent access.
+export interface PermissionContext {
+  userId: number;
+  isAdmin: boolean;
+  positionIds: number[];
+  departmentIds: number[];
+}
+
+export async function getPermissionContext(userId: number): Promise<PermissionContext> {
+  const [positionIds, departmentIds, isAdmin] = await Promise.all([
+    getUserPositionIds(userId),
+    getUserDepartmentIds(userId),
+    checkPermission(userId, "system", "admin"),
+  ]);
+  return { userId, isAdmin, positionIds, departmentIds };
+}
+
+export async function checkPermissionWithContext(
+  ctx: PermissionContext,
+  resourceKey: string,
+  roleKey: string,
+): Promise<boolean> {
+  if (ctx.isAdmin && !(resourceKey === "system" && roleKey === "admin")) return true;
+
+  const resource = await prisma.resource.findUnique({
+    where: { key: resourceKey },
+    select: { id: true },
+  });
+  if (!resource) return false;
+
+  const resourceIds = await getResourceDescendants(resource.id);
+
+  const userGrant = await prisma.userResourceRole.findFirst({
+    where: {
+      userId: ctx.userId,
+      resourceId: { in: resourceIds },
+      role: { key: roleKey },
+    },
+  });
+  if (userGrant) return true;
+
+  if (ctx.positionIds.length > 0) {
+    const positionGrant = await prisma.positionResourceRole.findFirst({
+      where: {
+        positionId: { in: ctx.positionIds },
+        resourceId: { in: resourceIds },
+        role: { key: roleKey },
+      },
+    });
+    if (positionGrant) return true;
+  }
+
+  if (ctx.departmentIds.length > 0) {
+    const deptGrant = await prisma.departmentResourceRole.findFirst({
+      where: {
+        departmentId: { in: ctx.departmentIds },
+        resourceId: { in: resourceIds },
+        role: { key: roleKey },
+      },
+    });
+    if (deptGrant) return true;
+  }
+
+  return false;
+}
+
 export async function checkPermission(
   userId: number,
   resourceKey: string,
-  roleKey: string
+  roleKey: string,
 ): Promise<boolean> {
   // 0. system.admin bypass (skip if already checking system.admin itself)
   if (!(resourceKey === "system" && roleKey === "admin")) {
@@ -167,14 +250,18 @@ export async function checkPermission(
 // ============================================================
 
 export async function authenticate(
-  request: Request
+  request: Request,
 ): Promise<AuthPayload | null> {
   // 1. Cookie token (web)
   const token = getTokenFromCookie(request);
   if (token) {
     const payload = await verifyToken(token);
     if (payload) {
-      const canLogin = await checkPermission(payload.userId, "system", "access");
+      const canLogin = await checkPermission(
+        payload.userId,
+        "system",
+        "access",
+      );
       if (!canLogin) return null;
       return payload;
     }
@@ -238,7 +325,24 @@ export async function getUserPermissions(userId: number) {
     getUserDepartmentIds(userId),
   ]);
 
-  const result: Array<{ resource: { id: number; key: string; name: string; description: string | null; sortOrder: number; parentId: number | null }; role: { id: number; key: string; name: string; description: string | null; sortOrder: number }; scopeId: string | null }> = [...direct];
+  const result: Array<{
+    resource: {
+      id: number;
+      key: string;
+      name: string;
+      description: string | null;
+      sortOrder: number;
+      parentId: number | null;
+    };
+    role: {
+      id: number;
+      key: string;
+      name: string;
+      description: string | null;
+      sortOrder: number;
+    };
+    scopeId: string | null;
+  }> = [...direct];
 
   if (posIds.length > 0) {
     const posGrants = await prisma.positionResourceRole.findMany({
@@ -246,7 +350,8 @@ export async function getUserPermissions(userId: number) {
       include: { resource: true, role: true },
       orderBy: { resource: { sortOrder: "asc" } },
     });
-    for (const g of posGrants) result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
+    for (const g of posGrants)
+      result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
   }
   if (deptIds.length > 0) {
     const deptGrants = await prisma.departmentResourceRole.findMany({
@@ -254,7 +359,8 @@ export async function getUserPermissions(userId: number) {
       include: { resource: true, role: true },
       orderBy: { resource: { sortOrder: "asc" } },
     });
-    for (const g of deptGrants) result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
+    for (const g of deptGrants)
+      result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
   }
 
   return result;
@@ -263,29 +369,60 @@ export async function getUserPermissions(userId: number) {
 export async function getUserDepartmentAdmins(userId: number) {
   const [direct, posIds, deptIds] = await Promise.all([
     prisma.userResourceRole.findMany({
-      where: { userId, resource: { key: "people.org" }, role: { key: "admin" } },
+      where: {
+        userId,
+        resource: { key: "people.org" },
+        role: { key: "admin" },
+      },
       include: { resource: true, role: true },
     }),
     getUserPositionIds(userId),
     getUserDepartmentIds(userId),
   ]);
 
-  type DeptAdmin = { resource: { id: number; key: string; name: string; description: string | null; sortOrder: number; parentId: number | null }; role: { id: number; key: string; name: string; description: string | null; sortOrder: number }; scopeId: string | null };
+  type DeptAdmin = {
+    resource: {
+      id: number;
+      key: string;
+      name: string;
+      description: string | null;
+      sortOrder: number;
+      parentId: number | null;
+    };
+    role: {
+      id: number;
+      key: string;
+      name: string;
+      description: string | null;
+      sortOrder: number;
+    };
+    scopeId: string | null;
+  };
   const result: DeptAdmin[] = [...direct];
 
   if (posIds.length > 0) {
     const posGrants = await prisma.positionResourceRole.findMany({
-      where: { positionId: { in: posIds }, resource: { key: "people.org" }, role: { key: "admin" } },
+      where: {
+        positionId: { in: posIds },
+        resource: { key: "people.org" },
+        role: { key: "admin" },
+      },
       include: { resource: true, role: true },
     });
-    for (const g of posGrants) result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
+    for (const g of posGrants)
+      result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
   }
   if (deptIds.length > 0) {
     const deptGrants = await prisma.departmentResourceRole.findMany({
-      where: { departmentId: { in: deptIds }, resource: { key: "people.org" }, role: { key: "admin" } },
+      where: {
+        departmentId: { in: deptIds },
+        resource: { key: "people.org" },
+        role: { key: "admin" },
+      },
       include: { resource: true, role: true },
     });
-    for (const g of deptGrants) result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
+    for (const g of deptGrants)
+      result.push({ resource: g.resource, role: g.role, scopeId: g.scopeId });
   }
 
   return result;
@@ -296,16 +433,36 @@ export async function getUserDepartmentAdmins(userId: number) {
 // ============================================================
 
 export async function checkHRAccess(userId: number): Promise<boolean> {
-  return (await checkPermission(userId, "system", "admin"))
-      || (await checkPermission(userId, "people", "access"));
+  return (
+    (await checkPermission(userId, "system", "admin")) ||
+    (await checkPermission(userId, "people", "access"))
+  );
 }
 
 export async function checkWorksAccess(userId: number): Promise<boolean> {
-  return (await checkPermission(userId, "system", "admin"))
-      || (await checkPermission(userId, "work", "access"));
+  return (
+    (await checkPermission(userId, "system", "admin")) ||
+    (await checkPermission(userId, "work", "access"))
+  );
 }
 
 export async function checkFinanceAccess(userId: number): Promise<boolean> {
-  return (await checkPermission(userId, "system", "admin"))
-      || (await checkPermission(userId, "finance", "access"));
+  return (
+    (await checkPermission(userId, "system", "admin")) ||
+    (await checkPermission(userId, "finance", "access"))
+  );
+}
+
+export async function checkInventoryAccess(userId: number): Promise<boolean> {
+  return (
+    (await checkPermission(userId, "system", "admin")) ||
+    (await checkPermission(userId, "inventory", "access"))
+  );
+}
+
+export async function checkContractAccess(userId: number): Promise<boolean> {
+  return (
+    (await checkPermission(userId, "system", "admin")) ||
+    (await checkPermission(userId, "contract", "access"))
+  );
 }

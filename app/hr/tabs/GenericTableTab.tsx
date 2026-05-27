@@ -19,6 +19,7 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
     editingCell, editValue, setEditValue, startEdit, cancelEdit, saveCell,
     creating, setCreating, createForm, setCreateForm, submitCreate,
     saving, load, showHistory, setShowHistory,
+    page, pageSize, total, setPage,
   } = useGenericTab(config);
 
   const { toast, showToast, closeToast } = useToast();
@@ -275,6 +276,30 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
         onApply={applyFilters}
         onReset={resetFilters}
       />
+
+      {total > 0 && (
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-xs text-gray-500">
+            共 {total} 条，第 {page} / {Math.ceil(total / pageSize)} 页
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page <= 1}
+              className="rounded border border-gray-300 px-3 py-1 text-xs disabled:opacity-40 hover:bg-gray-50"
+            >
+              上一页
+            </button>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page * pageSize >= total}
+              className="rounded border border-gray-300 px-3 py-1 text-xs disabled:opacity-40 hover:bg-gray-50"
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+      )}
 
       <Toast message={toast?.message || ""} type={toast?.type as any} show={!!toast} onClose={closeToast} />
     </div>

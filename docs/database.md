@@ -1,928 +1,643 @@
-# 数据库表说明
+# 数据库表结构
 
-共 19 张表，按业务模块分组。
+> 本文档由 `scripts/gen-db-docs.js` 自动生成，基于 `prisma/schema.prisma`。
 
----
-
-## 1. 用户与认证
+## 模型列表
 
 ### User
-系统登录用户表。
 
-| 字段 | 说明 |
-|------|------|
-| wxUserId | 微信用户ID，唯一 |
-| username/password | 账号密码登录（可选） |
-| name | 用户姓名 |
-| company | 所属公司 |
-| departmentId/departmentName | 所属部门 |
-| isWorkListAdmin | 超级管理员，可进 `/admin` |
-| canAccessHR | 人事行政权限，可进 `/hr` |
-| canAccessWorks | 工作清单权限 |
-| canSelectAnyWeek | 可补填任意周报 |
-| employeeId | 关联的员工编号 |
-| canLogin | 是否允许登录 |
-| apiKey | 个人 API Key |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| wxUserId | String? | @unique | 微信用户ID（无微信则留空） |
+| username | String? | @unique | 登录用户名（自取） |
+| password | String? | - | 登录密码 |
+| name | String | - | 名称 |
+| avatar | String? | - | 头像URL |
+| routineItems | String? | - | 日常工作模板JSON |
+| canLogin | Boolean | @default(true) | 离职=停用，不删号（账号状态，非权限） |
+| apiKey | String? | @unique | API密钥 |
+| employeeId | String? | - | 关联员工编号 |
+| createdAt | DateTime | @default(now()) | 创建时间 |
+| resourceRoles | UserResourceRole[] | - |  |
+| reports | Report[] | - |  |
+| employees | Employee[] | @relation("EmployeeUser") |  |
+| managedDepartments | Department[] | @relation("DepartmentManager") |  |
+| editHistories | EditHistory[] | @relation("EditHistoryEditor") |  |
+| editedFinanceAccounts | FinanceAccount[] | @relation("FinanceAccountEditor") |  |
+| editedFinanceVouchers | FinanceVoucher[] | @relation("FinanceVoucherEditor") |  |
+| editedStockRawMaterials | StockRawMaterial[] | @relation("StockRawMaterialEditor") |  |
+| editedStockPackagings | StockPackaging[] | @relation("StockPackagingEditor") |  |
+| editedStockFinishedGoods | StockFinishedGoods[] | @relation("StockFinishedGoodsEditor") |  |
+| stockOperations | StockOperation[] | @relation("StockOperationEditor") |  |
+| editedContracts | Contract[] | @relation("ContractEditor") |  |
 
----
+### SystemConfig
 
-## 2. 周报模块
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| key | String | @id | 配置键 |
+| value | String | - | 配置值 |
 
-### ReportGroup
-周报分组（部门/项目组）。
+### Resource
 
-| 字段 | 说明 |
-|------|------|
-| name | 分组名称 |
-| description | 描述 |
-| sortOrder | 排序 |
-| departmentId | 关联的部门（可选） |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| key | String | @unique | 资源标识 |
+| name | String | - | 资源名称 |
+| description | String? | - | 资源描述 |
+| level | Int | @default(1) | 1=父权限(无parentId), 2+=子权限 |
+| sortOrder | Int | @default(0) | 排序序号 |
+| parentId | Int? | - | 上级资源（level≥2时必填） |
+| parent | Resource? | @relation("ResHierarchy", fields: [parentId], references: [id]) |  |
+| children | Resource[] | @relation("ResHierarchy") |  |
+| userRoles | UserResourceRole[] | - |  |
+| positionRoles | PositionResourceRole[] | - |  |
+| departmentRoles | DepartmentResourceRole[] | - |  |
 
-### ReportGroupAdmin
-周报分组管理员（谁负责管理这个分组）。
+### Role
 
-| 字段 | 说明 |
-|------|------|
-| reportGroupId | 分组ID |
-| userId | 用户ID |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| key | String | @unique | "access" | "read" | "write" | "delete" | "admin" |
+| name | String | - | 角色名称 |
+| description | String? | - | 角色描述 |
+| sortOrder | Int | @default(0) | 排序序号 |
+| userAssignments | UserResourceRole[] | - |  |
+| positionAssignments | PositionResourceRole[] | - |  |
+| departmentAssignments | DepartmentResourceRole[] | - |  |
 
-### ReportGroupMember
-周报分组成员（谁需要在这个分组下写周报）。
+### UserResourceRole
 
-| 字段 | 说明 |
-|------|------|
-| reportGroupId | 分组ID |
-| userId | 用户ID |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| userId | Int | - | 用户ID |
+| resourceId | Int | - | 资源ID |
+| roleId | Int | - | 角色ID |
+| scopeId | String? | - | null=全局, 有值=范围实例 |
+| user | User | @relation(fields: [userId], references: [id], onDelete: Cascade) |  |
+| resource | Resource | @relation(fields: [resourceId], references: [id], onDelete: Cascade) |  |
+| role | Role | @relation(fields: [roleId], references: [id], onDelete: Cascade) |  |
 
-### ReportGroupViewer
-周报分组查看者（可以看这个分组的周报，但不用写）。
+### PositionResourceRole
 
-| 字段 | 说明 |
-|------|------|
-| reportGroupId | 分组ID |
-| userId | 用户ID |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| positionId | Int | - | 岗位ID |
+| resourceId | Int | - | 资源ID |
+| roleId | Int | - | 角色ID |
+| scopeId | String? | - | null=全局, 有值=范围实例 |
+| position | Position | @relation(fields: [positionId], references: [id], onDelete: Cascade) |  |
+| resource | Resource | @relation(fields: [resourceId], references: [id], onDelete: Cascade) |  |
+| role | Role | @relation(fields: [roleId], references: [id], onDelete: Cascade) |  |
 
-### WeeklyReport
-周报主表。
+### DepartmentResourceRole
 
-| 字段 | 说明 |
-|------|------|
-| userId | 填写人 |
-| reportGroupId | 所属分组 |
-| weekNumber | 周数（1-52） |
-| year | 年份 |
-| periodType | 周期类型（weekly） |
-| scopeType/scopeId | 作用域 |
-| taskName | 任务名称 |
-| notes | 备注 |
-| version | 版本号 |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| departmentId | Int | - | 部门ID |
+| resourceId | Int | - | 资源ID |
+| roleId | Int | - | 角色ID |
+| scopeId | String? | - | null=全局, 有值=范围实例 |
+| department | Department | @relation(fields: [departmentId], references: [id], onDelete: Cascade) |  |
+| resource | Resource | @relation(fields: [resourceId], references: [id], onDelete: Cascade) |  |
+| role | Role | @relation(fields: [roleId], references: [id], onDelete: Cascade) |  |
+
+### Report
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| userId | Int? | - | 用户ID |
+| targetType | String | @default("department") | "department" | "project" | "position" |
+| targetId | Int | @default(0) | 多态 FK → Department.id | Project.id | Position.id |
+| date | String | - | 日期（yyyy-MM-dd，日报=当天，周报=周一，月报=月初） |
+| taskName | String | - | 任务名称 |
+| notes | String? | - | 备注 |
+| history | ReportHistory[] | - |  |
+| items | ReportItem[] | - |  |
+| user | User? | @relation(fields: [userId], references: [id]) |  |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
 
 ### ReportItem
-周报条目明细。
 
-| 字段 | 说明 |
-|------|------|
-| reportId | 所属周报 |
-| category | 分类 |
-| plan | 计划内容 |
-| completion | 完成情况 |
-| nextGoal | 下一步目标 |
-| sortOrder | 排序 |
-| workItemId | 关联工作清单 |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| reportId | Int | - | 周报ID |
+| category | String | - | 分类 |
+| plan | String | - | 本周计划 |
+| completion | String? | - | 完成情况 |
+| nextGoal | String? | - | 下周目标 |
+| sortOrder | Int | - | 排序序号 |
+| workItemId | Int? | - | 关联工作清单条目ID |
+| workItem | WorkItem? | @relation(fields: [workItemId], references: [id]) |  |
+| report | Report | @relation(fields: [reportId], references: [id], onDelete: Cascade) |  |
 
 ### ReportHistory
-周报修改历史（每次保存生成一个新版本）。
 
-| 字段 | 说明 |
-|------|------|
-| reportId | 所属周报 |
-| version | 版本号 |
-| taskName | 当时的任务名 |
-| notes | 当时的备注 |
-| itemsJson | 当时的条目（JSON） |
-
----
-
-## 3. 工作清单模块
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| reportId | Int | - | 周报ID |
+| version | Int | - | 版本号 |
+| taskName | String | - | 任务名称 |
+| notes | String? | - | 备注 |
+| itemsJson | String | - | 条目JSON快照 |
+| createdAt | DateTime | @default(now()) | 创建时间 |
+| report | Report | @relation(fields: [reportId], references: [id], onDelete: Cascade) |  |
 
 ### WorkItem
-工作清单条目。
 
-| 字段 | 说明 |
-|------|------|
-| departmentId | 所属部门 |
-| category | 分类 |
-| content | 工作内容 |
-| importance | 重要度（1-5） |
-| urgency | 紧急度（1-5） |
-| isArchived | 是否归档 |
-| sortOrder | 排序 |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| targetType | String | @default("personal") | "project" | "department" | "position" | "personal" |
+| targetId | Int? | - | 多态 FK |
+| category | String | - | 分类 |
+| content | String | - | 内容 |
+| importance | Int | @default(3) | 重要度（1-5） |
+| urgency | Int | @default(3) | 紧急度（1-5） |
+| isArchived | Boolean | @default(false) | 是否归档 |
+| isPrivate | Boolean | @default(false) | personal 时默认仅自己可见 |
+| sortOrder | Int | @default(0) | 排序序号 |
+| createdAt | DateTime | @default(now()) | 创建时间 |
+| participants | WorkParticipant[] | - |  |
+| reportItems | ReportItem[] | - |  |
 
 ### WorkParticipant
-工作参与人。
 
-| 字段 | 说明 |
-|------|------|
-| workItemId | 所属工作 |
-| name | 参与人姓名 |
-| wxUserId | 参与人微信ID |
-
----
-
-## 4. 人事行政模块（HR）
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| workItemId | Int | - | 关联工作清单条目ID |
+| name | String | - | 名称 |
+| wxUserId | String? | - | 微信用户ID |
+| createdAt | DateTime | @default(now()) | 创建时间 |
+| workItem | WorkItem | @relation(fields: [workItemId], references: [id], onDelete: Cascade) |  |
 
 ### Employee
-员工基础信息表（1人1条，去重）。
 
-| 字段 | 说明 |
-|------|------|
-| employeeId | 业务编号（如 00108），唯一 |
-| name | 姓名 |
-| alias | 别名 |
-| gender/ethnicity/hometown/politics | 性别/民族/籍贯/政治面貌 |
-| education/title/school/major/majorRelevant | 学历/职称/院校/专业 |
-| phone | 电话 |
-| office1/office2/office3 | 办公区 |
-| attendance1/attendance2 | 考勤信息 |
-| joinDate | 进司时间 |
-| nature | 性质 |
-| status | 状态（在职/离职） |
-| leaveDate | 离职日期 |
-| deleted | 软删除标记 |
-| deletedTime/deletedBy | 删除时间和操作人 |
-| userId | 关联的系统用户 |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| employeeId | String | @unique | 员工编号 |
+| idNumber | String? | @unique | 身份证号 |
+| otherId | String? | - | 其他证件号 |
+| name | String | - | 名称 |
+| alias | String? | - | 别名 |
+| gender | Boolean? | - | 性别（是否男） |
+| birthDate | String? | - | 出生年月 |
+| ethnicity | String? | - | 民族 |
+| hometown | String? | - | 籍贯 |
+| politics | String? | - | 政治面貌 |
+| education | String? | - | 学历 |
+| title | String? | - | 职称 |
+| school | String? | - | 毕业院校 |
+| major | String? | - | 专业 |
+| phone | String? | - | 电话 |
+| workStartDate | String? | - | 参加工作时间 |
+| userId | Int? | - | 用户ID |
+| user | User? | @relation("EmployeeUser", fields: [userId], references: [id]) |  |
+| employments | Employment[] | - |  |
+| positions | EDP[] | - |  |
+| projects | EmployeeProject[] | - |  |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
+
+### Employment
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| employeeId | Int | - | 员工ID |
+| employee | Employee | @relation(fields: [employeeId], references: [id], onDelete: Cascade) |  |
+| isActive | Boolean | @default(true) | 是否在职 |
+| currentCompany | String? | - | 当前所属公司 |
+| joinDate | String? | - | 入职日期 |
+| leaveDate | String? | - | 离职日期 |
+| leaveReason | String? | - | 离职原因 |
+| officeLocation | String? | - | 办公地点 |
+| attendanceType | String? | - | 考勤类型 |
+| contracts | String? | - | 合同记录列表 JSON |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
+
+### Company
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| code | String | @unique | 编码 |
+| name | String | @unique | 名称 |
+| fullName | String? | - | 全称 |
+| registeredCapital | String? | - | 注册资本 |
+| unifiedCode | String? | - | 统一社会信用代码 |
+| bankName | String? | - | 开户行 |
+| registeredAddress | String? | - | 办公地址 |
+| registeredDate | String? | - | 注册时间 |
+| legalPerson | String? | - | 法定代表人 |
+| queryGroup | Int? | - | 1=丰华生物体系, 2=丰华制药 |
+| sortOrder | Int | @default(0) | 排序 |
+| parentOfRelations | CompanyRelation[] | @relation("ParentCompany") |  |
+| childOfRelations | CompanyRelation[] | @relation("ChildCompany") |  |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
+
+### CompanyRelation
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| parentId | Int | - | 持股方 |
+| childId | Int | - | 被持股方 |
+| parent | Company | @relation("ParentCompany", fields: [parentId], references: [id], onDelete: Cascade) |  |
+| child | Company | @relation("ChildCompany", fields: [childId], references: [id], onDelete: Cascade) |  |
+| shareRatio | Float? | - | 持股比例 |
+| isConsolidated | Boolean | @default(false) | 是否并表 |
 
 ### Department
-部门表。
 
-| 字段 | 说明 |
-|------|------|
-| code | 部门编码（5位，如 01001），唯一 |
-| name | 部门名称 |
-| company | 所属公司 |
-| level | 层级（1=一级 2=二级 3=三级） |
-| parentId | 上级部门ID |
-| managerId | 负责人 employeeId |
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| code | String | - | 编码 |
+| name | String | - | 名称 |
+| alias | String? | - | 别名 |
+| level | Int | @default(1) | 层级：1=事业部，2=部门，3=子部门 |
+| parentId | Int? | - | 上级ID |
+| parent | Department? | @relation("DeptHierarchy", fields: [parentId], references: [id]) |  |
+| children | Department[] | @relation("DeptHierarchy") |  |
+| managerUserId | Int? | - | 负责人 → User.id |
+| manager | User? | @relation("DepartmentManager", fields: [managerUserId], references: [id]) |  |
+| positions | Position[] | - | 岗位（1:N） |
+| edps | EDP[] | - |  |
+| resourceRoles | DepartmentResourceRole[] | - |  |
+| endDate | DateTime? | - | 截止时间（null=至今） |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
 
 ### Position
-岗位表。
-
-| 字段 | 说明 |
-|------|------|
-| code | 岗位编码（5位，如 01001），唯一 |
-| name | 岗位名称 |
-| company | 所属公司 |
-
-### EmployeePosition
-员工岗位关联表（1人多岗）。
-
-| 字段 | 说明 |
-|------|------|
-| employeeId | 员工ID |
-| departmentId | 部门ID |
-| positionId | 岗位ID |
-| company | 业务公司 |
-| center | 中心 |
-| isPrimary | 是否主岗 |
-| sortOrder | 排序 |
-
-### DepartmentPosition
-部门-岗位配置表（哪些岗位属于哪个部门）。
-
-| 字段 | 说明 |
-|------|------|
-| departmentId | 部门ID |
-| positionId | 岗位ID |
-
----
-
-## 5. 权限与配置
-
-### FieldPermission
-字段级权限例外规则。
-
-| 字段 | 说明 |
-|------|------|
-| field | 字段名 |
-| userId | 用户ID（null 表示全局默认） |
-| canRead | 是否可读 |
-| canEdit | 是否可编辑 |
-
-### DepartmentAdmin
-部门管理员（谁管理哪个部门）。
-
-| 字段 | 说明 |
-|------|------|
-| dept1 | 部门名称（一级部门） |
-| company | 公司 |
-| userId | 用户ID |
-
-### CompanyCode
-公司编码字典。
-
-| 字段 | 说明 |
-|------|------|
-| code | 编码（如 01/02/03/04/05） |
-| name | 公司名 |
-
-### UserPosition
-用户岗位配置表（早期设计，目前未使用）。
-
-| 字段 | 说明 |
-|------|------|
-| id | 字符串ID |
-| userId | 用户ID |
-| companyCode | 公司编码 |
-| deptCode | 部门编码 |
-| positionCode | 岗位编码 |
-| isPrimary | 是否主岗 |
-| canSelectAnyWeek/canAccessWorks/canAccessHR | 权限标记 |
 
----
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| code | String | - | 编码 |
+| alias | String? | - | 别名 |
+| name | String | - | 名称 |
+| departmentId | Int? | - | 所属部门 |
+| department | Department? | @relation(fields: [departmentId], references: [id], onDelete: SetNull) |  |
+| positionDescriptionId | Int? | - | → PositionDescription.id |
+| positionDescription | PositionDescription? | @relation(fields: [positionDescriptionId], references: [id], onDelete: SetNull) |  |
+| edps | EDP[] | - |  |
+| resourceRoles | PositionResourceRole[] | - |  |
+| endDate | DateTime? | - | 截止时间（null=至今） |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
+
+### EDP
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| employeeId | Int | - | 员工编号 |
+| employee | Employee | @relation(fields: [employeeId], references: [id], onDelete: Cascade) |  |
+| departmentId | Int? | - | 部门ID |
+| department | Department? | @relation(fields: [departmentId], references: [id]) |  |
+| positionId | Int? | - | 岗位ID |
+| position | Position? | @relation(fields: [positionId], references: [id]) |  |
+| isPrimary | Boolean | @default(false) | 是否主岗 |
+| startDate | String? | - | 任职开始日期 |
+| endDate | String? | - | 任职结束日期（null=至今） |
+| personnelType | String? | - | 人员类型 |
+| rank | String? | - | 职级 |
+| title | String? | - | 职称 |
+| reportTo | String? | - | 直接上级 |
+| reportTo2 | String? | - | 第二汇报线 |
+| workPercent | String? | - | 工作占比 |
+| isResearch | Boolean? | - | 是否研发 |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
+
+### Project
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| name | String | - | 项目名称 |
+| type | String | @default("project") | "department" | "project" |
+| description | String? | - | 说明 |
+| endDate | DateTime? | - | 截止时间（null=至今） |
+| employees | EmployeeProject[] | - |  |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
+
+### EmployeeProject
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| employeeId | Int | - | 员工ID |
+| employee | Employee | @relation(fields: [employeeId], references: [id], onDelete: Cascade) |  |
+| projectId | Int | - | 项目ID |
+| project | Project | @relation(fields: [projectId], references: [id], onDelete: Cascade) |  |
+| role | String? | - | 项目角色 |
+| startDate | String? | - | 开始日期 |
+| endDate | String? | - | 结束日期 |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+| version | Int | @default(1) | 版本号 |
+
+### PositionDescription
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| code | String | @unique | PPA-GW0101 |
+| name | String | - | 岗位名称 |
+| departmentName | String? | - | 所属部门 |
+| reportTo | String? | - | 直接上级 |
+| positionPurpose | String? | - | 岗位目的（一句话） |
+| summary | String? | - | 职责概要（一段话） |
+| headcount | Int? | - | 编制人数 |
+| version | String? | - | 版本号 |
+| effectiveDate | String? | - | 生效日期 |
+| sourceFile | String | - | 原始JSON文件名 |
+| details | String? | - | 岗位详细信息 JSON |
+| positions | Position[] | - | 关联岗位 |
+| editedBy | Int? | - | 编辑人用户ID |
+| editedAt | DateTime? | - | 编辑时间 |
+
+### EditHistory
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| entityType | String | - | Prisma 模型名（如 Employee, Employment, Department...） |
+| entityId | String | - | 实体主键 |
+| version | Int | - | 版本号 |
+| dataJson | String | - | 编辑后快照 |
+| editedBy | Int | - | 编辑人用户ID |
+| editor | User | @relation("EditHistoryEditor", fields: [editedBy], references: [id]) |  |
+| tag | String? | - | V0 日期标签: "2026-05-24"，null=普通编辑版本 |
+| createdAt | DateTime | @default(now()) | 创建时间 |
+
+### LoginAttempt
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) | 主键 |
+| username | String | - | 尝试登录的用户名 |
+| ip | String | - | 客户端IP |
+| success | Boolean | - | 是否成功 |
+| createdAt | DateTime | @default(now()) | 创建时间 |
+
+### FinanceAccount
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| code | String | @unique | 科目编码，如 1001 |
+| name | String | - | 科目名称 |
+| category | String | - | asset/liability/equity/cost/revenue |
+| parentId | Int? | - |  |
+| parent | FinanceAccount? | @relation("AccountHierarchy", fields: [parentId], references: [id]) |  |
+| children | FinanceAccount[] | @relation("AccountHierarchy") |  |
+| balanceDirection | String | @default("debit") | debit/credit |
+| isActive | Boolean | @default(true) |  |
+| companyCode | String? | - | null=通用 |
+| sortOrder | Int | @default(0) |  |
+| voucherItems | FinanceVoucherItem[] | - |  |
+| balances | FinanceAccountBalance[] | - |  |
+| editedBy | Int? | - |  |
+| editor | User? | @relation("FinanceAccountEditor", fields: [editedBy], references: [id]) |  |
+| editedAt | DateTime? | - |  |
+| version | Int | @default(1) |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
+
+### FinancePeriod
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| year | Int | - |  |
+| month | Int | - |  |
+| startDate | String | - |  |
+| endDate | String | - |  |
+| isClosed | Boolean | @default(false) |  |
+| companyCode | String? | - |  |
+| vouchers | FinanceVoucher[] | - |  |
+| balances | FinanceAccountBalance[] | - |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
+
+### FinanceVoucher
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| voucherNo | String | @unique | 凭证号，如 V202501001 |
+| date | String | - | 凭证日期 yyyy-MM-dd |
+| periodId | Int | - |  |
+| period | FinancePeriod | @relation(fields: [periodId], references: [id]) |  |
+| description | String | - | 摘要 |
+| totalDebit | Float | @default(0) |  |
+| totalCredit | Float | @default(0) |  |
+| status | String | @default("draft") | draft/posted |
+| companyCode | String? | - |  |
+| items | FinanceVoucherItem[] | - |  |
+| editedBy | Int? | - |  |
+| editor | User? | @relation("FinanceVoucherEditor", fields: [editedBy], references: [id]) |  |
+| editedAt | DateTime? | - |  |
+| version | Int | @default(1) |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
+
+### FinanceVoucherItem
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| voucherId | Int | - |  |
+| voucher | FinanceVoucher | @relation(fields: [voucherId], references: [id], onDelete: Cascade) |  |
+| accountId | Int | - |  |
+| account | FinanceAccount | @relation(fields: [accountId], references: [id]) |  |
+| debit | Float | @default(0) |  |
+| credit | Float | @default(0) |  |
+| description | String? | - |  |
+| sortOrder | Int | @default(0) |  |
+
+### FinanceAccountBalance
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| accountId | Int | - |  |
+| account | FinanceAccount | @relation(fields: [accountId], references: [id]) |  |
+| periodId | Int | - |  |
+| period | FinancePeriod | @relation(fields: [periodId], references: [id]) |  |
+| openingDebit | Float | @default(0) |  |
+| openingCredit | Float | @default(0) |  |
+| currentDebit | Float | @default(0) |  |
+| currentCredit | Float | @default(0) |  |
+| closingDebit | Float | @default(0) |  |
+| closingCredit | Float | @default(0) |  |
+| companyCode | String? | - |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
+
+### StockRawMaterial
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| code | String | @unique |  |
+| name | String | - |  |
+| spec | String? | - |  |
+| unit | String | @default("kg") |  |
+| manufacturer | String? | - |  |
+| status | String | @default("正常") | 正常/暂未生产/待验证 |
+| lastBalance | Float | @default(0) |  |
+| currentPurchase | Float | @default(0) |  |
+| currentConsume | Float | @default(0) |  |
+| remark | String? | - |  |
+| companyCode | String? | - |  |
+| editedBy | Int? | - |  |
+| editor | User? | @relation("StockRawMaterialEditor", fields: [editedBy], references: [id]) |  |
+| editedAt | DateTime? | - |  |
+| version | Int | @default(1) |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
+
+### StockPackaging
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| code | String | @unique |  |
+| name | String | - |  |
+| spec | String? | - |  |
+| unit | String | @default("卷") |  |
+| packagingType | String | @default("小容量") | 小容量/片剂包装 |
+| status | String | @default("正常") | 正常/待检/不合格 |
+| lastBalance | Float | @default(0) |  |
+| currentInbound | Float | @default(0) |  |
+| currentOutbound | Float | @default(0) |  |
+| batchNo | String? | - |  |
+| expiryDate | String? | - |  |
+| remark | String? | - |  |
+| companyCode | String? | - |  |
+| editedBy | Int? | - |  |
+| editor | User? | @relation("StockPackagingEditor", fields: [editedBy], references: [id]) |  |
+| editedAt | DateTime? | - |  |
+| version | Int | @default(1) |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
+
+### StockFinishedGoods
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| code | String | @unique |  |
+| name | String | - |  |
+| packagingSpec | String? | - |  |
+| unit | String | @default("件") |  |
+| stockType | String | @default("正常库存") | 正常库存/退货/验证产品 |
+| lastBalance | Float | @default(0) |  |
+| currentInbound | Float | @default(0) |  |
+| currentOutbound | Float | @default(0) |  |
+| availableStock | Float | @default(0) |  |
+| remark | String? | - |  |
+| companyCode | String? | - |  |
+| editedBy | Int? | - |  |
+| editor | User? | @relation("StockFinishedGoodsEditor", fields: [editedBy], references: [id]) |  |
+| editedAt | DateTime? | - |  |
+| version | Int | @default(1) |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
+
+### StockBatch
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| targetType | String | - | raw_material / packaging / finished_goods |
+| targetId | Int | - |  |
+| batchNo | String | - |  |
+| quantity | Float | @default(0) |  |
+| expiryDate | String? | - |  |
+| status | String | @default("正常") |  |
+| remark | String? | - |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
+
+### StockOperation
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| opType | String | - | purchase / inbound / outbound / consume / adjust / return |
+| targetType | String | - | raw_material / packaging / finished_goods |
+| targetId | Int | - |  |
+| quantity | Float | @default(0) |  |
+| docNo | String? | - |  |
+| reason | String? | - |  |
+| operatorId | Int? | - |  |
+| editor | User? | @relation("StockOperationEditor", fields: [operatorId], references: [id]) |  |
+| createdAt | DateTime | @default(now()) |  |
+
+### StockReturn
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| finishedGoodsId | Int | - |  |
+| returnDate | String | - |  |
+| quantity | Float | @default(0) |  |
+| salesman | String? | - |  |
+| reason | String? | - |  |
+| createdAt | DateTime | @default(now()) |  |
+
+### Contract
+
+| 字段 | 类型 | 属性 | 说明 |
+|------|------|------|------|
+| id | Int | @id @default(autoincrement()) |  |
+| contractNo | String? | - | 合同编号 |
+| name | String | - | 合同名称 |
+| partyA | String? | - | 签署方（甲方） |
+| partyB | String? | - | 签署对方（乙方） |
+| shareholder | String? | - | 股东方 |
+| category | String? | - | 合同类型/分类 |
+| content | String? | - | 合同内容 |
+| handler | String? | - | 经办人 |
+| signDate | String? | - | 签订日期 |
+| endDate | String? | - | 结束日期 |
+| status | String? | - | 状态 |
+| amount | Float? | - | 合同金额 |
+| executedAmount | Float? | - | 已执行金额 |
+| location | String? | - | 文件位置（北京办公区/上海办公区） |
+| remark | String? | - | 备注 |
+| editedBy | Int? | - |  |
+| editor | User? | @relation("ContractEditor", fields: [editedBy], references: [id]) |  |
+| editedAt | DateTime? | - |  |
+| version | Int | @default(1) |  |
+| createdAt | DateTime | @default(now()) |  |
+| updatedAt | DateTime | @updatedAt |  |
 
-## 6. 表间关联关系
-
-```
-User
-├── 1:N WeeklyReport        (用户写多篇周报)
-├── 1:N ReportGroupAdmin    (管理哪些周报分组)
-├── 1:N ReportGroupMember   (属于哪些周报分组成员)
-├── 1:N ReportGroupViewer   (能看哪些周报分组)
-├── 1:N DepartmentAdmin     (管理哪些部门)
-├── 1:N FieldPermission     (字段权限例外)
-├── 1:N UserPosition        (岗位配置，未使用)
-├── 1:1 Employee            (通过 employeeId / userId 双向关联)
-│   └── 1:N EmployeePosition
-│       ├── N:1 Department
-│       └── N:1 Position
-│
-ReportGroup
-├── 1:N ReportGroupAdmin
-├── 1:N ReportGroupMember
-├── 1:N ReportGroupViewer
-├── 1:N WeeklyReport
-│   ├── 1:N ReportItem
-│   └── 1:N ReportHistory
-│   └── N:1 User
-│   └── N:1 ReportGroup
-│
-Department
-├── 1:N EmployeePosition
-├── 1:N DepartmentPosition
-├── 1:N ReportGroup         (可选关联)
-├── N:1 Department          (parentId 自关联，层级结构)
-│
-Position
-├── 1:N EmployeePosition
-├── 1:N DepartmentPosition
-│
-WorkItem
-└── 1:N WorkParticipant
-```
-
----
-
-## 7. 重复字段与耦合分析
-
-### 7.1 双向关联耦合：User ↔ Employee
-
-- `User.employeeId`（字符串）指向 `Employee.employeeId`
-- `Employee.userId`（Int）指向 `User.id`
-
-**问题**：两边各存一个外键，可能不一致。实际业务以 `User.employeeId` 为准，`Employee.userId` 是后加的反向关联。
-
-### 7.2 业务键 vs 外键：DepartmentAdmin
-
-- `DepartmentAdmin` 用 `(dept1, company)` 作为业务键
-- 没有直接关联 `Department.id`
-
-**问题**：部门改名后需要同步更新 DepartmentAdmin 的 dept1 字段。
-
-### 7.3 冗余表：UserPosition
-
-- 字段 `companyCode / deptCode / positionCode` 与 `EmployeePosition + Department + Position` 重复
-- 目前没有任何 API 查询此表
-
-**建议**：确认无用后删除，避免与 EmployeePosition 维护两套数据。
-
-### 7.4 公司名硬编码
-
-- `Department.company`、`Position.company` 直接存字符串（"丰华生物"/"丰华制药"等）
-- `CompanyCode` 表是独立字典，但业务表未外键关联
-
-**问题**：公司名修改需要改多处，CompanyCode 表未真正起到字典作用。
-
-### 7.5 通用外键：WeeklyReport.scopeType / scopeId
-
-- `scopeType` 表示作用域类型（department/user/group）
-- `scopeId` 是对应类型的 ID
-
-**问题**：无法建立数据库级外键约束，靠业务代码保证一致性。
-
-### 7.6 字段级权限：FieldPermission.userId 可为 null
-
-- `userId = null` 表示全局默认规则
-- `userId = 具体ID` 表示个人例外
-
-**问题**：查询时需要先查个人规则，没有再查全局规则，逻辑较复杂。目前该功能因 HR 全员开放编辑而暂未生效。
-
----
-
-## 8. 重新设计方案
-
-目标：**所有表间关联只通过 ID**，**消除所有硬编码字符串**。
-
-### 8.1 打破 User ↔ Employee 双向关联
-
-**现状**：`User.employeeId` (String) ↔ `Employee.userId` (Int) 双向存储，可能不一致。
-
-**方案**：只保留 `Employee.userId → User.id` 单向关联。
-
-```
-Before:                          After:
-User.employeeId ──┐              User (无 employeeId)
-                   │              Employee.userId ──→ User.id
-Employee.userId ───┘              
-```
-
-**查询变化**：
-- 查用户关联的员工：`Employee.findFirst({ where: { userId } })`
-- 查员工关联的用户：`Employee.userId` 直接取
-
-**影响**：所有读 `User.employeeId` 的代码需改为查 Employee 表。Prisma 中 `User.employees[]` 已存在。
-
----
-
-### 8.2 DepartmentAdmin: 字符串 → ID 外键
-
-**现状**：`dept1` (部门名称) + `company` (公司名) 作为业务键，部门改名后需同步更新。
-
-**方案**：改为 `departmentId` 外键。
-
-```diff
-model DepartmentAdmin {
-  id           Int        @id
-- dept1        String
-- company      String
-+ departmentId Int
-+ department   Department @relation(fields: [departmentId], references: [id])
-  userId       Int
-  user         User       @relation(...)
-}
-```
-
-公司名通过 `Department.companyCode` 查询，不再冗余存储。
-
----
-
-### 8.3 公司字典真正生效：company 字符串 → companyCode 外键
-
-**现状**：
-- `Department.company`、`Position.company` 存字符串（"丰华生物"等）
-- `COMPANY_MAP`、`SHARED_GROUP`、`FENGHUA_ALL` 在 `app/hr/page.tsx` 硬编码
-- `CompanyCode` 表有数据但未被外键关联
-
-**方案**：
-
-```diff
-model Department {
-- company    String
-+ companyCode String
-+ company    CompanyCode @relation(fields: [companyCode], references: [code])
-}
-
-model Position {
-- company    String
-+ companyCode String
-+ company    CompanyCode @relation(fields: [companyCode], references: [code])
-}
-
-model EmployeePosition {
-- company    String?
-+ companyCode String?
-}
-```
-
-前端常量从 API 动态获取：
-```typescript
-// Before: 硬编码
-const COMPANY_MAP = { "丰华生物": "01", ... };
-
-// After: 从 CompanyCode 表加载
-const { data: companies } = await fetch("/api/company-codes");
-```
-
----
-
-### 8.4 删除冗余表 UserPosition
-
-**现状**：3 条数据，零代码引用。与 `EmployeePosition` 功能重叠。
-
-**方案**：直接删除 `UserPosition` 表。
-
-```sql
-DROP TABLE UserPosition;
-```
-
----
-
-### 8.5 合并 ReportGroup 三表为一表
-
-**现状**：`ReportGroupAdmin`、`ReportGroupMember`、`ReportGroupViewer` 三个结构完全相同的表，仅含义不同。
-
-**方案**：合并为一个 `ReportGroupMembership`，加 `role` 字段区分。
-
-```diff
-- model ReportGroupAdmin { ... }
-- model ReportGroupMember { ... }
-- model ReportGroupViewer { ... }
-
-+ model ReportGroupMembership {
-+   id            Int         @id
-+   reportGroupId Int
-+   userId        Int
-+   role          String      // "admin" | "member" | "viewer"
-+   reportGroup   ReportGroup @relation(...)
-+   user          User        @relation(...)
-+   @@unique([reportGroupId, userId])
-+ }
-```
-
-查询示例：
-```typescript
-// 查成员
-db.reportGroupMembership.findMany({ where: { reportGroupId, role: "member" } })
-// 查管理员
-db.reportGroupMembership.findMany({ where: { reportGroupId, role: "admin" } })
-```
-
----
-
-### 8.6 精简 User 表
-
-**现状**：`User` 表混合了认证信息 + 业务信息 + 权限标记。
-
-**方案**：移除可通过关联查询的冗余字段。
-
-```diff
-model User {
-  id         Int    @id
-  wxUserId   String @unique
-  username   String? @unique
-  password   String?
-  name       String
-- company            // 通过 departmentId → Department.companyCode 查询
-- departmentName     // 通过 departmentId → Department.name 查询
-- employeeId         // 通过 Employee.userId 反向查
-  departmentId Int
-  // 权限字段保留（核心逻辑依赖）
-  isWorkListAdmin  Boolean
-  canSelectAnyWeek Boolean
-  canAccessHR      Boolean
-  canAccessWorks   Boolean
-  canLogin         Boolean
-  apiKey           String?
-}
-```
-
----
-
-### 8.7 WeeklyReport 多态关联简化
-
-**现状**：`scopeType` + `scopeId` 多态外键，无法建数据库约束。实际 scopeType 只有 "department"。
-
-**方案**：直接改为 `departmentId`。
-
-```diff
-model WeeklyReport {
-- scopeType  String   @default("department")
-- scopeId    Int
-+ departmentId Int
-+ department   Department? @relation(fields: [departmentId], references: [id])
-}
-```
-
-旧数据兼容：迁移时 `scopeId` → `departmentId`。
-
----
-
-### 8.8 FieldPermission 全局规则显式化
-
-**现状**：`userId = null` 表示全局默认规则，查询逻辑需要两步。
-
-**方案**：新增 `GlobalFieldPermission` 表分离全局和个人规则。
-
-```diff
-+ model GlobalFieldPermission {
-+   field   String
-+   canRead Boolean @default(true)
-+   canEdit Boolean @default(false)
-+   @@id([field])
-+ }
-
-model FieldPermission {
-  field   String
-- userId  Int?     // 不再允许 null
-+ userId  Int       // 必须关联具体用户
-+ canRead Boolean
-+ canEdit Boolean
-+ @@id([field, userId])
-}
-```
-
----
-
-### 8.9 新 ER 图
-
-```
-User ──1:N── WeeklyReport ──1:N── ReportItem
-  │              │                    │
-  │              └──1:N── ReportHistory
-  │
-  ├──1:N── ReportGroupMembership (role: admin/member/viewer)
-  │              │
-  │              └──N:1── ReportGroup
-  │                           │
-  │                           └──N:1── Department (可选)
-  │
-  ├──1:1── Employee (通过 Employee.userId)
-  │              │
-  │              └──1:N── EmployeePosition
-  │                            ├──N:1── Department
-  │                            └──N:1── Position
-  │
-  ├──1:N── FieldPermission (userId NOT NULL)
-  ├──1:N── DepartmentAdmin ──N:1── Department
-  │
-  └──N:1── Department
-
-CompanyCode ──1:N── Department
-CompanyCode ──1:N── Position
-CompanyCode ──1:N── EmployeePosition
-
-Department ──1:N── DepartmentPosition ──N:1── Position
-Department ──1:N── Department (parentId 自关联)
-Department ──1:N── WorkItem ──1:N── WorkParticipant
-```
-
-**表总数**：16 张（从 19 张减少 3 张）
-- 删除：UserPosition
-- 合并：ReportGroupAdmin + ReportGroupMember + ReportGroupViewer → ReportGroupMembership
-- 新增：GlobalFieldPermission
-
----
-
-### 8.10 迁移优先级
-
-| 优先级 | 改动 | 理由 | 风险 |
-|--------|------|------|------|
-| **P0** | 删除 UserPosition | 零代码引用，零风险 | 无 |
-| **P0** | DepartmentAdmin 改 departmentId | 消除部门改名不一致 | 需改 admin/page.tsx |
-| **P1** | company → companyCode 外键 | 消除公司名硬编码 | 需改多处查询 |
-| **P1** | 打破 Employee 双向关联 | 消除数据不一致风险 | 需改所有读 User.employeeId 处 |
-| **P2** | 合并 ReportGroup 三表 | 减少表数量，简化逻辑 | 需改周报相关 API |
-| **P2** | WeeklyReport scopeType/scopeId → departmentId | 消除多态外键 | 需迁移历史数据 |
-| **P3** | 精简 User 表 | 减少冗余字段 | 影响面广，需逐字段确认 |
-| **P3** | FieldPermission 拆全局表 | 简化查询逻辑 | 该功能当前未启用 |
-
----
-
-## 9. 权限系统重新设计
-
-目标：**权限定义与授予分离**，**新增权限只需插一行数据**，**Admin 页面自动发现**。
-
-### 9.1 现状问题
-
-权限散落在 **5 处**，新增权限要改 10+ 个文件：
-
-| 存储位置 | 权限 | 问题 |
-|----------|------|------|
-| `User.isWorkListAdmin` | 超级管理员 | Schema+API+UI 多处硬编码 |
-| `User.canSelectAnyWeek` | 补填周报 | 同上 |
-| `User.canAccessHR` | 人事行政 | 同上 |
-| `User.canAccessWorks` | 工作清单 | 同上 |
-| `User.canLogin` | 可登录 | 同上 |
-| `DepartmentAdmin` | 部门管理员 | 用 dept1 字符串而非 ID |
-| `ReportGroupAdmin` | 周报分组管理员 | 三个结构完全相同的表 |
-| `ReportGroupMember` | 周报填写人 | |
-| `ReportGroupViewer` | 周报查看者 | |
-| `FieldPermission` | 字段读写 | userId 可为 null |
-| `UserPosition` | (未使用) | 冗余表 |
-
-Admin 页面 `allPermissions` 硬编码，新权限必须改 `admin/page.tsx`、`user-permissions/route.ts`、`employee-permissions/route.ts` 等多处。
-
-### 9.2 新设计：定义表 + 授予表分离
-
-```
-定义层（权限注册表，新增权限只插数据）
-├── PermissionCategory    权限分类
-└── Permission            权限定义
-
-授予层（谁有什么权限）
-├── UserPermission        用户系统/模块权限（替代 User 表 5 个 boolean）
-├── ReportGroupMembership 周报分组成员（替代 ReportGroupAdmin/Member/Viewer 三表）
-├── DepartmentAdmin       部门管理员（改用 departmentId）
-└── FieldPermission       字段级权限
-```
-
-#### 9.2.1 定义表
-
-```prisma
-model PermissionCategory {
-  id        Int          @id @default(autoincrement())
-  key       String       @unique   // "system" | "module" | "report" | "dept" | "field"
-  name      String                 // "系统权限" | "模块权限" | "周报权限" | "部门权限" | "字段权限"
-  sortOrder Int          @default(0)
-  permissions Permission[]
-}
-
-model Permission {
-  id          Int                @id @default(autoincrement())
-  key         String             @unique   // "system.admin" | "hr.access" | "report.member"
-  categoryId  Int
-  category    PermissionCategory @relation(fields: [categoryId], references: [id])
-  name        String                       // 权限名称（如 "超级管理员"）
-  description String?                      // 权限说明
-  sortOrder   Int                @default(0)
-  userGrants  UserPermission[]
-}
-```
-
-#### 9.2.2 授予表
-
-```prisma
-// 系统/模块权限（替代 User 表 5 个 boolean）
-model UserPermission {
-  id           Int        @id @default(autoincrement())
-  userId       Int
-  permissionId Int
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, permissionId])
-}
-
-// 周报分组权限（替代 ReportGroupAdmin/Member/Viewer 三表）
-model ReportGroupMembership {
-  id            Int         @id @default(autoincrement())
-  userId        Int
-  reportGroupId Int
-  role          String      // "admin" | "member" | "viewer"
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reportGroup   ReportGroup @relation(fields: [reportGroupId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, reportGroupId])
-}
-
-// 部门管理员
-model DepartmentAdmin {
-  id           Int        @id @default(autoincrement())
-  userId       Int
-  departmentId Int
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, departmentId])
-}
-
-// 字段级权限
-model FieldPermission {
-  id      Int     @id @default(autoincrement())
-  field   String
-  userId  Int
-  canRead Boolean @default(true)
-  canEdit Boolean @default(false)
-  user    User    @relation(fields: [userId], references: [id])
-
-  @@unique([field, userId])
-}
-
-// 全局字段默认权限
-model GlobalFieldPermission {
-  field   String
-  canRead Boolean @default(true)
-  canEdit Boolean @default(false)
-
-  @@id([field])
-}
-```
-
-#### 9.2.3 User 表变化
-
-```diff
-model User {
-  id         Int    @id
-  wxUserId   String @unique
-  username   String? @unique
-  password   String?
-  name       String
-  departmentId Int
-- isWorkListAdmin  Boolean
-- canSelectAnyWeek Boolean
-- canAccessHR      Boolean
-- canAccessWorks   Boolean
-- canLogin         Boolean
-+ permissions UserPermission[]   // 通过 UserPermission 查权限
-  apiKey     String?
-}
-```
-
-### 9.3 权限数据（Permission 表种子数据）
-
-#### 系统权限（system）
-
-| key | name | description |
-|-----|------|-------------|
-| `system.login` | 可登录 | 是否允许登录系统 |
-| `system.admin` | 超级管理员 | 管理后台全部权限，可查看所有数据 |
-| `system.any_week` | 补填周报 | 可补填任意历史周的周报 |
-
-#### 模块权限（module）
-
-| key | name | description |
-|-----|------|-------------|
-| `module.hr` | 人事行政 | 访问人事行政管理 `/hr` |
-| `module.works` | 工作清单 | 访问工作清单 `/works` |
-
-#### 周报分组权限（report）
-
-| key | name | description |
-|-----|------|-------------|
-| `report.admin` | 分组管理员 | 管理分组设置、成员、查看者 |
-| `report.member` | 分组填写 | 填写/提交该分组的周报 |
-| `report.viewer` | 分组查看 | 查看该分组的周报，不填写 |
-
-> **注意**：这些权限通过 `ReportGroupMembership` 表授予，`reportGroupId` 指定作用范围。Permission 表的 `report.*` 用于 Admin 页面展示。
-
-#### 部门权限（dept）
-
-| key | name | description |
-|-----|------|-------------|
-| `dept.admin` | 部门管理员 | 管理部门的花名册/岗位信息 |
-
-> 通过 `DepartmentAdmin` 表授予，`departmentId` 指定作用范围。
-
-#### 字段权限（field）
-
-| key | name | description |
-|-----|------|-------------|
-| `field.read` | 字段读取 | 可查看某字段 |
-| `field.edit` | 字段编辑 | 可编辑某字段 |
-
-> 通过 `FieldPermission` 表授予，`field` 指定字段名。
-
-### 9.4 自动发现机制
-
-新增权限只需 INSERT 一行，Admin 页面无需改代码：
-
-```sql
--- 新增一个权限（只需这一条SQL）
-INSERT INTO Permission (key, categoryId, name, description, sortOrder)
-VALUES ('module.reports', 2, '报表查看', '可查看数据报表', 20);
-```
-
-Admin 页面加载权限列表：
-
-```
-GET /api/admin/permissions
-→ {
-    categories: [
-      {
-        key: "system", name: "系统权限",
-        permissions: [
-          { key: "system.login", name: "可登录", description: "..." },
-          { key: "system.admin", name: "超级管理员", description: "..." },
-          { key: "system.any_week", name: "补填周报", description: "..." }
-        ]
-      },
-      {
-        key: "module", name: "模块权限",
-        permissions: [
-          { key: "module.hr", name: "人事行政", description: "..." },
-          { key: "module.works", name: "工作清单", description: "..." }
-        ]
-      },
-      ...
-    ]
-  }
-```
-
-API 实现：
-```typescript
-// GET /api/admin/permissions
-export async function GET() {
-  const categories = await prisma.permissionCategory.findMany({
-    orderBy: { sortOrder: "asc" },
-    include: {
-      permissions: { orderBy: { sortOrder: "asc" } }
-    }
-  });
-  return NextResponse.json({ categories });
-}
-```
-
-### 9.5 Admin 页面新视图
-
-#### 视图 1：按权限类型（by-permission-type）
-
-```
-┌──────────────────────────────────────────────┐
-│ [系统权限] [模块权限] [周报权限] [部门权限] [字段权限]  │  ← 一级：分类卡
-├──────────────────────────────────────────────┤
-│                                              │
-│  ▼ 系统权限                                  │  ← 点击展开
-│    ┌──────────┐ ┌──────────┐ ┌────────────┐ │
-│    │ 可登录    │ │ 超级管理  │ │ 补填周报    │ │  ← 二级：具体权限卡
-│    │ 共 85 人  │ │ 共 3 人  │ │ 共 12 人   │ │
-│    └──────────┘ └──────────┘ └────────────┘ │
-│                                              │
-│  ▼ 模块权限                                  │
-│    ┌──────────┐ ┌──────────┐                │
-│    │ 人事行政  │ │ 工作清单  │                │
-│    └──────────┘ └──────────┘                │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-点击"超级管理员"卡片 → 展开拥有该权限的用户列表（可搜索、可赋予/取消）。
-
-#### 视图 2：按员工（by-user）
-
-```
-┌──────────────────────────────────────────────┐
-│ 搜索员工: [张三________________]              │
-├──────────────────────────────────────────────┤
-│ 张三 (zhangsan) · 研发部                      │
-│                                              │
-│ ▶ 系统权限 (3)                               │  ← 一级：分类分组
-│   [可登录 ✓] [超级管理员 ✗] [补填周报 ✓]     │  ← 二级：具体权限
-│                                              │
-│ ▶ 模块权限 (2)                               │
-│   [人事行政 ✓] [工作清单 ✓]                   │
-│                                              │
-│ ▶ 周报权限 (2 个分组)                        │
-│   [研发部周报-管理员] [项目组周报-填写]       │
-│                                              │
-│ ▶ 部门权限 (1)                               │
-│   [研发部-管理员]                             │
-│                                              │
-│ ▶ 字段权限 (3)                               │
-│   [phone:读/写] [salary:读] [address:读]     │
-└──────────────────────────────────────────────┘
-```
-
-### 9.6 权限校验变化
-
-```typescript
-// Before: 读 User 表 boolean
-const user = await prisma.user.findUnique({ where: { id } });
-if (user?.isWorkListAdmin) { ... }
-
-// After: 查 UserPermission 表
-const hasPermission = await checkPermission(userId, "system.admin");
-
-// lib/auth.ts 新增 helper
-export async function checkPermission(userId: number, permKey: string): Promise<boolean> {
-  const perm = await prisma.userPermission.findUnique({
-    where: { userId_permissionId: { userId, permissionId: permKey } },
-  });
-  return !!perm;
-}
-
-export async function getUserPermissions(userId: number) {
-  return prisma.userPermission.findMany({
-    where: { userId },
-    include: { permission: { include: { category: true } } },
-    orderBy: { permission: { category: { sortOrder: "asc" } } },
-  });
-}
-```
-
-向后兼容：保留 `isWorkListAdmin` 作为 `checkPermission(userId, "system.admin")` 的别名。
-
-### 9.7 迁移步骤
-
-| 步骤 | 操作 | 说明 |
-|------|------|------|
-| 1 | 创建 `PermissionCategory` + `Permission` 表，插入种子数据 | 权限注册表 |
-| 2 | 创建 `UserPermission` 表 | 新的授予表 |
-| 3 | 将 `User` 表 5 个 boolean 迁移到 `UserPermission` | `isWorkListAdmin` → `system.admin` 等 |
-| 4 | 合并 ReportGroupAdmin/Member/Viewer → `ReportGroupMembership` | 添加 `role` 字段 |
-| 5 | 更新 `DepartmentAdmin` 改用 `departmentId` | 消除 dept1 字符串 |
-| 6 | 更新 `lib/auth.ts` 权限校验函数 | 查新表 |
-| 7 | 改造 Admin 页面 | 动态加载权限定义 |
-| 8 | 删除 `User` 表 5 个 boolean 字段 | 最后一步，确保无遗漏 |
-
-### 9.8 权限表总览
-
-| 表 | 用途 | 记录数 |
-|----|------|--------|
-| `PermissionCategory` | 权限分类定义 | ~5 行 |
-| `Permission` | 权限定义注册表 | ~10 行 |
-| `UserPermission` | 用户系统/模块权限 | N × M |
-| `ReportGroupMembership` | 周报分组权限 | 替代原 3 表 |
-| `DepartmentAdmin` | 部门管理员 | 少量 |
-| `FieldPermission` | 字段级个人例外 | 少量 |
-| `GlobalFieldPermission` | 字段级全局默认 | 按字段数 |
-
-**总计**：7 张权限相关表（定义 2 张 + 授予 5 张），替代原有散落在 User + 4 处的混乱结构。

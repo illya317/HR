@@ -42,6 +42,6 @@ export interface EmployeePerm {
 export interface AdminUser {
   id: number;
   name: string;
-  isWorkListAdmin: boolean;
-  isAnyGroupAdmin: boolean;
+  isWorkListAdmin?: boolean;
+  isAnyGroupAdmin?: boolean;
 }

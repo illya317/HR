@@ -31,6 +31,12 @@ export interface GenericTabState {
   load: () => Promise<void>;
   showHistory: boolean;
   setShowHistory: (v: boolean) => void;
+
+  // 服务端分页
+  page: number;
+  pageSize: number;
+  total: number;
+  setPage: (v: number) => void;
 }
 
 export function useGenericTab(config: TabConfig): GenericTabState {
@@ -55,49 +61,53 @@ export function useGenericTab(config: TabConfig): GenericTabState {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(50);
+  const [total, setTotal] = useState(0);
 
-  // 加载原始数据（只传 keyword，不传筛选条件）
+  // 加载原始数据（keyword + filters + 分页）
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
       if (keyword) params.set("keyword", keyword);
+      params.set("page", String(page));
+      params.set("pageSize", String(pageSize));
+      for (const [key, value] of Object.entries(filters)) {
+        if (value !== "" && value !== undefined && value !== null) {
+          params.set(key, value);
+        }
+      }
       const res = await fetch(`${config.apiPath}?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         const list = config.listGetter ? config.listGetter(data) : data.items || data;
         setRawItems(Array.isArray(list) ? list : []);
+        setTotal(typeof data.total === "number" ? data.total : 0);
       } else {
         const data = await res.json().catch(() => ({ error: `请求失败 (${res.status})` }));
         setError(data.error || `请求失败 (${res.status})`);
         setRawItems([]);
+        setTotal(0);
       }
     } catch (e: any) {
       setError(e.message || "网络错误");
       setRawItems([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [config.apiPath, config.listGetter, keyword]);
+  }, [config.apiPath, config.listGetter, keyword, page, pageSize, filters]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  // 前端筛选：rawItems + filters -> items
+  // 前端不再筛选（已移至服务端），rawItems 即当前页 items
   useEffect(() => {
-    let list = [...rawItems];
-    for (const [key, value] of Object.entries(filters)) {
-      if (value !== "" && value !== undefined && value !== null) {
-        list = list.filter((item: any) => {
-          const v = item[key];
-          return String(v) === value;
-        });
-      }
-    }
-    setItems(list);
-  }, [rawItems, filters]);
+    setItems(rawItems);
+  }, [rawItems]);
 
   const setFilter = useCallback((key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -186,5 +196,6 @@ export function useGenericTab(config: TabConfig): GenericTabState {
     submitCreate,
     saving, load,
     showHistory, setShowHistory,
+    page, pageSize, total, setPage,
   };
 }

@@ -6,7 +6,7 @@ import { HIDDEN_RESOURCE_KEYS } from "../lib";
 import type { ResourceItem } from "../types";
 
 interface Props {
-  user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };
+  user: { id: number; name: string; isWorkListAdmin?: boolean; isAnyGroupAdmin?: boolean };
   resources: ResourceItem[];
   showToast: (msg: string, type?: "success" | "error") => void;
 }

@@ -4,7 +4,7 @@ import FilterBar from "@/app/components/FilterBar";
 import { useByPositionTab } from "../hooks/useByPositionTab";
 
 interface Props {
-  user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };
+  user: { id: number; name: string; isWorkListAdmin?: boolean; isAnyGroupAdmin?: boolean };
   resources: Array<{ id: number; key: string; name: string; description: string | null }>;
   showToast: (msg: string, type?: "success" | "error") => void;
 }

@@ -1,18 +1,25 @@
 import { NextResponse } from "next/server";
-import { authenticate, checkHRAccess, type AuthPayload } from "@/lib/auth";
+import {
+  authenticate,
+  checkHRAccess,
+  checkFinanceAccess,
+  checkInventoryAccess,
+  checkContractAccess,
+  type AuthPayload,
+} from "@/lib/auth";
 
 export type { AuthPayload };
 
 export type AuthHandler = (
   req: Request,
-  user: AuthPayload
+  user: AuthPayload,
 ) => Promise<Response>;
 
 export type AccessChecker = (userId: number) => Promise<boolean>;
 
 export function withAuth(
   handler: AuthHandler,
-  checkAccess?: AccessChecker
+  checkAccess?: AccessChecker,
 ): (req: Request) => Promise<Response> {
   return async (req: Request) => {
     const payload = await authenticate(req);
@@ -26,6 +33,26 @@ export function withAuth(
   };
 }
 
-export function withHRAccess(handler: AuthHandler): (req: Request) => Promise<Response> {
+export function withHRAccess(
+  handler: AuthHandler,
+): (req: Request) => Promise<Response> {
   return withAuth(handler, checkHRAccess);
+}
+
+export function withFinanceAccess(
+  handler: AuthHandler,
+): (req: Request) => Promise<Response> {
+  return withAuth(handler, checkFinanceAccess);
+}
+
+export function withInventoryAccess(
+  handler: AuthHandler,
+): (req: Request) => Promise<Response> {
+  return withAuth(handler, checkInventoryAccess);
+}
+
+export function withContractAccess(
+  handler: AuthHandler,
+): (req: Request) => Promise<Response> {
+  return withAuth(handler, checkContractAccess);
 }

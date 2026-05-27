@@ -63,7 +63,7 @@
 <body>
 <nav>
 <h1>HR Database Schema</h1>
-<p style="font-size:12px;color:#94a3b8;margin-bottom:20px">24 tables</p>
+<p style="font-size:12px;color:#94a3b8;margin-bottom:20px">36 tables</p>
 
 <div class="group"><div class="group-title">1. System</div>
 <a href="#User">1-1 User</a>
@@ -102,6 +102,24 @@
 </div>
 <div class="group"><div class="group-title">7. Edit History</div>
 <a href="#EditHistory">7-1 EditHistory</a>
+</div>
+<div class="group"><div class="group-title">8. Finance</div>
+<a href="#FinanceAccount">8-1 FinanceAccount</a>
+<a href="#FinancePeriod">8-2 FinancePeriod</a>
+<a href="#FinanceVoucher">8-3 FinanceVoucher</a>
+<a href="#FinanceVoucherItem">8-4 FinanceVoucherItem</a>
+<a href="#FinanceAccountBalance">8-5 FinanceAccountBalance</a>
+</div>
+<div class="group"><div class="group-title">9. Inventory</div>
+<a href="#StockRawMaterial">9-1 StockRawMaterial</a>
+<a href="#StockPackaging">9-2 StockPackaging</a>
+<a href="#StockFinishedGoods">9-3 StockFinishedGoods</a>
+<a href="#StockBatch">9-4 StockBatch</a>
+<a href="#StockOperation">9-5 StockOperation</a>
+<a href="#StockReturn">9-6 StockReturn</a>
+</div>
+<div class="group"><div class="group-title">10. Contract</div>
+<a href="#Contract">10-1 Contract</a>
 </div>
 <div class="legend">
   <span><span class="legend-swatch" style="background:#10b981"></span> PK</span>
@@ -163,6 +181,11 @@
     <td class="field-comment">API密钥</td>
   </tr>
   <tr>
+    <td><span class="field-name">employeeId</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">关联员工编号</td>
+  </tr>
+  <tr>
     <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
     <td class="field-comment">创建时间</td>
@@ -179,6 +202,13 @@
 <a href="#Employee" class="dep-link">5-1 Employee</a>
 <a href="#Department" class="dep-link">5-5 Department</a>
 <a href="#EditHistory" class="dep-link">7-1 EditHistory</a>
+<a href="#FinanceAccount" class="dep-link">8-1 FinanceAccount</a>
+<a href="#FinanceVoucher" class="dep-link">8-3 FinanceVoucher</a>
+<a href="#StockRawMaterial" class="dep-link">9-1 StockRawMaterial</a>
+<a href="#StockPackaging" class="dep-link">9-2 StockPackaging</a>
+<a href="#StockFinishedGoods" class="dep-link">9-3 StockFinishedGoods</a>
+<a href="#StockOperation" class="dep-link">9-5 StockOperation</a>
+<a href="#Contract" class="dep-link">10-1 Contract</a>
 </div>
 </div>
 </div>
@@ -1556,6 +1586,11 @@
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
     <td class="field-comment">编辑人用户ID <span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">1-1 User</a></span></td>
   </tr>
+  <tr class="uk-border uk-bg">
+    <td><span class="field-name">tag</span><span class="kb uk">U₄</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">V0 日期标签: "2026-05-24"，null=普通编辑版本</td>
+  </tr>
   <tr>
     <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
@@ -1563,7 +1598,971 @@
   </tr>
 </tbody></table>
 <div class="table-footer">
-<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">Unique[1]: (entityType, entityId, version)</span><span class="constraint-tag">FK: editedBy → User</span></div>
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">Unique[1]: (entityType, entityId, version, tag)</span><span class="constraint-tag">FK: editedBy → User</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#User" class="dep-link">1-1 User</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="section"><div class="section-title">8. Finance</div>
+<div class="table-block" id="FinanceAccount">
+<div class="table-header"><h3><span class="table-num">8-1</span> FinanceAccount</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border ref-underline">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span><span class="kb ref">R</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="uk-border uk-bg">
+    <td><span class="field-name">code</span> <span class="field-required">*</span><span class="kb uk">U</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">科目编码，如 1001</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">name</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">科目名称</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">category</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">asset/liability/equity/cost/revenue</td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">parentId</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceAccount" class="dep-link">8-1 FinanceAccount</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">balanceDirection</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">debit/credit</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">isActive</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">companyCode</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">null=通用</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">editedBy</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">1-1 User</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">editedAt</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">version</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">UK: code</span><span class="constraint-tag">FK: parentId → FinanceAccount, editedBy → User</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#FinanceAccount" class="dep-link">8-1 FinanceAccount</a>
+<a href="#User" class="dep-link">1-1 User</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<a href="#FinanceAccount" class="dep-link">8-1 FinanceAccount</a>
+<a href="#FinanceVoucherItem" class="dep-link">8-4 FinanceVoucherItem</a>
+<a href="#FinanceAccountBalance" class="dep-link">8-5 FinanceAccountBalance</a>
+</div>
+</div>
+</div>
+<div class="table-block" id="FinancePeriod">
+<div class="table-header"><h3><span class="table-num">8-2</span> FinancePeriod</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border ref-underline">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span><span class="kb ref">R</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">year</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">month</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">startDate</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">endDate</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">isClosed</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#7c3aed15;color:#7c3aed">bool</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">companyCode</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<span class="dep-none">无</span>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<a href="#FinanceVoucher" class="dep-link">8-3 FinanceVoucher</a>
+<a href="#FinanceAccountBalance" class="dep-link">8-5 FinanceAccountBalance</a>
+</div>
+</div>
+</div>
+<div class="table-block" id="FinanceVoucher">
+<div class="table-header"><h3><span class="table-num">8-3</span> FinanceVoucher</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border ref-underline">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span><span class="kb ref">R</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="uk-border uk-bg">
+    <td><span class="field-name">voucherNo</span> <span class="field-required">*</span><span class="kb uk">U</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">凭证号，如 V202501001</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">date</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">凭证日期 yyyy-MM-dd</td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">periodId</span> <span class="field-required">*</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinancePeriod" class="dep-link">8-2 FinancePeriod</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">description</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">摘要</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">totalDebit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">totalCredit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">status</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">draft/posted</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">companyCode</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">editedBy</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">1-1 User</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">editedAt</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">version</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">UK: voucherNo</span><span class="constraint-tag">FK: periodId → FinancePeriod, editedBy → User</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#FinancePeriod" class="dep-link">8-2 FinancePeriod</a>
+<a href="#User" class="dep-link">1-1 User</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<a href="#FinanceVoucherItem" class="dep-link">8-4 FinanceVoucherItem</a>
+</div>
+</div>
+</div>
+<div class="table-block" id="FinanceVoucherItem">
+<div class="table-header"><h3><span class="table-num">8-4</span> FinanceVoucherItem</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">voucherId</span> <span class="field-required">*</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceVoucher" class="dep-link">8-3 FinanceVoucher</a></span></td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">accountId</span> <span class="field-required">*</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceAccount" class="dep-link">8-1 FinanceAccount</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">debit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">credit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">description</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">sortOrder</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">FK: voucherId → FinanceVoucher, accountId → FinanceAccount</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#FinanceVoucher" class="dep-link">8-3 FinanceVoucher</a>
+<a href="#FinanceAccount" class="dep-link">8-1 FinanceAccount</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+<div class="table-block" id="FinanceAccountBalance">
+<div class="table-header"><h3><span class="table-num">8-5</span> FinanceAccountBalance</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="uk-border uk-bg fk-underline">
+    <td><span class="field-name">accountId</span> <span class="field-required">*</span><span class="kb uk">U₁</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceAccount" class="dep-link">8-1 FinanceAccount</a></span></td>
+  </tr>
+  <tr class="uk-border uk-bg fk-underline">
+    <td><span class="field-name">periodId</span> <span class="field-required">*</span><span class="kb uk">U₂</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinancePeriod" class="dep-link">8-2 FinancePeriod</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">openingDebit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">openingCredit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">currentDebit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">currentCredit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">closingDebit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">closingCredit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">companyCode</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">Unique[1]: (accountId, periodId)</span><span class="constraint-tag">FK: accountId → FinanceAccount, periodId → FinancePeriod</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#FinanceAccount" class="dep-link">8-1 FinanceAccount</a>
+<a href="#FinancePeriod" class="dep-link">8-2 FinancePeriod</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="section"><div class="section-title">9. Inventory</div>
+<div class="table-block" id="StockRawMaterial">
+<div class="table-header"><h3><span class="table-num">9-1</span> StockRawMaterial</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="uk-border uk-bg">
+    <td><span class="field-name">code</span> <span class="field-required">*</span><span class="kb uk">U</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">name</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">spec</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">unit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">manufacturer</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">status</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">正常/暂未生产/待验证</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">lastBalance</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">currentPurchase</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">currentConsume</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">remark</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">companyCode</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">editedBy</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">1-1 User</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">editedAt</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">version</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">UK: code</span><span class="constraint-tag">FK: editedBy → User</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#User" class="dep-link">1-1 User</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+<div class="table-block" id="StockPackaging">
+<div class="table-header"><h3><span class="table-num">9-2</span> StockPackaging</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="uk-border uk-bg">
+    <td><span class="field-name">code</span> <span class="field-required">*</span><span class="kb uk">U</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">name</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">spec</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">unit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">packagingType</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">小容量/片剂包装</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">status</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">正常/待检/不合格</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">lastBalance</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">currentInbound</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">currentOutbound</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">batchNo</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">expiryDate</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">remark</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">companyCode</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">editedBy</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">1-1 User</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">editedAt</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">version</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">UK: code</span><span class="constraint-tag">FK: editedBy → User</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#User" class="dep-link">1-1 User</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+<div class="table-block" id="StockFinishedGoods">
+<div class="table-header"><h3><span class="table-num">9-3</span> StockFinishedGoods</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="uk-border uk-bg">
+    <td><span class="field-name">code</span> <span class="field-required">*</span><span class="kb uk">U</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">name</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">packagingSpec</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">unit</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">stockType</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">正常库存/退货/验证产品</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">lastBalance</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">currentInbound</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">currentOutbound</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">availableStock</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">remark</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">companyCode</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">editedBy</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">1-1 User</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">editedAt</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">version</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">UK: code</span><span class="constraint-tag">FK: editedBy → User</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#User" class="dep-link">1-1 User</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+<div class="table-block" id="StockBatch">
+<div class="table-header"><h3><span class="table-num">9-4</span> StockBatch</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">targetType</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">raw_material / packaging / finished_goods</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">targetId</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">batchNo</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">quantity</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">expiryDate</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">status</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">remark</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<span class="dep-none">无</span>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+<div class="table-block" id="StockOperation">
+<div class="table-header"><h3><span class="table-num">9-5</span> StockOperation</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">opType</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">purchase / inbound / outbound / consume / adjust / return</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">targetType</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">raw_material / packaging / finished_goods</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">targetId</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">quantity</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">docNo</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">reason</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">operatorId</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">1-1 User</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">FK: operatorId → User</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<a href="#User" class="dep-link">1-1 User</a>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+<div class="table-block" id="StockReturn">
+<div class="table-header"><h3><span class="table-num">9-6</span> StockReturn</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">finishedGoodsId</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">returnDate</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">quantity</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">salesman</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">reason</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span></div>
+<div class="dep-out"><span class="dep-label">Depends on:</span>
+<span class="dep-none">无</span>
+</div>
+<div class="dep-in"><span class="dep-label">Referenced by:</span>
+<span class="dep-none">无</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="section"><div class="section-title">10. Contract</div>
+<div class="table-block" id="Contract">
+<div class="table-header"><h3><span class="table-num">10-1</span> Contract</h3></div>
+<table class="field-table"><thead><tr><th style="width:200px">Field</th><th style="width:60px">Type</th><th>Description</th></tr></thead><tbody>
+  <tr class="pk-border">
+    <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">contractNo</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">合同编号</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">name</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">合同名称</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">partyA</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">签署方（甲方）</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">partyB</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">签署对方（乙方）</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">shareholder</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">股东方</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">category</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">合同类型/分类</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">content</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">合同内容</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">handler</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">经办人</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">signDate</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">签订日期</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">endDate</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">结束日期</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">status</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">状态</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">amount</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment">合同金额</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">executedAmount</span></td>
+    <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
+    <td class="field-comment">已执行金额</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">location</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">文件位置（北京办公区/上海办公区）</td>
+  </tr>
+  <tr>
+    <td><span class="field-name">remark</span></td>
+    <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
+    <td class="field-comment">备注</td>
+  </tr>
+  <tr class="fk-underline">
+    <td><span class="field-name">editedBy</span><span class="kb fk">F</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#User" class="dep-link">1-1 User</a></span></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">editedAt</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">version</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+  <tr>
+    <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
+    <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
+    <td class="field-comment"></td>
+  </tr>
+</tbody></table>
+<div class="table-footer">
+<div class="constraints"><span class="constraint-tag">PK: id</span><span class="constraint-tag">FK: editedBy → User</span></div>
 <div class="dep-out"><span class="dep-label">Depends on:</span>
 <a href="#User" class="dep-link">1-1 User</a>
 </div>

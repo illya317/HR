@@ -1,43 +1,20 @@
 import { NextResponse } from "next/server";
-import { authenticate, checkHRAccess } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { matchAnyField } from "@/lib/search-schema";
 
+// ⚠️ 已迁移到 /api/hr/projects，本文件保留兼容期
 export async function GET(request: Request) {
-  const payload = await authenticate(request);
-  if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
-  if (!(await checkHRAccess(payload.userId)))
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
-
-  const { searchParams } = new URL(request.url);
-  const keyword = searchParams.get("keyword") || "";
-
-  let projects = await prisma.project.findMany({
-    orderBy: { id: "desc" },
-    include: {
-      _count: { select: { employees: true } },
-    },
-  });
-  if (keyword) projects = projects.filter((p) => matchAnyField(p, keyword, "Project"));
-  return NextResponse.json({ projects });
+  const url = new URL(request.url);
+  const target = new URL("/api/hr/projects", url.origin);
+  target.search = url.search;
+  target.searchParams.set("pageSize", "99999");
+  return fetch(target, { headers: request.headers });
 }
 
 export async function POST(request: Request) {
-  const payload = await authenticate(request);
-  if (!payload) return NextResponse.json({ error: "未登录" }, { status: 401 });
-  if (!(await checkHRAccess(payload.userId)))
-    return NextResponse.json({ error: "无权限" }, { status: 403 });
-
-  const { name, type, departmentIds, description } = await request.json();
-  if (!name) return NextResponse.json({ error: "名称不能为空" }, { status: 400 });
-
-  const project = await prisma.project.create({
-    data: {
-      name,
-      type: type || "project",
-      description: description || null,
-      editedBy: payload.userId,
-    },
+  const url = new URL(request.url);
+  const target = new URL("/api/hr/projects", url.origin);
+  return fetch(target, {
+    method: "POST",
+    headers: request.headers,
+    body: await request.text(),
   });
-  return NextResponse.json({ project });
 }

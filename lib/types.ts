@@ -7,10 +7,13 @@ export interface SessionUser {
   apiKey?: string | null;
   canLogin?: boolean;
   isWorkListAdmin?: boolean;
+  isSuperAdmin?: boolean;
   canSelectAnyWeek?: boolean;
   canAccessHR?: boolean;
   canAccessWorks?: boolean;
   canAccessFinance?: boolean;
+  canAccessInventory?: boolean;
+  canAccessContract?: boolean;
   canAccessAdmin?: boolean;
   isActiveEmployee?: boolean;
   employeeId?: string | null;

@@ -7,7 +7,7 @@ import { HIDDEN_RESOURCE_KEYS } from "../lib";
 import PermissionDrilldown, { type EmployeePerm } from "../components/PermissionDrilldown";
 
 interface Props {
-  user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };
+  user: { id: number; name: string; isWorkListAdmin?: boolean; isAnyGroupAdmin?: boolean };
   resources: ResourceItem[];
   showToast: (msg: string, type?: "success" | "error") => void;
 }

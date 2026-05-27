@@ -7,7 +7,7 @@ import { useByUserTab } from "../hooks/useByUserTab";
 import UserPermCard from "../components/UserPermCard";
 
 interface Props {
-  user: { id: number; name: string; isWorkListAdmin: boolean; isAnyGroupAdmin: boolean };
+  user: { id: number; name: string; isWorkListAdmin?: boolean; isAnyGroupAdmin?: boolean };
   resources: ResourceItem[];
   roles: Array<{ id: number; key: string; name: string; description: string | null }>;
   allDepts: DeptItem[];

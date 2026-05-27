@@ -27,6 +27,13 @@ model User {
   employees               Employee[]        @relation("EmployeeUser")
   managedDepartments      Department[]      @relation("DepartmentManager")
   editHistories           EditHistory[]     @relation("EditHistoryEditor")
+  editedFinanceAccounts   FinanceAccount[]  @relation("FinanceAccountEditor")
+  editedFinanceVouchers   FinanceVoucher[]  @relation("FinanceVoucherEditor")
+  editedStockRawMaterials StockRawMaterial[] @relation("StockRawMaterialEditor")
+  editedStockPackagings   StockPackaging[]   @relation("StockPackagingEditor")
+  editedStockFinishedGoods StockFinishedGoods[] @relation("StockFinishedGoodsEditor")
+  stockOperations         StockOperation[]   @relation("StockOperationEditor")
+  editedContracts         Contract[]         @relation("ContractEditor")
 }
 
 model SystemConfig {
@@ -207,6 +214,8 @@ model Employee {
   editedBy      Int? // 编辑人用户ID
   editedAt      DateTime? // 编辑时间
   version       Int                @default(1) // 版本号
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 }
 
 model Employment {
@@ -214,6 +223,9 @@ model Employment {
   employeeId     Int                               // 员工ID
   employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   isActive       Boolean  @default(true)         // 是否在职
+
+  @@index([employeeId])
+  @@index([isActive])
   currentCompany String?                           // 当前所属公司
   joinDate       String?                           // 入职日期
   leaveDate      String?                           // 离职日期
@@ -244,6 +256,8 @@ model Company {
   editedBy           Int?               // 编辑人用户ID
   editedAt           DateTime?          // 编辑时间
   version            Int                @default(1) // 版本号
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
 
 model CompanyRelation {
@@ -254,6 +268,8 @@ model CompanyRelation {
   child          Company  @relation("ChildCompany", fields: [childId], references: [id], onDelete: Cascade)
   shareRatio     Float?   // 持股比例
   isConsolidated Boolean  @default(false) // 是否并表
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([parentId, childId])
 }
@@ -262,6 +278,9 @@ model Department {
   id                Int                @id @default(autoincrement()) // 主键
   code              String             // 编码
   name              String // 名称
+
+  @@index([code])
+  @@index([name])
   alias             String?            // 别名
   level             Int                @default(1) // 层级：1=事业部，2=部门，3=子部门
   parentId          Int? // 上级ID
@@ -284,6 +303,10 @@ model Position {
   alias                 String?                 // 别名
   name                  String                  // 名称
   departmentId          Int?                    // 所属部门
+
+  @@index([code])
+  @@index([name])
+  @@index([departmentId])
   department            Department?             @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   positionDescriptionId Int?                    // → PositionDescription.id
   positionDescription   PositionDescription?    @relation(fields: [positionDescriptionId], references: [id], onDelete: SetNull)
@@ -303,6 +326,10 @@ model EDP {
   department   Department? @relation(fields: [departmentId], references: [id])
   positionId   Int? // 岗位ID
   position     Position?   @relation(fields: [positionId], references: [id])
+
+  @@index([employeeId])
+  @@index([departmentId])
+  @@index([positionId])
   isPrimary    Boolean    @default(false) // 是否主岗
   startDate    String?    // 任职开始日期
   endDate      String?    // 任职结束日期（null=至今）
@@ -330,6 +357,8 @@ model Project {
   editedBy     Int? // 编辑人用户ID
   editedAt     DateTime? // 编辑时间
   version      Int              @default(1) // 版本号
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 }
 
 model EmployeeProject {
@@ -344,6 +373,8 @@ model EmployeeProject {
   editedBy   Int? // 编辑人用户ID
   editedAt   DateTime? // 编辑时间
   version    Int       @default(1) // 版本号
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@unique([employeeId, projectId])
 }
@@ -366,6 +397,8 @@ model PositionDescription {
   positions         Position[]       // 关联岗位
   editedBy          Int?                              // 编辑人用户ID
   editedAt          DateTime?                         // 编辑时间
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
 
 // ─── 编辑历史 ─────────────────────────────────────────────
@@ -390,4 +423,229 @@ model LoginAttempt {
   ip        String   // 客户端IP
   success   Boolean  // 是否成功
   createdAt DateTime @default(now()) // 创建时间
+}
+
+// ─── 财务模块 ─────────────────────────────────────────────
+
+model FinanceAccount {
+  id               Int                 @id @default(autoincrement())
+  code             String              @unique // 科目编码，如 1001
+  name             String              // 科目名称
+  category         String              // asset/liability/equity/cost/revenue
+  parentId         Int?
+  parent           FinanceAccount?     @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children         FinanceAccount[]    @relation("AccountHierarchy")
+  balanceDirection String              @default("debit") // debit/credit
+  isActive         Boolean             @default(true)
+  companyCode      String?             // null=通用
+  sortOrder        Int                 @default(0)
+  voucherItems     FinanceVoucherItem[]
+  balances         FinanceAccountBalance[]
+  editedBy         Int?
+  editor           User?               @relation("FinanceAccountEditor", fields: [editedBy], references: [id])
+  editedAt         DateTime?
+  version          Int                 @default(1)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+}
+
+model FinancePeriod {
+  id          Int              @id @default(autoincrement())
+  year        Int
+  month       Int
+  startDate   String
+  endDate     String
+  isClosed    Boolean          @default(false)
+  companyCode String?
+  vouchers    FinanceVoucher[]
+  balances    FinanceAccountBalance[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model FinanceVoucher {
+  id          Int                @id @default(autoincrement())
+  voucherNo   String             @unique // 凭证号，如 V202501001
+  date        String             // 凭证日期 yyyy-MM-dd
+  periodId    Int
+  period      FinancePeriod      @relation(fields: [periodId], references: [id])
+  description String             // 摘要
+  totalDebit  Float              @default(0)
+  totalCredit Float              @default(0)
+  status      String             @default("draft") // draft/posted
+  companyCode String?
+  items       FinanceVoucherItem[]
+  editedBy    Int?
+  editor      User?              @relation("FinanceVoucherEditor", fields: [editedBy], references: [id])
+  editedAt    DateTime?
+  version     Int                @default(1)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([periodId, date, companyCode])
+  @@index([status])
+}
+
+model FinanceVoucherItem {
+  id          Int            @id @default(autoincrement())
+  voucherId   Int
+  voucher     FinanceVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  accountId   Int
+  account     FinanceAccount @relation(fields: [accountId], references: [id])
+  debit       Float          @default(0)
+  credit      Float          @default(0)
+  description String?
+  sortOrder   Int            @default(0)
+}
+
+model FinanceAccountBalance {
+  id            Int            @id @default(autoincrement())
+  accountId     Int
+  account       FinanceAccount @relation(fields: [accountId], references: [id])
+  periodId      Int
+  period        FinancePeriod  @relation(fields: [periodId], references: [id])
+  openingDebit  Float          @default(0)
+  openingCredit Float          @default(0)
+  currentDebit  Float          @default(0)
+  currentCredit Float          @default(0)
+  closingDebit  Float          @default(0)
+  closingCredit Float          @default(0)
+  companyCode   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([accountId, periodId])
+}
+
+// ─── 库存管理 ─────────────────────────────────────────────
+
+model StockRawMaterial {
+  id              Int      @id @default(autoincrement())
+  code            String   @unique
+  name            String
+  spec            String?
+  unit            String   @default("kg")
+  manufacturer    String?
+  status          String   @default("正常") // 正常/暂未生产/待验证
+  lastBalance     Float    @default(0)
+  currentPurchase Float    @default(0)
+  currentConsume  Float    @default(0)
+  remark          String?
+  companyCode     String?
+  editedBy        Int?
+  editor          User?    @relation("StockRawMaterialEditor", fields: [editedBy], references: [id])
+  editedAt        DateTime?
+  version         Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model StockPackaging {
+  id              Int      @id @default(autoincrement())
+  code            String   @unique
+  name            String
+  spec            String?
+  unit            String   @default("卷")
+  packagingType   String   @default("小容量") // 小容量/片剂包装
+  status          String   @default("正常") // 正常/待检/不合格
+  lastBalance     Float    @default(0)
+  currentInbound  Float    @default(0)
+  currentOutbound Float    @default(0)
+  batchNo         String?
+  expiryDate      String?
+  remark          String?
+  companyCode     String?
+  editedBy        Int?
+  editor          User?    @relation("StockPackagingEditor", fields: [editedBy], references: [id])
+  editedAt        DateTime?
+  version         Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model StockFinishedGoods {
+  id              Int      @id @default(autoincrement())
+  code            String   @unique
+  name            String
+  packagingSpec   String?
+  unit            String   @default("件")
+  stockType       String   @default("正常库存") // 正常库存/退货/验证产品
+  lastBalance     Float    @default(0)
+  currentInbound  Float    @default(0)
+  currentOutbound Float    @default(0)
+  availableStock  Float    @default(0)
+  remark          String?
+  companyCode     String?
+  editedBy        Int?
+  editor          User?    @relation("StockFinishedGoodsEditor", fields: [editedBy], references: [id])
+  editedAt        DateTime?
+  version         Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model StockBatch {
+  id          Int      @id @default(autoincrement())
+  targetType  String   // raw_material / packaging / finished_goods
+  targetId    Int
+  batchNo     String
+  quantity    Float    @default(0)
+  expiryDate  String?
+  status      String   @default("正常")
+  remark      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StockOperation {
+  id          Int      @id @default(autoincrement())
+  opType      String   // purchase / inbound / outbound / consume / adjust / return
+  targetType  String   // raw_material / packaging / finished_goods
+  targetId    Int
+  quantity    Float    @default(0)
+  docNo       String?
+  reason      String?
+  operatorId  Int?
+  editor      User?    @relation("StockOperationEditor", fields: [operatorId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model StockReturn {
+  id              Int      @id @default(autoincrement())
+  finishedGoodsId Int
+  returnDate      String
+  quantity        Float    @default(0)
+  salesman        String?
+  reason          String?
+  createdAt       DateTime @default(now())
+}
+
+// ─── 合同管理 ─────────────────────────────────────────────
+
+model Contract {
+  id             Int      @id @default(autoincrement())
+  contractNo     String?  // 合同编号
+  name           String   // 合同名称
+  partyA         String?  // 签署方（甲方）
+  partyB         String?  // 签署对方（乙方）
+  shareholder    String?  // 股东方
+  category       String?  // 合同类型/分类
+  content        String?  // 合同内容
+  handler        String?  // 经办人
+  signDate       String?  // 签订日期
+  endDate        String?  // 结束日期
+  status         String?  // 状态
+  amount         Float?   // 合同金额
+  executedAmount Float?   // 已执行金额
+  location       String?  // 文件位置（北京办公区/上海办公区）
+  remark         String?  // 备注
+  editedBy       Int?
+  editor         User?    @relation("ContractEditor", fields: [editedBy], references: [id])
+  editedAt       DateTime?
+  version        Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([endDate])
+  @@index([status])
 }
