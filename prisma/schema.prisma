@@ -215,7 +215,7 @@ model Employee {
   editedAt      DateTime? // 编辑时间
   version       Int                @default(1) // 版本号
   createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  updatedAt     DateTime           @default(now()) @updatedAt
 }
 
 model Employment {
@@ -257,7 +257,7 @@ model Company {
   editedAt           DateTime?          // 编辑时间
   version            Int                @default(1) // 版本号
   createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  updatedAt          DateTime           @default(now()) @updatedAt
 }
 
 model CompanyRelation {
@@ -269,7 +269,7 @@ model CompanyRelation {
   shareRatio     Float?   // 持股比例
   isConsolidated Boolean  @default(false) // 是否并表
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime @default(now()) @updatedAt
 
   @@unique([parentId, childId])
 }
@@ -358,7 +358,7 @@ model Project {
   editedAt     DateTime? // 编辑时间
   version      Int              @default(1) // 版本号
   createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  updatedAt    DateTime         @default(now()) @updatedAt
 }
 
 model EmployeeProject {
@@ -374,7 +374,7 @@ model EmployeeProject {
   editedAt   DateTime? // 编辑时间
   version    Int       @default(1) // 版本号
   createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  updatedAt  DateTime  @default(now()) @updatedAt
 
   @@unique([employeeId, projectId])
 }
@@ -398,7 +398,7 @@ model PositionDescription {
   editedBy          Int?                              // 编辑人用户ID
   editedAt          DateTime?                         // 编辑时间
   createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  updatedAt         DateTime         @default(now()) @updatedAt
 }
 
 // ─── 编辑历史 ─────────────────────────────────────────────
@@ -446,7 +446,7 @@ model FinanceAccount {
   editedAt         DateTime?
   version          Int                 @default(1)
   createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  updatedAt        DateTime            @default(now()) @updatedAt
 }
 
 model FinancePeriod {
@@ -460,7 +460,7 @@ model FinancePeriod {
   vouchers    FinanceVoucher[]
   balances    FinanceAccountBalance[]
   createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  updatedAt   DateTime         @default(now()) @updatedAt
 }
 
 model FinanceVoucher {
@@ -480,7 +480,7 @@ model FinanceVoucher {
   editedAt    DateTime?
   version     Int                @default(1)
   createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  updatedAt   DateTime           @default(now()) @updatedAt
 
   @@index([periodId, date, companyCode])
   @@index([status])
@@ -512,7 +512,7 @@ model FinanceAccountBalance {
   closingCredit Float          @default(0)
   companyCode   String?
   createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  updatedAt     DateTime       @default(now()) @updatedAt
 
   @@unique([accountId, periodId])
 }
@@ -537,7 +537,7 @@ model StockRawMaterial {
   editedAt        DateTime?
   version         Int      @default(1)
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime @default(now()) @updatedAt
 }
 
 model StockPackaging {
@@ -560,7 +560,7 @@ model StockPackaging {
   editedAt        DateTime?
   version         Int      @default(1)
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime @default(now()) @updatedAt
 }
 
 model StockFinishedGoods {
@@ -581,7 +581,7 @@ model StockFinishedGoods {
   editedAt        DateTime?
   version         Int      @default(1)
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime @default(now()) @updatedAt
 }
 
 model StockBatch {
@@ -594,7 +594,7 @@ model StockBatch {
   status      String   @default("正常")
   remark      String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model StockOperation {
@@ -644,7 +644,7 @@ model Contract {
   editedAt       DateTime?
   version        Int      @default(1)
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime @default(now()) @updatedAt
 
   @@index([endDate])
   @@index([status])
