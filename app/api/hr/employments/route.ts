@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
   const mapped = items.map((item) => ({
     id: item.id,
-    employeeId: String(item.employeeId),
+    employeeId: item.employeeId,
     employeeName: item.employee?.name || "",
     isActive: item.isActive,
     currentCompany: item.currentCompany,
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   }));
 
   if (keyword) {
-    return NextResponse.json({ items: mapped.filter((e) => matchEmployee(e, keyword) || e.employeeName?.includes(keyword)) });
+    return NextResponse.json({ items: mapped.filter((e) => matchEmployee({ ...e, employeeId: String(e.employeeId) }, keyword) || e.employeeName?.includes(keyword)) });
   }
   return NextResponse.json({ items: mapped });
 }
