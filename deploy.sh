@@ -8,6 +8,19 @@ KEY="/Users/koito/Desktop/.System/tencent/fenghua.pem"
 PUSH_DB=false
 LOCKFILE=".deploying"
 
+# 分支检查：必须在 main 分支部署
+if [ "$(git branch --show-current)" != "main" ]; then
+  echo "[错误] 必须在 main 分支部署，当前分支：$(git branch --show-current)"
+  exit 1
+fi
+
+# 未提交修改检查（必须在锁文件之前，否则 .deploying 会被视为未跟踪文件）
+if [ -n "$(git status --porcelain)" ]; then
+  echo "[错误] 存在未提交的修改，请先 commit"
+  git status --short
+  exit 1
+fi
+
 # 锁文件：防止多 Agent 同时部署
 if [ -f "$LOCKFILE" ]; then
   echo "[错误] 检测到 $LOCKFILE，可能另一个部署正在进行。"
@@ -17,19 +30,6 @@ fi
 
 touch "$LOCKFILE"
 trap 'rm -f "$LOCKFILE"' EXIT
-
-# 分支检查：必须在 main 分支部署
-if [ "$(git branch --show-current)" != "main" ]; then
-  echo "[错误] 必须在 main 分支部署，当前分支：$(git branch --show-current)"
-  exit 1
-fi
-
-# 未提交修改检查
-if [ -n "$(git status --porcelain)" ]; then
-  echo "[错误] 存在未提交的修改，请先 commit"
-  git status --short
-  exit 1
-fi
 
 # 解析参数
 for arg in "$@"; do
