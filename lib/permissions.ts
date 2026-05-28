@@ -30,6 +30,13 @@ export const RES = {
     account: "finance.account",
     voucher: "finance.voucher",
     report: "finance.report",
+    cost: "finance.cost",
+    costShipments: "finance.cost.shipments",
+    costAnalysis: "finance.cost.analysis",
+    costStructure: "finance.cost.structure",
+    costWorkshop: "finance.cost.workshop",
+    costSalary: "finance.cost.salary",
+    costImports: "finance.cost.imports",
   },
   inventory: {
     root: "inventory",

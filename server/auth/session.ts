@@ -56,6 +56,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     hasHRDelete,
     hasWorks,
     hasFinance,
+    hasFinanceCost,
     hasInventory,
     hasContract,
   ] = await Promise.all([
@@ -65,6 +66,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     checkPermissionWithContext(ctx, "people", "delete"),
     checkPermissionWithContext(ctx, "work", "access"),
     checkPermissionWithContext(ctx, "finance", "access"),
+    checkPermissionWithContext(ctx, "finance.cost", "access"),
     checkPermissionWithContext(ctx, "inventory", "access"),
     checkPermissionWithContext(ctx, "contract", "access"),
   ]);
@@ -84,6 +86,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     canDeleteHR: isAdmin || (hasHRDelete && isActiveEmployee),
     canAccessWorks: hasWorks,
     canAccessFinance: hasFinance,
+    canAccessFinanceCost: hasFinanceCost,
     canAccessInventory: hasInventory,
     canAccessContract: hasContract,
     canAccessAdmin: isAdmin || canManagePermissions,

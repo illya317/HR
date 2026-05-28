@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { withFinanceAccess } from "@/lib/with-auth";
+import { withFinanceWrite } from "@/lib/with-auth";
 import { prisma } from "@/lib/prisma";
 import { handleDelete } from "@/lib/crud-finance";
 
@@ -13,7 +13,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  return withFinanceAccess(async (req, user) => {
+  return withFinanceWrite(async (req, user) => {
     const { id } = await params;
     const body = await req.json();
     const { code, name, category, balanceDirection, isActive, sortOrder } =

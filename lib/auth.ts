@@ -25,6 +25,9 @@ export {
   checkFinanceAccess,
   checkFinanceWrite,
   checkFinanceDelete,
+  checkFinanceCostAccess,
+  checkFinanceCostWrite,
+  checkFinanceCostDelete,
   checkInventoryAccess,
   checkContractAccess,
 } from "@/server/auth/domain";

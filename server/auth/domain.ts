@@ -53,6 +53,35 @@ export async function checkFinanceDelete(userId: number): Promise<boolean> {
   return checkFinanceAccess(userId, "delete");
 }
 
+export async function checkFinanceCostAccess(
+  userId: number,
+  roleKey: "access" | "write" | "delete" | "admin" = "access",
+): Promise<boolean> {
+  if (await checkPermission(userId, "system", "admin")) return true;
+  if (roleKey === "access") {
+    return (
+      (await checkPermission(userId, "finance.cost", "access")) ||
+      (await checkPermission(userId, "finance.cost", "write")) ||
+      (await checkPermission(userId, "finance.cost", "delete")) ||
+      (await checkPermission(userId, "finance", "access")) ||
+      (await checkPermission(userId, "finance", "write")) ||
+      (await checkPermission(userId, "finance", "delete"))
+    );
+  }
+  return (
+    (await checkPermission(userId, "finance.cost", roleKey)) ||
+    (await checkPermission(userId, "finance", roleKey))
+  );
+}
+
+export async function checkFinanceCostWrite(userId: number): Promise<boolean> {
+  return checkFinanceCostAccess(userId, "write");
+}
+
+export async function checkFinanceCostDelete(userId: number): Promise<boolean> {
+  return checkFinanceCostAccess(userId, "delete");
+}
+
 export async function checkInventoryAccess(userId: number): Promise<boolean> {
   return (
     (await checkPermission(userId, "system", "admin")) ||

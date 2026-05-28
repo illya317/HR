@@ -1,0 +1,44 @@
+import { NextResponse } from "next/server";
+import { withFinanceAccess, withFinanceDelete } from "@/lib/with-auth";
+import { deleteImportById, getImportById } from "@/server/services/finance-cost";
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  return withFinanceDelete(async () => {
+    const { id } = await params;
+    const numericId = parseInt(id);
+    if (Number.isNaN(numericId)) {
+      return NextResponse.json({ success: false, error: "无效ID" }, { status: 400 });
+    }
+
+    const existing = await getImportById(numericId);
+    if (!existing) {
+      return NextResponse.json({ success: false, error: "记录不存在" }, { status: 404 });
+    }
+
+    await deleteImportById(numericId);
+    return NextResponse.json({ success: true });
+  })(request);
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  return withFinanceAccess(async () => {
+    const { id } = await params;
+    const numericId = parseInt(id);
+    if (Number.isNaN(numericId)) {
+      return NextResponse.json({ success: false, error: "无效ID" }, { status: 400 });
+    }
+
+    const data = await getImportById(numericId);
+    if (!data) {
+      return NextResponse.json({ success: false, error: "记录不存在" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data });
+  })(request);
+}

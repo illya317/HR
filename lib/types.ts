@@ -14,6 +14,7 @@ export interface SessionUser {
   canDeleteHR?: boolean;
   canAccessWorks?: boolean;
   canAccessFinance?: boolean;
+  canAccessFinanceCost?: boolean;
   canAccessInventory?: boolean;
   canAccessContract?: boolean;
   canAccessAdmin?: boolean;
