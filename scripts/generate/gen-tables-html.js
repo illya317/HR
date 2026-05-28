@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
+const SCHEMA_DIR = path.join(__dirname, "..", "..", "prisma", "models");
 const SCHEMA_PATH = path.join(__dirname, "..", "..", "prisma", "schema.prisma");
 const OUTPUT_PATH = path.join(__dirname, "..", "..", "docs", "tables.html");
 
@@ -61,9 +62,26 @@ const GROUPS = [
   },
 ];
 
-// ─── Parse schema.prisma ──────────────────────────────────
+// ─── Parse all .prisma files ──────────────────────────────
 
-const schemaText = fs.readFileSync(SCHEMA_PATH, "utf8");
+function loadSchemaText() {
+  const parts = [];
+  // Load main schema.prisma (may contain inline models or just generator/datasource)
+  if (fs.existsSync(SCHEMA_PATH)) {
+    parts.push(fs.readFileSync(SCHEMA_PATH, "utf8"));
+  }
+  // Load all model files from prisma/models/
+  if (fs.existsSync(SCHEMA_DIR)) {
+    const files = fs.readdirSync(SCHEMA_DIR).filter((f) => f.endsWith(".prisma"));
+    files.sort(); // deterministic order
+    for (const f of files) {
+      parts.push(fs.readFileSync(path.join(SCHEMA_DIR, f), "utf8"));
+    }
+  }
+  return parts.join("\n");
+}
+
+const schemaText = loadSchemaText();
 
 // Remove comments that are on their own line (keep inline comments)
 const lines = schemaText.split("\n");
