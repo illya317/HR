@@ -3,6 +3,7 @@ import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { handleCreate } from "@/lib/crud";
 
+
 const CONFIG = { entityType: "EmployeeProject", modelKey: "employeeProject" as const };
 
 export async function GET(request: Request) {
@@ -13,6 +14,10 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get("projectId");
+  const keyword = searchParams.get("keyword") || "";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(500, Math.max(1, parseInt(searchParams.get("pageSize") || "50", 10)));
+
   const where = projectId ? { projectId: parseInt(projectId) } : {};
 
   const entries = await prisma.employeeProject.findMany({
@@ -23,18 +28,33 @@ export async function GET(request: Request) {
     },
     orderBy: { id: "asc" },
   });
-  return NextResponse.json({
-    entries: entries.map((e) => ({
-      id: e.id,
-      employeeId: e.employeeId,
-      employeeName: e.employee?.name || "",
-      projectId: e.projectId,
-      projectName: e.project?.name || "",
-      role: e.role,
-      startDate: e.startDate,
-      endDate: e.endDate,
-    })),
-  });
+
+  const mapped = entries.map((e) => ({
+    id: e.id,
+    employeeId: e.employeeId,
+    employeeName: e.employee?.name || "",
+    projectId: e.projectId,
+    projectName: e.project?.name || "",
+    role: e.role,
+    startDate: e.startDate,
+    endDate: e.endDate,
+  }));
+
+  let result = mapped;
+  if (keyword) {
+    const q = keyword.toLowerCase();
+    result = mapped.filter((e) =>
+      (e.employeeName || "").toLowerCase().includes(q) ||
+      (e.projectName || "").toLowerCase().includes(q) ||
+      (e.role || "").toLowerCase().includes(q)
+    );
+  }
+
+  const total = result.length;
+  const start = (page - 1) * pageSize;
+  const paged = result.slice(start, start + pageSize);
+
+  return NextResponse.json({ entries: paged, total });
 }
 
 export async function POST(request: Request) {

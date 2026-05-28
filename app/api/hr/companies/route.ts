@@ -5,6 +5,7 @@ const CONFIG = { entityType: "Company", modelKey: "company" as const };
 import { authenticate, checkHRAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { snapshotHistory } from "@/lib/history";
+import { matchAnyField } from "@/lib/search-schema";
 
 export async function GET(request: Request) {
   const payload = await authenticate(request);
@@ -15,21 +16,35 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const keyword = searchParams.get("keyword") || "";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(500, Math.max(1, parseInt(searchParams.get("pageSize") || "50", 10)));
+
   const companies = await prisma.company.findMany({ orderBy: { id: "asc" } });
-  return NextResponse.json({
-    companies: companies.map((r) => ({
-      id: r.id,
-      code: r.code,
-      name: r.name,
-      fullName: r.fullName,
-      registeredCapital: r.registeredCapital,
-      unifiedCode: r.unifiedCode,
-      bankName: r.bankName,
-      registeredAddress: r.registeredAddress,
-      registeredDate: r.registeredDate,
-      legalPerson: r.legalPerson,
-    })),
-  });
+  const mapped = companies.map((r) => ({
+    id: r.id,
+    code: r.code,
+    name: r.name,
+    fullName: r.fullName,
+    registeredCapital: r.registeredCapital,
+    unifiedCode: r.unifiedCode,
+    bankName: r.bankName,
+    registeredAddress: r.registeredAddress,
+    registeredDate: r.registeredDate,
+    legalPerson: r.legalPerson,
+  }));
+
+  let result = mapped;
+  if (keyword) {
+    result = mapped.filter((c) => matchAnyField(c, keyword, "Company"));
+  }
+
+  const total = result.length;
+  const start = (page - 1) * pageSize;
+  const paged = result.slice(start, start + pageSize);
+
+  return NextResponse.json({ companies: paged, total });
 }
 
 export async function POST(request: Request) {

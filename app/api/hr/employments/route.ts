@@ -15,6 +15,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get("keyword") || "";
   const isActive = searchParams.get("isActive");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(500, Math.max(1, parseInt(searchParams.get("pageSize") || "50", 10)));
 
   const where: Prisma.EmploymentWhereInput = {};
   if (isActive !== null && isActive !== "") {
@@ -41,10 +43,19 @@ export async function GET(request: Request) {
     contracts: item.contracts,
   }));
 
+  let filtered = mapped;
   if (keyword) {
-    return NextResponse.json({ items: mapped.filter((e) => matchEmployee({ ...e, employeeId: String(e.employeeId) }, keyword) || e.employeeName?.includes(keyword)) });
+    filtered = mapped.filter((e) =>
+      matchEmployee({ name: e.employeeName, employeeId: String(e.employeeId) }, keyword) ||
+      e.employeeName?.includes(keyword)
+    );
   }
-  return NextResponse.json({ items: mapped });
+
+  const total = filtered.length;
+  const start = (page - 1) * pageSize;
+  const paged = filtered.slice(start, start + pageSize);
+
+  return NextResponse.json({ items: paged, total });
 }
 
 export async function POST(request: Request) {
@@ -54,5 +65,3 @@ export async function POST(request: Request) {
     return body;
   });
 }
-
-

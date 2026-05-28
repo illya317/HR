@@ -21,6 +21,9 @@ export const GET = withContractAccess(async (request) => {
       { partyB: { contains: q } },
       { content: { contains: q } },
       { contractNo: { contains: q } },
+      { handler: { contains: q } },
+      { shareholder: { contains: q } },
+      { remark: { contains: q } },
     ];
   }
   if (location) where.location = location;

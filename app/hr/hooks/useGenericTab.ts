@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { TabConfig } from "../types";
 
 export interface TabItem {
@@ -48,6 +48,8 @@ export function useGenericTab(config: TabConfig): GenericTabState {
   const [items, setItems] = useState<TabItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const keywordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [filters, setFilters] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     if (config.filters) {
@@ -65,17 +67,32 @@ export function useGenericTab(config: TabConfig): GenericTabState {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPageRaw] = useState(1);
   const [pageSize] = useState(50);
   const [total, setTotal] = useState(0);
 
-  // 加载原始数据（keyword + filters + 分页）
+  // Debounce keyword → searchKeyword（300ms）
+  useEffect(() => {
+    if (keywordTimerRef.current) clearTimeout(keywordTimerRef.current);
+    keywordTimerRef.current = setTimeout(() => {
+      setSearchKeyword(keyword);
+    }, 300);
+    return () => {
+      if (keywordTimerRef.current) clearTimeout(keywordTimerRef.current);
+    };
+  }, [keyword]);
+
+  const setPage = useCallback((v: number) => {
+    setPageRaw(v);
+  }, []);
+
+  // 加载原始数据（searchKeyword + filters + 分页）
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (keyword) params.set("keyword", keyword);
+      if (searchKeyword) params.set("keyword", searchKeyword);
       params.set("page", String(page));
       params.set("pageSize", String(pageSize));
       for (const [key, value] of Object.entries(filters)) {
@@ -102,20 +119,20 @@ export function useGenericTab(config: TabConfig): GenericTabState {
     } finally {
       setLoading(false);
     }
-  }, [config, keyword, page, pageSize, filters]);
+  }, [config, searchKeyword, page, pageSize, filters]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  // 前端不再筛选（已移至服务端），items 即当前页数据
-
   const setFilter = useCallback((key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setPageRaw(1);
   }, []);
 
   const applyFilters = useCallback((next: Record<string, string>) => {
     setFilters(next);
+    setPageRaw(1);
   }, []);
 
   const resetFilters = useCallback(() => {
@@ -126,6 +143,7 @@ export function useGenericTab(config: TabConfig): GenericTabState {
       }
     }
     setFilters(init);
+    setPageRaw(1);
   }, [config.filters]);
 
   const startEdit = useCallback((id: number, field: string, initialValue: unknown) => {

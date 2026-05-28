@@ -15,15 +15,35 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get("keyword") || "";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(500, Math.max(1, parseInt(searchParams.get("pageSize") || "50", 10)));
 
-  let projects = await prisma.project.findMany({
+  const projects = await prisma.project.findMany({
     orderBy: { id: "asc" },
     include: {
       _count: { select: { employees: true } },
     },
   });
-  if (keyword) projects = projects.filter((p) => matchAnyField(p, keyword, "Project"));
-  return NextResponse.json({ projects });
+
+  const mapped = projects.map((p) => ({
+    id: p.id,
+    name: p.name,
+    type: p.type,
+    description: p.description,
+    endDate: p.endDate,
+    employeeCount: p._count.employees,
+  }));
+
+  let result = mapped;
+  if (keyword) {
+    result = mapped.filter((p) => matchAnyField(p, keyword, "Project"));
+  }
+
+  const total = result.length;
+  const start = (page - 1) * pageSize;
+  const paged = result.slice(start, start + pageSize);
+
+  return NextResponse.json({ projects: paged, total });
 }
 
 export async function POST(request: Request) {
@@ -35,5 +55,3 @@ export async function POST(request: Request) {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   return handleCreate(request, CONFIG, () => parsed.data);
 }
-
-

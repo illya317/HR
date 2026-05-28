@@ -54,6 +54,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const company = searchParams.get("company") || "";
   const keyword = searchParams.get("keyword") || "";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(500, Math.max(1, parseInt(searchParams.get("pageSize") || "50", 10)));
 
   const where: Prisma.EmploymentWhereInput = { isActive: true };
   if (company) where.currentCompany = company;
@@ -107,12 +109,13 @@ export async function GET(request: Request) {
     }
   }
 
+  let result = contracts;
   if (keyword) {
     const query = keyword.toLowerCase();
     const searchFields = [
       "company", "legalRelation", "contractType", "employmentForm",
     ];
-    const filtered = contracts.filter((c) => {
+    result = contracts.filter((c) => {
       // employee info matching (name, pinyin initials, employeeId)
       if (matchEmployee({ name: c.employeeName, employeeId: c.employeeId }, keyword)) return true;
       // contract fields: includes + pinyin initials
@@ -134,10 +137,12 @@ export async function GET(request: Request) {
       }
       return false;
     });
-    return NextResponse.json({ contracts: filtered });
   }
 
-  return NextResponse.json({ contracts });
+  const total = result.length;
+  const start = (page - 1) * pageSize;
+  const paged = result.slice(start, start + pageSize);
+  return NextResponse.json({ contracts: paged, total });
 }
 
 export async function POST(request: Request) {
