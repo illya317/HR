@@ -70,6 +70,15 @@ REMOTE_CMD="$REMOTE_CMD && echo '==> 复制静态资源到 standalone...' && cp 
 REMOTE_CMD="$REMOTE_CMD && echo '==> 重启服务...' && pm2 restart $PM2_NAME --update-env 2>/dev/null || pm2 start .next/standalone/server.js --name $PM2_NAME --cwd $REMOTE_DIR/.next/standalone --env production"
 REMOTE_CMD="$REMOTE_CMD && echo '==> 保存 PM2 配置...' && pm2 save"
 
-ssh -i "$KEY" "$SERVER" "$REMOTE_CMD"
+# 支持密钥内容直接写入 env，或密钥文件路径
+if [ -n "$KEY_CONTENT" ]; then
+  TMP_KEY=$(mktemp)
+  printf '%s\n' "$KEY_CONTENT" > "$TMP_KEY"
+  chmod 600 "$TMP_KEY"
+  trap 'rm -f "$LOCKFILE" "$TMP_KEY"' EXIT
+  ssh -i "$TMP_KEY" "$SERVER" "$REMOTE_CMD"
+else
+  ssh -i "$KEY" "$SERVER" "$REMOTE_CMD"
+fi
 
 echo "==> 完成"
