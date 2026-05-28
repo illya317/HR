@@ -24,6 +24,10 @@ interface UserItem {
   canEditHR: boolean;
   canDeleteHR: boolean;
   canAccessWorks: boolean;
+  canAccessFinance: boolean;
+  canAccessInventory: boolean;
+  canAccessContract: boolean;
+  canAccessDocs: boolean;
 }
 
 export default function AdminUsersTab({ showToast }: { showToast: (msg: string, type?: "success" | "error") => void }) {
@@ -193,6 +197,18 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
                       ) : null}
                       {u.canAccessWorks && (
                         <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] text-amber-600">工作</span>
+                      )}
+                      {u.canAccessFinance && (
+                        <span className="rounded bg-cyan-50 px-1 py-0.5 text-[10px] text-cyan-600">财务</span>
+                      )}
+                      {u.canAccessInventory && (
+                        <span className="rounded bg-orange-50 px-1 py-0.5 text-[10px] text-orange-600">库存</span>
+                      )}
+                      {u.canAccessContract && (
+                        <span className="rounded bg-indigo-50 px-1 py-0.5 text-[10px] text-indigo-600">合同</span>
+                      )}
+                      {u.canAccessDocs && (
+                        <span className="rounded bg-gray-100 px-1 py-0.5 text-[10px] text-gray-600">文档</span>
                       )}
                     </div>
                   </td>

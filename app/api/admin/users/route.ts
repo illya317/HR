@@ -28,12 +28,16 @@ export async function GET(request: Request) {
 
   const enrichedUsers = await Promise.all(
     users.map(async (u) => {
-      const [isAdmin, canAccessHR, canEditHR, canDeleteHR, canAccessWorks] = await Promise.all([
+      const [isAdmin, canAccessHR, canEditHR, canDeleteHR, canAccessWorks, canAccessFinance, canAccessInventory, canAccessContract, canAccessDocs] = await Promise.all([
         checkPermission(u.id, "system", "admin"),
         checkPermission(u.id, "people", "access"),
         checkPermission(u.id, "people", "write"),
         checkPermission(u.id, "people", "delete"),
         checkPermission(u.id, "work", "access"),
+        checkPermission(u.id, "finance", "access"),
+        checkPermission(u.id, "inventory", "access"),
+        checkPermission(u.id, "contract", "access"),
+        checkPermission(u.id, "docs", "access"),
       ]);
       return {
         id: u.id,
@@ -45,7 +49,11 @@ export async function GET(request: Request) {
         canAccessHR: isAdmin || canAccessHR || canEditHR || canDeleteHR,
         canEditHR: isAdmin || canEditHR,
         canDeleteHR: isAdmin || canDeleteHR,
-        canAccessWorks,
+        canAccessWorks: isAdmin || canAccessWorks,
+        canAccessFinance: isAdmin || canAccessFinance,
+        canAccessInventory: isAdmin || canAccessInventory,
+        canAccessContract: isAdmin || canAccessContract,
+        canAccessDocs: isAdmin || canAccessDocs,
       };
     })
   );
