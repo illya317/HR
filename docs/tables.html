@@ -2054,77 +2054,77 @@
   <tr class="pk-border ref-underline">
     <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span><span class="kb ref">R</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">导入批次ID</td>
   </tr>
   <tr>
     <td><span class="field-name">profile</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">数据类型：shipments/sales-salary/cost-structure/cost-analysis/workshop-reports</td>
   </tr>
   <tr>
     <td><span class="field-name">year</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">数据所属年份</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceFile</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">原始文件名</td>
   </tr>
   <tr>
     <td><span class="field-name">sourcePath</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">原始文件路径</td>
   </tr>
   <tr>
     <td><span class="field-name">normalizedJsonPath</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">标准化后的JSON路径</td>
   </tr>
   <tr>
     <td><span class="field-name">checksum</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">文件MD5校验和</td>
   </tr>
   <tr>
     <td><span class="field-name">status</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">导入状态：imported/processing/failed</td>
   </tr>
   <tr>
     <td><span class="field-name">recordCount</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">导入的记录条数</td>
   </tr>
   <tr>
     <td><span class="field-name">warningCount</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">警告数量</td>
   </tr>
   <tr>
     <td><span class="field-name">errorCount</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">错误数量</td>
   </tr>
   <tr>
     <td><span class="field-name">importedBy</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">导入操作人</td>
   </tr>
   <tr>
     <td><span class="field-name">importedAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">导入时间</td>
   </tr>
   <tr>
     <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">创建时间</td>
   </tr>
   <tr>
     <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">更新时间</td>
   </tr>
 </tbody></table>
 <div class="table-footer">
@@ -2147,97 +2147,97 @@
   <tr class="pk-border">
     <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">发货记录ID</td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">importId</span> <span class="field-required">*</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
+    <td class="field-comment">所属导入批次ID <span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
   </tr>
   <tr>
     <td><span class="field-name">year</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">发货年份</td>
   </tr>
   <tr>
     <td><span class="field-name">month</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">发货月份</td>
   </tr>
   <tr>
     <td><span class="field-name">date</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">发货日期（YYYY-MM-DD）</td>
   </tr>
   <tr>
     <td><span class="field-name">customerName</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">客户名称</td>
   </tr>
   <tr>
     <td><span class="field-name">productName</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">产品名称</td>
   </tr>
   <tr>
     <td><span class="field-name">spec</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">规格</td>
   </tr>
   <tr>
     <td><span class="field-name">batchNo</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">批号</td>
   </tr>
   <tr>
     <td><span class="field-name">quantity</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">发货数量</td>
   </tr>
   <tr>
     <td><span class="field-name">unitPrice</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">单价</td>
   </tr>
   <tr>
     <td><span class="field-name">amount</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">发货金额（含税）</td>
   </tr>
   <tr>
     <td><span class="field-name">receivedAmount</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">已回款金额</td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">employeeId</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#Employee" class="dep-link">5-1 Employee</a></span></td>
+    <td class="field-comment">业务员员工ID，为空表示厂家直销 <span style="font-size:11px;color:#d97706">→ <a href="#Employee" class="dep-link">5-1 Employee</a></span></td>
   </tr>
   <tr>
     <td><span class="field-name">sourceFile</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源文件名</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceSheet</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源工作表</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceRow</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源行号</td>
   </tr>
   <tr>
     <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">创建时间</td>
   </tr>
   <tr>
     <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">更新时间</td>
   </tr>
 </tbody></table>
 <div class="table-footer">
@@ -2257,72 +2257,72 @@
   <tr class="pk-border">
     <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">工资记录ID</td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">importId</span> <span class="field-required">*</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
+    <td class="field-comment">所属导入批次ID <span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
   </tr>
   <tr>
     <td><span class="field-name">year</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">年份</td>
   </tr>
   <tr>
     <td><span class="field-name">month</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">月份</td>
   </tr>
   <tr>
     <td><span class="field-name">baseSalary</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">基本工资/底薪</td>
   </tr>
   <tr>
     <td><span class="field-name">bonus</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">提成/奖金</td>
   </tr>
   <tr>
     <td><span class="field-name">deduction</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">扣款</td>
   </tr>
   <tr>
     <td><span class="field-name">actualSalary</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">实发工资</td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">employeeId</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#Employee" class="dep-link">5-1 Employee</a></span></td>
+    <td class="field-comment">员工ID，为空表示厂销 <span style="font-size:11px;color:#d97706">→ <a href="#Employee" class="dep-link">5-1 Employee</a></span></td>
   </tr>
   <tr>
     <td><span class="field-name">sourceFile</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源文件名</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceSheet</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源工作表</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceRow</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源行号</td>
   </tr>
   <tr>
     <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">创建时间</td>
   </tr>
   <tr>
     <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">更新时间</td>
   </tr>
 </tbody></table>
 <div class="table-footer">
@@ -2342,77 +2342,77 @@
   <tr class="pk-border">
     <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">成本结构行ID</td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">importId</span> <span class="field-required">*</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
+    <td class="field-comment">所属导入批次ID <span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
   </tr>
   <tr>
     <td><span class="field-name">year</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">年份</td>
   </tr>
   <tr>
     <td><span class="field-name">month</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">月份</td>
   </tr>
   <tr>
     <td><span class="field-name">productName</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">产品名称</td>
   </tr>
   <tr>
     <td><span class="field-name">category</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">成本大类：原材料/包材/人工/辅助人工/制造费用</td>
   </tr>
   <tr>
     <td><span class="field-name">itemName</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">成本细项名称</td>
   </tr>
   <tr>
     <td><span class="field-name">amount</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">金额</td>
   </tr>
   <tr>
     <td><span class="field-name">quantity</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">入库数量（用于计算单位成本）</td>
   </tr>
   <tr>
     <td><span class="field-name">unit</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">计量单位</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceFile</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源文件名</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceSheet</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源工作表</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceRow</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源行号</td>
   </tr>
   <tr>
     <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">创建时间</td>
   </tr>
   <tr>
     <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">更新时间</td>
   </tr>
 </tbody></table>
 <div class="table-footer">
@@ -2431,77 +2431,77 @@
   <tr class="pk-border">
     <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">成本分析行ID</td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">importId</span> <span class="field-required">*</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
+    <td class="field-comment">所属导入批次ID <span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
   </tr>
   <tr>
     <td><span class="field-name">year</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">年份</td>
   </tr>
   <tr>
     <td><span class="field-name">month</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">月份</td>
   </tr>
   <tr>
     <td><span class="field-name">tableName</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源工作表名称（对应Excel中的sheet）</td>
   </tr>
   <tr>
     <td><span class="field-name">rowLabel</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">行标签（如产品名/规格/项目名称）</td>
   </tr>
   <tr>
     <td><span class="field-name">metricKey</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">指标键（列名）</td>
   </tr>
   <tr>
     <td><span class="field-name">metricName</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">指标显示名称</td>
   </tr>
   <tr>
     <td><span class="field-name">value</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">数值（可空）</td>
   </tr>
   <tr>
     <td><span class="field-name">textValue</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">文本值（当value为空时存储原始文本）</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceFile</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源文件名</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceSheet</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源工作表</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceRow</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源行号</td>
   </tr>
   <tr>
     <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">创建时间</td>
   </tr>
   <tr>
     <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">更新时间</td>
   </tr>
 </tbody></table>
 <div class="table-footer">
@@ -2520,77 +2520,77 @@
   <tr class="pk-border">
     <td><span class="field-name">id</span> <span class="field-required">*</span><span class="kb pk">P</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">车间日报行ID</td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">importId</span> <span class="field-required">*</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
+    <td class="field-comment">所属导入批次ID <span style="font-size:11px;color:#d97706">→ <a href="#FinanceDataImport" class="dep-link">9-1 FinanceDataImport</a></span></td>
   </tr>
   <tr>
     <td><span class="field-name">year</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">年份</td>
   </tr>
   <tr>
     <td><span class="field-name">month</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">月份</td>
   </tr>
   <tr>
     <td><span class="field-name">productName</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">产品名称</td>
   </tr>
   <tr>
     <td><span class="field-name">batchNo</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">生产批号</td>
   </tr>
   <tr>
     <td><span class="field-name">workPoint</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">工分</td>
   </tr>
   <tr>
     <td><span class="field-name">quantity</span></td>
     <td><span class="field-type" style="background:#6b728015;color:#6b7280">float</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">完成数量</td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">employeeId</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#Employee" class="dep-link">5-1 Employee</a></span></td>
+    <td class="field-comment">员工ID <span style="font-size:11px;color:#d97706">→ <a href="#Employee" class="dep-link">5-1 Employee</a></span></td>
   </tr>
   <tr class="fk-underline">
     <td><span class="field-name">positionId</span><span class="kb fk">F</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"><span style="font-size:11px;color:#d97706">→ <a href="#Position" class="dep-link">5-6 Position</a></span></td>
+    <td class="field-comment">岗位ID（工序对应的岗位） <span style="font-size:11px;color:#d97706">→ <a href="#Position" class="dep-link">5-6 Position</a></span></td>
   </tr>
   <tr>
     <td><span class="field-name">sourceFile</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源文件名</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceSheet</span></td>
     <td><span class="field-type" style="background:#05966915;color:#059669">str</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源工作表</td>
   </tr>
   <tr>
     <td><span class="field-name">sourceRow</span></td>
     <td><span class="field-type" style="background:#2563eb15;color:#2563eb">int</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">来源行号</td>
   </tr>
   <tr>
     <td><span class="field-name">createdAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">创建时间</td>
   </tr>
   <tr>
     <td><span class="field-name">updatedAt</span> <span class="field-required">*</span></td>
     <td><span class="field-type" style="background:#d9770615;color:#d97706">time</span></td>
-    <td class="field-comment"></td>
+    <td class="field-comment">更新时间</td>
   </tr>
 </tbody></table>
 <div class="table-footer">
