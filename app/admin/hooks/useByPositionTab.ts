@@ -51,9 +51,9 @@ export function useByPositionTab(
     async function load() {
       try {
         const [posRes, grantRes, epRes] = await Promise.all([
-          fetch("/api/positions"),
+          fetch("/api/hr/positions?pageSize=99999"),
           fetch("/api/admin/position-permissions"),
-          fetch("/api/employee-positions"),
+          fetch("/api/hr/edps?pageSize=99999"),
         ]);
         const posData = await posRes.json();
         const grantData = await grantRes.json();
@@ -63,12 +63,12 @@ export function useByPositionTab(
         setGrants(grantData.grants || []);
 
         const map = new Map<number, Set<string>>();
-        (epData.positions || []).forEach((ep: { positionId?: number; dept1?: string }) => {
-          if (ep.positionId && ep.dept1) {
+        (epData.positions || []).forEach((ep: { positionId?: number; departmentName?: string }) => {
+          if (ep.positionId && ep.departmentName) {
             if (!map.has(ep.positionId)) {
               map.set(ep.positionId, new Set());
             }
-            map.get(ep.positionId)!.add(ep.dept1);
+            map.get(ep.positionId)!.add(ep.departmentName);
           }
         });
         const finalMap = new Map<number, string[]>();

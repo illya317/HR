@@ -14,18 +14,18 @@
 
 每一步都要能单独提交、单独回滚、单独验证。
 
-## 当前现状
+## 整改前现状（历史参考）
 
-| 问题 | 现状 | 风险 |
+| 问题 | 整改前状态 | 当前状态 |
 |---|---|---|
-| 业务模块继续增加 | 已有 HR、Finance、Inventory、Contracts，后续还会有绩效、采购、生产 | 没有统一接入方式时，新模块会乱塞 |
-| Prisma schema 过长 | `prisma/schema.prisma` 已超过 800 行 | 领域边界不清，merge 冲突高 |
-| API 入口并存 | 有 `/api/hr/*`，也有 `/api/employees`、`/api/positions` 等旧入口 | agent 不知道该改哪个 |
-| admin 旧权限文件残留 | 新权限矩阵已存在，但旧 ByUser/ByPosition 等文件还在 | 容易继续维护两套 UI |
-| 超长文件仍存在 | `PermissionsTab.tsx`、`usePermissionsTab.ts`、`CodeTable.tsx` 超过 300 行 | 新功能继续加会更难拆 |
-| service 层不均匀 | finance-cost 已开始有 service，但其他模块仍有 API/页面承担业务逻辑 | 计算逻辑分散 |
-| docs 分散 | README、CLAUDE、ARCHITECTURE、docs 各有一部分 | 非程序员和 agent 都容易找错 |
-| 脚本混杂 | `scripts/` 同时有 check/import/migrate/generate | 后续脚本越来越难找 |
+| 业务模块继续增加 | 已有 HR、Finance、Inventory、Contracts，后续还会有绩效、采购、生产 | ✅ 新模块模板已确定，新增模块有标准目录和权限契约 |
+| Prisma schema 过长 | `prisma/schema.prisma` 已超过 800 行 | ✅ 已按领域拆分为 `prisma/models/*.prisma`，主文件只保留 generator/datasource |
+| API 入口并存 | 有 `/api/hr/*`，也有 `/api/employees`、`/api/positions` 等旧入口 | ✅ 旧入口已改为纯代理，前端已全部迁移到 `/api/hr/*` |
+| admin 旧权限文件残留 | 新权限矩阵已存在，但旧 ByUser/ByPosition 等文件还在 | ✅ 旧权限文件已删除，权限页只剩用户账号 + 权限管理两个主 tab |
+| 超长文件仍存在 | `PermissionsTab.tsx`、`usePermissionsTab.ts`、`CodeTable.tsx` 超过 300 行 | ✅ 已拆分：PermissionsTab 132 行、usePermissionsTab 203 行、CodeTable 152 行 |
+| service 层不均匀 | finance-cost 已开始有 service，但其他模块仍有 API/页面承担业务逻辑 | ✅ admin permission-grants 已下沉到 `server/services/admin/`，finance-cost 持续维护 |
+| docs 分散 | README、CLAUDE、ARCHITECTURE、docs 各有一部分 | ✅ README 为项目地图，docs/ 放治理规则，各模块自有 ARCHITECTURE.md |
+| 脚本混杂 | `scripts/` 同时有 check/import/migrate/generate | ✅ 已分类为 `scripts/check/`、`scripts/import/`、`scripts/migrate/`、`scripts/generate/`、`scripts/seed/`，命名规则已落地 |
 
 ## 优化路线
 
@@ -118,7 +118,7 @@ npx tsc --noEmit
 npm run build
 ```
 
-### Phase 3：API 入口治理
+### Phase 3：API 入口治理 ✅ 已完成
 
 目标：新代码只走领域 API，旧 API 逐步降级为兼容代理。
 
@@ -135,27 +135,36 @@ npm run build
 | 采购 | `/api/procurement/*` |
 | 生产 | `/api/production/*` |
 
-旧入口处理：
+完成状态：
 
-- `/api/employees`
-- `/api/positions`
-- `/api/departments`
-- `/api/projects`
-- `/api/employee-positions`
-- `/api/employee-projects`
+- 新增 `/api/hr/roster`：承载原 `/api/employees` 的花名册扁平化 + Excel 导出逻辑。
+- 新增 `/api/hr/employees/search`：员工搜索（含岗位展开）。
+- 旧入口已全部改为纯代理：
+  - `/api/employees` → `/api/hr/roster`
+  - `/api/employees/search` → `/api/hr/employees/search`
+  - `/api/employees/autocomplete` → `/api/hr/autocomplete`
+  - `/api/positions` → `/api/hr/positions`
+  - `/api/employee-positions` → `/api/hr/edps`
+  - `/api/departments` → `/api/hr/departments`
+  - `/api/projects` → `/api/hr/projects`
+  - `/api/employee-projects` → `/api/hr/employee-projects`
+- 前端已全部迁移到 `/api/hr/*`：
+  - `useSearch.ts`、`useDeptAdminsTab.ts` → `/api/hr/employees/search`、`/api/hr/autocomplete`
+  - `useByPositionTab.ts` → `/api/hr/positions`、`/api/hr/edps`
+  - `RosterTab.tsx` → `/api/hr/roster`
+  - `useCodeData.ts` → `/api/hr/roster`
+- `docs/api.md` 已更新：旧 API 单独列为"兼容层（已废弃）"。
 
-优化方式：
+遗留注意：
 
-1. 标记为 compatibility route。
-2. 只保留转发，不新增业务逻辑。
-3. 前端逐步迁移到 `/api/hr/*`。
-4. 文档标注废弃时间。
-5. 无调用后删除。
+- `/api/hr/roster` 目前 159 行，超过 API route 120 行硬约束，需后续拆分为 `server/services/hr/roster.ts`。
 
 验收：
 
-- `rg "/api/employees|/api/positions|/api/departments"` 只剩兼容层或文档。
-- 新页面不再调用旧入口。
+```bash
+rg '/api/employees|/api/positions|/api/departments' app/ --type-add 'web:*.{ts,tsx}' -tweb
+# 只剩纯代理文件和文档中的兼容层说明
+```
 
 ### Phase 4：超长文件拆分
 
@@ -288,6 +297,7 @@ access / write / delete / admin
 - [x] `chore(docs): add project map and architecture roadmap`
 - [x] `chore(schema): split prisma schema by domain`
 - [x] `chore(api): mark legacy HR APIs as compatibility routes`（Phase 3）
+- [x] `fix(api): complete Phase 3 rework — migrate frontend to /api/hr/*, old routes pure proxy, docs updated`
 - [x] `refactor(admin): split permissions matrix files`（Phase 4）
 - [x] `refactor(hr-code): finish code table decomposition`（Phase 4）
 - [x] `chore(service): migrate admin permission-grants to service layer`（Phase 5）

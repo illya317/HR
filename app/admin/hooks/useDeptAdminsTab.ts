@@ -105,7 +105,7 @@ export function useDeptAdminsTab(
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/employees/search?q=${encodeURIComponent(deptSearchQ.trim())}`);
+        const res = await fetch(`/api/hr/employees/search?q=${encodeURIComponent(deptSearchQ.trim())}`);
         if (res.ok) {
           const data = await res.json();
           setDeptResults((data.items || []).filter((item: EmployeeResult) => item.userId != null));

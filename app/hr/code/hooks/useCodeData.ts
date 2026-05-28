@@ -70,7 +70,7 @@ export function useCodeData({
     const [codesRes, empRes] = await Promise.all([
       fetch(url),
       fetch(
-        `/api/employees?company=${encodeURIComponent(selectedCompany || "")}`
+        `/api/hr/roster?company=${encodeURIComponent(selectedCompany || "")}`
       ),
     ]);
     if (codesRes.ok) {
