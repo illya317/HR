@@ -104,7 +104,7 @@ Schema 可视化文档：`docs/tables.html`（自动生成，运行 `node script
 
 ## 数据导入
 
-源数据在 `prisma/seed/*.json`、`prisma/seed/position-descriptions/*.json` 和 `prisma/seed/department-descriptions/*.json`：
+源数据在 `prisma/seed-data/*.json`、`prisma/seed-data/position-descriptions/*.json` 和 `prisma/seed-data/department-descriptions/*.json`：
 
 ```
 Company → Department → PositionDescription → Position → Employee → Employment → EDP
