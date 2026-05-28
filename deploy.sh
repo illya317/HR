@@ -45,7 +45,7 @@ if [ "$PUSH_DB" = true ]; then
   echo "==> 同步数据库 schema..."
   TMP_DB="/tmp/server-dev-push-$RANDOM.db"
   rsync -avz -e "ssh -i $KEY" "$SERVER:$REMOTE_DIR/prisma/dev.db" "$TMP_DB"
-  DATABASE_URL="file:$TMP_DB" npx prisma db push --accept-data-loss --skip-generate
+  DATABASE_URL="file:$TMP_DB" npx prisma db push --accept-data-loss
   rsync -avz -e "ssh -i $KEY" "$TMP_DB" "$SERVER:$REMOTE_DIR/prisma/dev.db"
   rm -f "$TMP_DB"
   echo "==> Schema 同步完成"
@@ -83,6 +83,10 @@ echo "==> 同步 Prisma schema 到服务器..."
 rsync -avz --delete -e "ssh -i $KEY" \
   prisma/ "$SERVER:$REMOTE_DIR/prisma/"
 
+echo "==> 同步 generated/prisma 到服务器..."
+rsync -avz --delete -e "ssh -i $KEY" \
+  generated/prisma/ "$SERVER:$REMOTE_DIR/generated/prisma/"
+
 echo "==> 同步 package.json 到服务器..."
 rsync -avz -e "ssh -i $KEY" \
   package.json "$SERVER:$REMOTE_DIR/package.json"
@@ -90,8 +94,11 @@ rsync -avz -e "ssh -i $KEY" \
 echo "==> 服务器端安装生产依赖..."
 ssh -i "$KEY" "$SERVER" "cd $REMOTE_DIR/.next/standalone && npm install --production"
 
+echo "==> 服务器端安装 prisma CLI..."
+ssh -i "$KEY" "$SERVER" "cd $REMOTE_DIR && npm install prisma@^7.8.0 --save-dev"
+
 echo "==> 服务器端重新生成 Prisma Client..."
-ssh -i "$KEY" "$SERVER" "cd $REMOTE_DIR && npx prisma generate --schema=./prisma"
+ssh -i "$KEY" "$SERVER" "cd $REMOTE_DIR && npx prisma generate"
 
 echo "==> 修复服务器 .env 数据库路径..."
 ssh -i "$KEY" "$SERVER" "sed -i 's|file:/Users/koito/Desktop/Project/[^/]*/prisma/dev.db|file:/home/ubuntu/weekly/prisma/dev.db|' $REMOTE_DIR/.next/standalone/.env 2>/dev/null || true"
