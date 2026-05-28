@@ -24,6 +24,8 @@ const REQUIRED_DOMAINS = [
 // 可选/辅助目录，不需要 ARCHITECTURE.md
 const OPTIONAL_DIRS = [
   "administration",
+  "api",
+  "api-guide",
   "components",
   "docs",
   "history",

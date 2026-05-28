@@ -87,45 +87,69 @@ function isPureProxy(content) {
   return hasProxy;
 }
 
+function walkRoutes(dir) {
+  const results = [];
+  for (const entry of fs.readdirSync(dir)) {
+    const full = path.join(dir, entry);
+    if (fs.statSync(full).isDirectory()) {
+      results.push(...walkRoutes(full));
+    } else if (entry === "route.ts") {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
+const KNOWN_PREFIXES = [
+  "admin",
+  "auth",
+  "finance",
+  "hr",
+  "inventory",
+  "contracts",
+  "reports",
+  "user",
+  "week-info",
+  "works",
+  "my-api-key",
+  "my-targets",
+  "position-descriptions",
+  "employments",
+];
+
 let errors = 0;
 
-for (const route of LEGACY_ROUTES) {
-  const routeFile = path.join(ROOT, route, "route.ts");
-  if (!fs.existsSync(routeFile)) continue;
+const allRoutes = walkRoutes(ROOT);
 
-  const content = fs.readFileSync(routeFile, "utf-8");
+for (const file of allRoutes) {
+  const rel = path.relative(ROOT, file).replace(/\\/g, "/");
+  const content = fs.readFileSync(file, "utf-8");
 
-  if (!content.includes("@deprecated")) {
-    console.error(`❌ ${route}/route.ts 缺少 @deprecated 标记`);
-    errors++;
+  // 判断是否属于 legacy 路由（包括子目录）
+  const isLegacy = LEGACY_ROUTES.some(
+    (r) => rel.startsWith(r + "/") || rel === r + "/route.ts"
+  );
+
+  if (isLegacy) {
+    if (!content.includes("@deprecated")) {
+      console.error(`❌ ${rel} 缺少 @deprecated 标记`);
+      errors++;
+      continue;
+    }
+
+    if (!isPureProxy(content)) {
+      console.error(`❌ ${rel} 包含非代理业务逻辑（必须纯代理）`);
+      errors++;
+    } else {
+      console.log(`✓ ${rel} 纯代理`);
+    }
     continue;
   }
 
-  if (!isPureProxy(content)) {
-    console.error(`❌ ${route}/route.ts 包含非代理业务逻辑（必须纯代理）`);
-    errors++;
-  } else {
-    console.log(`✓ ${route}/route.ts 纯代理`);
-  }
-}
-
-// 额外检查：根级 route.ts 不允许新增非代理逻辑
-const rootRoutes = fs.readdirSync(ROOT).filter((f) => {
-  const full = path.join(ROOT, f);
-  return fs.statSync(full).isDirectory() && !f.startsWith(".") && fs.existsSync(path.join(full, "route.ts"));
-});
-
-for (const route of rootRoutes) {
-  const routeFile = path.join(ROOT, route, "route.ts");
-  const content = fs.readFileSync(routeFile, "utf-8");
-
-  // 根级目录下如果不是兼容路由，也应该有合理的域名前缀
-  const hasDomainPrefix =
-    ["admin", "auth", "finance", "hr", "inventory", "contracts", "reports", "user", "week-info", "works", "my-api-key", "my-targets", "position-descriptions", "employments"].includes(route) ||
-    LEGACY_ROUTES.includes(route);
-
-  if (!hasDomainPrefix) {
-    console.error(`❌ ${route}/route.ts 缺少域名前缀，应放到 /api/<domain>/*`);
+  // 非 legacy：检查是否在已知域名前缀下
+  const firstSegment = rel.split("/")[0];
+  if (!KNOWN_PREFIXES.includes(firstSegment)) {
+    console.error(`❌ ${rel} 缺少域名前缀，应放到 /api/<domain>/*`);
     errors++;
   }
 }
