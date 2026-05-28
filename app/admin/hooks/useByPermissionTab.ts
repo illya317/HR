@@ -27,15 +27,6 @@ interface SystemAdmin {
   username: string;
 }
 
-interface ApiUser {
-  id: number;
-  name: string;
-  username: string;
-  resourceRoles?: Array<{
-    resource?: { key: string };
-    role?: { key: string };
-  }>;
-}
 
 export function useByPermissionTab({ user, resources, showToast }: Props) {
   const topResources = resources.filter((r) => !r.key.includes(".") && !HIDDEN_RESOURCE_KEYS.has(r.key));
@@ -53,13 +44,11 @@ export function useByPermissionTab({ user, resources, showToast }: Props) {
       const res = await fetch("/api/admin/users");
       if (res.ok) {
         const data = await res.json();
-        const users = (data.users || []) as ApiUser[];
+        const users = (data.users || []) as Array<{ id: number; name: string; username: string | null; isWorkListAdmin?: boolean }>;
         setSystemAdmins(
           users
-            .filter((u) =>
-              u.resourceRoles?.some((rr) => rr.resource?.key === "system" && rr.role?.key === "admin")
-            )
-            .map((u) => ({ id: u.id, name: u.name, username: u.username }))
+            .filter((u) => u.isWorkListAdmin)
+            .map((u) => ({ id: u.id, name: u.name, username: u.username || "" }))
         );
       }
     } catch (e) {
