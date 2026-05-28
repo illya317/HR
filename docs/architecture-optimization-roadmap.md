@@ -287,12 +287,12 @@ access / write / delete / admin
 
 - [x] `chore(docs): add project map and architecture roadmap`
 - [x] `chore(schema): split prisma schema by domain`
-- [ ] `chore(api): mark legacy HR APIs as compatibility routes`（Phase 3）
-- [ ] `refactor(admin): split permissions matrix files`（Phase 4）
-- [ ] `refactor(hr-code): finish code table decomposition`（Phase 4）
-- [ ] `chore(service): migrate inventory and HR analytics to service layer`（Phase 5）
-- [ ] `chore(scripts): classify scripts and add naming rules`（Phase 6）
-- [ ] `feat(template): add new domain module checklist`（Phase 7）
+- [x] `chore(api): mark legacy HR APIs as compatibility routes`（Phase 3）
+- [x] `refactor(admin): split permissions matrix files`（Phase 4）
+- [x] `refactor(hr-code): finish code table decomposition`（Phase 4）
+- [x] `chore(service): migrate admin permission-grants to service layer`（Phase 5）
+- [x] `chore(scripts): classify scripts and add naming rules`（Phase 6）
+- [x] `feat(template): add new domain module checklist`（Phase 7）
 
 每个任务都独立验证和提交。
 
