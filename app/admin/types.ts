@@ -1,3 +1,32 @@
+export type SubjectType = "user" | "position" | "department";
+
+export interface Subject {
+  id: number;
+  name: string;
+  extra?: {
+    employeeId?: string;
+    userId?: number | null;
+    hasUser?: boolean;
+    company?: string;
+    department?: string;
+    deptPath?: string[];
+    positionIds?: number[];
+    departmentIds?: number[];
+    code?: string;
+  };
+}
+
+export interface Grant {
+  subjectId: number;
+  resourceKey: string;
+  roleKey: string;
+}
+
+export interface PermissionState {
+  has: boolean;
+  source: "direct" | "position" | "department" | "ancestor" | "system.admin" | null;
+}
+
 export interface ResourceItem {
   id: number;
   key: string;
