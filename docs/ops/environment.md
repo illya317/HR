@@ -32,7 +32,7 @@ Prisma database connection string.
 
 Local default:
 ```
-DATABASE_URL="file:./prisma/dev.db"
+DATABASE_URL="file:./data/dev.db"
 ```
 
 ## Optional Variables

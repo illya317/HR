@@ -225,7 +225,6 @@ npm run db:docs
 | `docs/security/rbac.md` | 权限模型 |
 | `docs/database.md` | 数据库说明 |
 | `docs/ops/environment.md` | 环境变量 |
-| `docs/ops/deploy.md` | 部署流程 |
 | `app/hr/ARCHITECTURE.md` | HR 模块架构 |
 
 如果 README 和代码不一致，先更新 README 或对应 `ARCHITECTURE.md`，再让 agent 继续写代码。项目还小的时候把地图画清楚，以后扩模块才不会每次都重新摸路。
