@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate --schema=./prisma && next build",
     "start": "next start",
     "lint": "eslint",
     "ci": "npm run arch:check && npm run env:check && npm run db:validate && npm run schema:check && npm run lint -- --max-warnings=0 && npx tsc --noEmit && npm run build",
