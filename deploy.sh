@@ -75,9 +75,12 @@ rm -f .next/standalone/node_modules/.prisma/client/libquery_engine-darwin-arm64*
 echo "==> 确保服务器数据库目录存在..."
 ssh -i "$KEY" "$SERVER" "mkdir -p $REMOTE_DIR/prisma"
 
-echo "==> 同步构建产物到服务器（rsync 只传差异）..."
-rsync -avz --delete --exclude='.env' -e "ssh -i $KEY" \
+echo "==> 同步构建产物到服务器（rsync 只传差异，node_modules 在服务器端自行安装）..."
+rsync -avz --delete --exclude='.env' --exclude='node_modules' -e "ssh -i $KEY" \
   .next/standalone/ "$SERVER:$REMOTE_DIR/.next/standalone/"
+
+echo "==> 服务器端安装生产依赖..."
+ssh -i "$KEY" "$SERVER" "cd $REMOTE_DIR/.next/standalone && npm install --production"
 
 echo "==> 修复服务器 .env 数据库路径..."
 ssh -i "$KEY" "$SERVER" "sed -i 's|file:/Users/koito/Desktop/Project/[^/]*/prisma/dev.db|file:/home/ubuntu/weekly/prisma/dev.db|' $REMOTE_DIR/.next/standalone/.env 2>/dev/null || true"
