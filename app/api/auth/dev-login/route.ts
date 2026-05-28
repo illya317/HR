@@ -61,11 +61,18 @@ export async function POST(request: Request) {
 
   await recordAttempt(username, ip, true);
 
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: { sessionVersion: { increment: 1 } },
+    select: { sessionVersion: true },
+  });
+
   const token = await createToken({
     userId: user.id,
     wxUserId: user.wxUserId ?? "",
     name: user.name,
     departmentId: 0,
+    sessionVersion: updatedUser.sessionVersion,
   });
 
   const [isAdmin, canAnyWeek, hasHR, hasWorks] = await Promise.all([

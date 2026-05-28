@@ -24,10 +24,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       wxUserId: true,
       apiKey: true,
       canLogin: true,
+      sessionVersion: true,
     },
   });
   if (!userWithPerms) return null;
   if (!userWithPerms.canLogin) return null;
+  if (userWithPerms.sessionVersion !== payload.sessionVersion) return null;
 
   const employee = await prisma.employee.findFirst({
     where: { userId: payload.userId },

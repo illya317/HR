@@ -15,6 +15,7 @@ export async function createToken(payload: {
   name: string;
   departmentId: number;
   departmentName?: string | null;
+  sessionVersion: number;
 }) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -34,6 +35,7 @@ export async function verifyToken(token: string) {
       name: string;
       departmentId: number;
       departmentName?: string | null;
+      sessionVersion: number;
     };
   } catch {
     return null;
@@ -256,6 +258,12 @@ export async function authenticate(
   if (token) {
     const payload = await verifyToken(token);
     if (payload) {
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: { canLogin: true, sessionVersion: true },
+      });
+      if (!user || !user.canLogin) return null;
+      if (user.sessionVersion !== payload.sessionVersion) return null;
       const canLogin = await checkPermission(
         payload.userId,
         "system",

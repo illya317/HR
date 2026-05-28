@@ -22,6 +22,7 @@ model User {
   apiKey           String?           @unique // API密钥
   employeeId       String?           // 关联员工编号
   createdAt        DateTime          @default(now()) // 创建时间
+  sessionVersion   Int               @default(0) // 会话版本，用于单点登录互踢
   resourceRoles           UserResourceRole[]
   reports                 Report[]
   employees               Employee[]        @relation("EmployeeUser")
