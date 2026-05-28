@@ -9,6 +9,8 @@ on:
 jobs:
   lint-and-build:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: file:./prisma/dev.db
     steps:
       - uses: actions/checkout@v4
 
@@ -30,4 +32,4 @@ jobs:
       - name: Full CI
         run: npm run ci
         env:
-          NEXTAUTH_SECRET: ci-dummy-secret
+          NEXTAUTH_SECRET: ci-dummy-secret-for-build
