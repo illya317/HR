@@ -71,11 +71,12 @@ export function useGenericTab(config: TabConfig): GenericTabState {
   const [pageSize] = useState(50);
   const [total, setTotal] = useState(0);
 
-  // Debounce keyword → searchKeyword（300ms）
+  // Debounce keyword → searchKeyword（300ms），搜索时自动重置到第 1 页
   useEffect(() => {
     if (keywordTimerRef.current) clearTimeout(keywordTimerRef.current);
     keywordTimerRef.current = setTimeout(() => {
       setSearchKeyword(keyword);
+      setPageRaw(1);
     }, 300);
     return () => {
       if (keywordTimerRef.current) clearTimeout(keywordTimerRef.current);
