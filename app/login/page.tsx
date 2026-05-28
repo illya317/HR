@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -9,7 +9,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [kickedAlert, setKickedAlert] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    // 检查 kicked cookie 或 URL 参数
+    const kickedCookie = document.cookie.split("; ").find((row) => row.startsWith("kicked="));
+    const kickedParam = new URLSearchParams(window.location.search).get("kicked");
+    if (kickedCookie || kickedParam) {
+      setKickedAlert(true);
+      // 清除 cookie
+      document.cookie = "kicked=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      // 清除 URL 参数
+      if (kickedParam) {
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +57,11 @@ export default function LoginPage() {
         <h1 className="mb-6 text-center text-2xl font-bold text-gray-800">
           {process.env.NEXT_PUBLIC_APP_NAME || "工作台"}
         </h1>
+        {kickedAlert && (
+          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            您已在其他设备登录，当前会话已失效。如需继续，请重新登录。
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">

@@ -29,7 +29,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   });
   if (!userWithPerms) return null;
   if (!userWithPerms.canLogin) return null;
-  if (userWithPerms.sessionVersion !== payload.sessionVersion) return null;
+  if (userWithPerms.sessionVersion !== payload.sessionVersion) {
+    throw new Error("SESSION_KICKED");
+  }
 
   const employee = await prisma.employee.findFirst({
     where: { userId: payload.userId },

@@ -294,6 +294,19 @@ export async function authenticate(
   return null;
 }
 
+export async function isKicked(request: Request): Promise<boolean> {
+  const token = getTokenFromCookie(request);
+  if (!token) return false;
+  const payload = await verifyToken(token);
+  if (!payload) return false;
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { sessionVersion: true },
+  });
+  if (!user) return false;
+  return user.sessionVersion !== payload.sessionVersion;
+}
+
 // ============================================================
 // Admin / group checks
 // ============================================================

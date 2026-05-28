@@ -2,27 +2,27 @@
 
 import { useEffect } from "react";
 
-export default function GlobalError({
+export default function ErrorBoundary({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    if (error.message === "SESSION_KICKED") {
+      window.location.href = "/login?kicked=1";
+    }
   }, [error]);
 
+  if (error.message === "SESSION_KICKED") {
+    return null;
+  }
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h2 className="text-lg font-medium text-gray-900">出错了</h2>
-      <p className="text-sm text-gray-500">{error.message}</p>
-      <button
-        onClick={() => reset()}
-        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-      >
-        重试
-      </button>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="rounded-lg bg-white p-8 shadow-md text-center">
+        <h2 className="text-xl font-bold text-gray-800 mb-2">出错了</h2>
+        <p className="text-gray-600">{error.message}</p>
+      </div>
     </div>
   );
 }

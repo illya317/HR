@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   authenticate,
+  isKicked,
   checkHRAccess,
   checkFinanceAccess,
   checkInventoryAccess,
@@ -24,6 +25,19 @@ export function withAuth(
   return async (req: Request) => {
     const payload = await authenticate(req);
     if (!payload) {
+      if (await isKicked(req)) {
+        const res = NextResponse.json(
+          { error: "已在其他设备登录" },
+          { status: 401 },
+        );
+        res.cookies.set("kicked", "1", {
+          httpOnly: false,
+          secure: false,
+          path: "/",
+          maxAge: 60,
+        });
+        return res;
+      }
       return NextResponse.json({ error: "未登录" }, { status: 401 });
     }
     if (checkAccess && !(await checkAccess(payload.userId))) {
