@@ -4,6 +4,8 @@ export interface HRUser {
   id: number;
   name: string;
   canAccessHR: boolean;
+  canEditHR: boolean;
+  canDeleteHR: boolean;
   isWorkListAdmin: boolean;
   company?: string | null;
 }

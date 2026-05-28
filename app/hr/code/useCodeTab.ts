@@ -165,7 +165,7 @@ export function useCodeTab({
   const sortedCodes = sortCodeList(codes, stats, sortField, sortDirection);
 
   function startEditRow(item: CodeItem) {
-    if (!user.canAccessHR) return;
+    if (!user.canEditHR) return;
     setEditRow(item.code);
     setEditCodeValue(item.code.length === 5 ? item.code.slice(2) : item.code);
     setEditNameValue(item.name);

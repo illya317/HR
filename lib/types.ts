@@ -10,6 +10,8 @@ export interface SessionUser {
   isSuperAdmin?: boolean;
   canSelectAnyWeek?: boolean;
   canAccessHR?: boolean;
+  canEditHR?: boolean;
+  canDeleteHR?: boolean;
   canAccessWorks?: boolean;
   canAccessFinance?: boolean;
   canAccessInventory?: boolean;

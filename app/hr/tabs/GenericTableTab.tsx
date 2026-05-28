@@ -36,7 +36,7 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
   const visibleFields = config.fields.filter((f) => !f.hidden);
 
   function handleStartEdit(item: Record<string, unknown>, field: FieldConfig) {
-    if (!user.canAccessHR || !editMode || !field.editable) return;
+    if (!user.canEditHR || !editMode || !field.editable) return;
     const itemId = item.id as number;
     if (editingCell?.id === itemId && editingCell?.field === field.key) return;
     let initVal: string | boolean | number | unknown;
@@ -121,11 +121,11 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
         keyword={keyword} onKeywordChange={setKeyword}
         onKeywordEnter={load}
         onReset={() => { setKeyword(""); resetFilters(); load(); }}
-        showEdit={user.canAccessHR}
+        showEdit={user.canEditHR}
         editProps={{
           editMode, onStartEdit: () => setEditMode(true),
           onSave: handleSave, onCancel: () => { cancelEdit(); setEditMode(false); },
-          canEdit: user.canAccessHR, saving,
+          canEdit: user.canEditHR, saving,
           onShowHistory: () => setShowHistory(true),
         }}
       >
@@ -174,7 +174,7 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
           筛选
         </button>
 
-        {config.canCreate && user.canAccessHR && (
+        {config.canCreate && user.canEditHR && (
           <button
             onClick={() => setCreating(true)}
             className="rounded-md bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700"
@@ -198,7 +198,7 @@ export default function GenericTableTab({ config, user }: { config: TabConfig; u
             config={config}
             editingCell={editingCell}
             editMode={editMode}
-            canEdit={user.canAccessHR}
+            canEdit={user.canEditHR}
             renderEditInput={renderEditInput}
             onStartEdit={handleStartEdit}
           />

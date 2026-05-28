@@ -48,10 +48,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
   const ctx = await getPermissionContext(payload.userId);
   const isAdmin = ctx.isAdmin;
-  const [canAnyWeek, hasHR, hasWorks, hasFinance, hasInventory, hasContract] =
+  const [canAnyWeek, hasHR, canEditHR, canDeleteHR, hasWorks, hasFinance, hasInventory, hasContract] =
     await Promise.all([
       checkPermissionWithContext(ctx, "work.report", "write"),
       checkPermissionWithContext(ctx, "people", "access"),
+      checkPermissionWithContext(ctx, "people", "write"),
+      checkPermissionWithContext(ctx, "people", "delete"),
       checkPermissionWithContext(ctx, "work", "access"),
       checkPermissionWithContext(ctx, "finance", "access"),
       checkPermissionWithContext(ctx, "inventory", "access"),
@@ -64,6 +66,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     isSuperAdmin: isAdmin,
     canSelectAnyWeek: canAnyWeek,
     canAccessHR: isAdmin || (hasHR && isActiveEmployee),
+    canEditHR: isAdmin || (canEditHR && isActiveEmployee),
+    canDeleteHR: isAdmin || (canDeleteHR && isActiveEmployee),
     canAccessWorks: hasWorks,
     canAccessFinance: hasFinance,
     canAccessInventory: hasInventory,

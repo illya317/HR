@@ -127,7 +127,7 @@ export default function CodeTable({
           <span
             className="cursor-pointer hover:text-emerald-600"
             onClick={() =>
-              editMode && user.canAccessHR
+              editMode && user.canEditHR
                 ? startEditRow(item)
                 : onSelect
                   ? onSelect(item.code)
@@ -282,7 +282,7 @@ export default function CodeTable({
               </span>
             </td>
           </tr>
-          {editMode && user.canAccessHR && (
+          {editMode && user.canEditHR && (
             <tr className="border-b last:border-0 bg-gray-50">
               <td className="whitespace-nowrap px-2 py-1.5">
                 <input

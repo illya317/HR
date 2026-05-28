@@ -21,6 +21,8 @@ interface UserItem {
   canLogin: boolean;
   isWorkListAdmin: boolean;
   canAccessHR: boolean;
+  canEditHR: boolean;
+  canDeleteHR: boolean;
   canAccessWorks: boolean;
 }
 
@@ -179,7 +181,8 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
                       {u.isWorkListAdmin && <span className="bg-purple-50 text-purple-600 rounded px-1 py-0.5 text-[10px]">管理员</span>}
-                      {u.canAccessHR && <span className="bg-blue-50 text-blue-600 rounded px-1 py-0.5 text-[10px]">HR</span>}
+                      {u.canAccessHR && <span className="bg-blue-50 text-blue-600 rounded px-1 py-0.5 text-[10px]">人事</span>}
+                      {u.canEditHR && <span className="bg-emerald-50 text-emerald-600 rounded px-1 py-0.5 text-[10px]">人事编辑</span>}
                       {u.canAccessWorks && <span className="bg-amber-50 text-amber-600 rounded px-1 py-0.5 text-[10px]">工作</span>}
                     </div>
                   </td>

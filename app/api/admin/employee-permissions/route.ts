@@ -107,6 +107,8 @@ export async function GET(request: Request) {
       // Backward-compat boolean fields
       isWorkListAdmin: rrs.some((rr) => rr.resource.key === "system" && rr.role.key === "admin"),
       canAccessHR: rrs.some((rr) => rr.resource.key === "people" && rr.role.key === "access"),
+      canEditHR: rrs.some((rr) => rr.resource.key === "people" && rr.role.key === "write") || rrs.some((rr) => rr.resource.key === "system" && rr.role.key === "admin"),
+      canDeleteHR: rrs.some((rr) => rr.resource.key === "people" && rr.role.key === "delete") || rrs.some((rr) => rr.resource.key === "system" && rr.role.key === "admin"),
       // New: resource+role pairs as resourceRoles for UX compatibility
       resourceRoles: rrs,
       // Granted resource+role keys (e.g., "system.admin", "people.access")

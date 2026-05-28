@@ -127,7 +127,7 @@ export default function CodeTab({
               setEditRow(null);
               setEditMode(false);
             }}
-            canEdit={user.canAccessHR}
+            canEdit={user.canEditHR}
             onShowHistory={() => setShowHistory(true)}
             saving={saving}
           />

@@ -40,6 +40,8 @@ export async function GET(request: Request) {
     canLogin: u.canLogin,
     isWorkListAdmin: u.resourceRoles.some((rr) => rr.resource.key === "system" && rr.role.key === "admin"),
     canAccessHR: u.resourceRoles.some((rr) => rr.resource.key === "people" && rr.role.key === "access"),
+    canEditHR: u.resourceRoles.some((rr) => rr.resource.key === "people" && rr.role.key === "write") || u.resourceRoles.some((rr) => rr.resource.key === "system" && rr.role.key === "admin"),
+    canDeleteHR: u.resourceRoles.some((rr) => rr.resource.key === "people" && rr.role.key === "delete") || u.resourceRoles.some((rr) => rr.resource.key === "system" && rr.role.key === "admin"),
     canAccessWorks: u.resourceRoles.some((rr) => rr.resource.key === "work" && rr.role.key === "access"),
   }));
 

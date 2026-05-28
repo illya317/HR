@@ -75,10 +75,12 @@ export async function POST(request: Request) {
     sessionVersion: updatedUser.sessionVersion,
   });
 
-  const [isAdmin, canAnyWeek, hasHR, hasWorks] = await Promise.all([
+  const [isAdmin, canAnyWeek, hasHR, canEditHR, canDeleteHR, hasWorks] = await Promise.all([
     checkPermission(user.id, "system", "admin"),
     checkPermission(user.id, "work.report", "write"),
     checkPermission(user.id, "people", "access"),
+    checkPermission(user.id, "people", "write"),
+    checkPermission(user.id, "people", "delete"),
     checkPermission(user.id, "work", "access"),
   ]);
 
@@ -92,6 +94,8 @@ export async function POST(request: Request) {
       isSuperAdmin: isAdmin,
       canSelectAnyWeek: canAnyWeek,
       canAccessHR: hasHR,
+      canEditHR: isAdmin || canEditHR,
+      canDeleteHR: isAdmin || canDeleteHR,
       canAccessWorks: hasWorks,
     },
   });
