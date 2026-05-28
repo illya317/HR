@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "db:check": "node scripts/check-db.js",
-    "db:docs": "node scripts/gen-db-docs.js"
+    "db:docs": "node scripts/gen-db-docs.js",
+    "env:check": "node scripts/check-env.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

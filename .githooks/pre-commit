@@ -1,5 +1,11 @@
 #!/bin/sh
-# Pre-commit hook: block commit if lint / type-check / build fails
+# Pre-commit hook: block commit if env / lint / type-check / build fails
+
+echo "→ Running env check..."
+npm run env:check || {
+  echo "✗ Env check failed. Commit aborted."
+  exit 1
+}
 
 echo "→ Running lint (max-warnings=0)..."
 npm run lint -- --max-warnings=0 || {
