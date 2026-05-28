@@ -797,6 +797,12 @@ console.log(`✓ docs/tables.md`);
 
 const apiEndpoints = parseApiRoutes();
 fs.writeFileSync(path.resolve(__dirname, "../../docs/api.html"), generateApiHTML(apiEndpoints), "utf-8");
-fs.writeFileSync(path.resolve(__dirname, "../../docs/api.md"), generateApiMD(apiEndpoints), "utf-8");
 console.log(`✓ docs/api.html  (${apiEndpoints.length} endpoints)`);
-console.log(`✓ docs/api.md`);
+
+const apiMdPath = path.resolve(__dirname, "../../docs/api.md");
+if (!fs.existsSync(apiMdPath)) {
+  fs.writeFileSync(apiMdPath, generateApiMD(apiEndpoints), "utf-8");
+  console.log(`✓ docs/api.md`);
+} else {
+  console.log(`✓ docs/api.md (skipped — handwritten, delete to regenerate)`);
+}
