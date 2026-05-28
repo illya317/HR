@@ -68,6 +68,10 @@ echo "==> 复制 Prisma 生成文件到 standalone..."
 mkdir -p .next/standalone/node_modules/.prisma
 cp -r node_modules/.prisma/client .next/standalone/node_modules/.prisma/
 
+echo "==> 清理 Prisma 重复文件和本地引擎（只保留服务器需要的 debian-openssl）..."
+find .next/standalone/node_modules/.prisma/client -regextype sed -regex '.* [2-9][0-9]*\.\(js\|ts\|node\)$' -delete 2>/dev/null || true
+rm -f .next/standalone/node_modules/.prisma/client/libquery_engine-darwin-arm64* 2>/dev/null || true
+
 echo "==> 确保服务器数据库目录存在..."
 ssh -i "$KEY" "$SERVER" "mkdir -p $REMOTE_DIR/prisma"
 
