@@ -11,11 +11,32 @@ interface SubjectInfo {
   extra?: Record<string, unknown>;
 }
 
-async function getUserSubjects(
-  companyFilter?: string,
-  deptFilter?: string,
-  keyword?: string
-): Promise<SubjectInfo[]> {
+async function buildDeptPathMaps() {
+  const allDepts = await prisma.department.findMany({
+    select: { id: true, name: true, parentId: true },
+  });
+  const parentMap = new Map<number, number | null>(allDepts.map((d) => [d.id, d.parentId]));
+  const nameMap = new Map<number, string>(allDepts.map((d) => [d.id, d.name]));
+
+  function getDeptPath(deptId: number | null): string[] {
+    const path: string[] = [];
+    const seen = new Set<number>();
+    let current = deptId;
+    while (current && !seen.has(current)) {
+      seen.add(current);
+      const name = nameMap.get(current);
+      if (name) path.unshift(name);
+      current = parentMap.get(current) ?? null;
+    }
+    return path;
+  }
+
+  return { getDeptPath };
+}
+
+async function getUserSubjects(companyFilter?: string): Promise<SubjectInfo[]> {
+  const { getDeptPath } = await buildDeptPathMaps();
+
   const activeEmpIds = new Set(
     (await prisma.employment.findMany({
       where: { isActive: true },
@@ -29,7 +50,7 @@ async function getUserSubjects(
     include: {
       positions: {
         include: {
-          department: { select: { name: true, code: true } },
+          department: { select: { name: true, code: true, id: true } },
           position: { select: { name: true } },
         },
       },
@@ -47,14 +68,12 @@ async function getUserSubjects(
   const result: SubjectInfo[] = [];
   for (const emp of employees) {
     const userId = userIdByEmployeeId.get(emp.employeeId);
-    const deptName = emp.positions[0]?.department?.name || "";
-    const companyName = emp.positions[0]?.department?.code?.startsWith("PPA") || emp.positions[0]?.department?.code?.startsWith("04")
+    const dept = emp.positions[0]?.department;
+    const companyName = dept?.code?.startsWith("PPA") || dept?.code?.startsWith("04")
       ? "丰华制药"
       : "丰华生物";
 
     if (companyFilter && companyFilter !== "全部" && companyName !== companyFilter) continue;
-    if (deptFilter && deptFilter !== "全部" && deptName !== deptFilter) continue;
-    if (keyword && !emp.name.includes(keyword) && !emp.employeeId.includes(keyword)) continue;
 
     result.push({
       id: userId ?? 0,
@@ -64,7 +83,8 @@ async function getUserSubjects(
         userId,
         hasUser: !!userId,
         company: companyName,
-        department: deptName,
+        department: dept?.name || "",
+        deptPath: getDeptPath(dept?.id ?? null),
         positionIds: emp.positions.map((p) => p.positionId).filter((id): id is number => id !== null),
         departmentIds: [...new Set(emp.positions.map((p) => p.departmentId).filter((id): id is number => id !== null))],
       },
@@ -73,14 +93,12 @@ async function getUserSubjects(
   return result;
 }
 
-async function getPositionSubjects(
-  companyFilter?: string,
-  deptFilter?: string,
-  keyword?: string
-): Promise<SubjectInfo[]> {
+async function getPositionSubjects(companyFilter?: string): Promise<SubjectInfo[]> {
+  const { getDeptPath } = await buildDeptPathMaps();
+
   const positions = await prisma.position.findMany({
     include: {
-      department: { select: { name: true, code: true } },
+      department: { select: { name: true, code: true, id: true } },
     },
     orderBy: { code: "asc" },
   });
@@ -93,8 +111,6 @@ async function getPositionSubjects(
       : "丰华生物";
 
     if (companyFilter && companyFilter !== "全部" && companyName !== companyFilter) continue;
-    if (deptFilter && deptFilter !== "全部" && dept?.name !== deptFilter) continue;
-    if (keyword && !pos.name.includes(keyword) && !pos.code.includes(keyword)) continue;
 
     result.push({
       id: pos.id,
@@ -103,16 +119,16 @@ async function getPositionSubjects(
         code: pos.code,
         company: companyName,
         department: dept?.name || "",
+        deptPath: getDeptPath(dept?.id ?? null),
       },
     });
   }
   return result;
 }
 
-async function getDepartmentSubjects(
-  companyFilter?: string,
-  keyword?: string
-): Promise<SubjectInfo[]> {
+async function getDepartmentSubjects(companyFilter?: string): Promise<SubjectInfo[]> {
+  const { getDeptPath } = await buildDeptPathMaps();
+
   const depts = await prisma.department.findMany({
     orderBy: { code: "asc" },
   });
@@ -124,7 +140,6 @@ async function getDepartmentSubjects(
       : "丰华生物";
 
     if (companyFilter && companyFilter !== "全部" && companyName !== companyFilter) continue;
-    if (keyword && !d.name.includes(keyword) && !d.code.includes(keyword)) continue;
 
     result.push({
       id: d.id,
@@ -132,6 +147,7 @@ async function getDepartmentSubjects(
       extra: {
         code: d.code,
         company: companyName,
+        deptPath: getDeptPath(d.id),
       },
     });
   }
@@ -152,16 +168,14 @@ export async function GET(request: Request) {
   const subjectType = (searchParams.get("subjectType") || "user") as SubjectType;
   const resourceKey = searchParams.get("resourceKey") || undefined;
   const companyFilter = searchParams.get("company") || undefined;
-  const deptFilter = searchParams.get("department") || undefined;
-  const keyword = searchParams.get("keyword") || undefined;
 
   let subjects: SubjectInfo[] = [];
   if (subjectType === "user") {
-    subjects = await getUserSubjects(companyFilter, deptFilter, keyword);
+    subjects = await getUserSubjects(companyFilter);
   } else if (subjectType === "position") {
-    subjects = await getPositionSubjects(companyFilter, deptFilter, keyword);
+    subjects = await getPositionSubjects(companyFilter);
   } else if (subjectType === "department") {
-    subjects = await getDepartmentSubjects(companyFilter, keyword);
+    subjects = await getDepartmentSubjects(companyFilter);
   }
 
   // Load direct grants for this subject type

@@ -180,10 +180,20 @@ export default function AdminUsersTab({ showToast }: { showToast: (msg: string, 
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
-                      {u.isWorkListAdmin && <span className="bg-purple-50 text-purple-600 rounded px-1 py-0.5 text-[10px]">管理员</span>}
-                      {u.canAccessHR && <span className="bg-blue-50 text-blue-600 rounded px-1 py-0.5 text-[10px]">人事</span>}
-                      {u.canEditHR && <span className="bg-emerald-50 text-emerald-600 rounded px-1 py-0.5 text-[10px]">人事编辑</span>}
-                      {u.canAccessWorks && <span className="bg-amber-50 text-amber-600 rounded px-1 py-0.5 text-[10px]">工作</span>}
+                      {u.isWorkListAdmin && (
+                        <span className="rounded bg-purple-50 px-1 py-0.5 text-[10px] text-purple-600">管理员</span>
+                      )}
+                      {/* HR 权限只显示最高级别 */}
+                      {u.canDeleteHR ? (
+                        <span className="rounded bg-red-50 px-1 py-0.5 text-[10px] text-red-600">人事删除</span>
+                      ) : u.canEditHR ? (
+                        <span className="rounded bg-emerald-50 px-1 py-0.5 text-[10px] text-emerald-600">人事编辑</span>
+                      ) : u.canAccessHR ? (
+                        <span className="rounded bg-blue-50 px-1 py-0.5 text-[10px] text-blue-600">人事</span>
+                      ) : null}
+                      {u.canAccessWorks && (
+                        <span className="rounded bg-amber-50 px-1 py-0.5 text-[10px] text-amber-600">工作</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-3 py-2">

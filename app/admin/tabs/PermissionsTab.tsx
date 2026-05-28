@@ -74,23 +74,51 @@ export default function PermissionsTab({ resources, showToast }: Props) {
               ))}
             </select>
             {s.subjectType !== "department" && (
-              <select
-                value={s.deptFilter}
-                onChange={(e) => s.setDeptFilter(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none"
-              >
-                {s.depts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={s.l1Dept}
+                  onChange={(e) => s.setL1Dept(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none"
+                >
+                  {s.l1Options.map((d) => (
+                    <option key={d} value={d}>
+                      {d === "全部" ? "一级部门" : d}
+                    </option>
+                  ))}
+                </select>
+                {s.l2Options.length > 1 && (
+                  <select
+                    value={s.l2Dept}
+                    onChange={(e) => s.setL2Dept(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none"
+                  >
+                    {s.l2Options.map((d) => (
+                      <option key={d} value={d}>
+                        {d === "全部" ? "二级部门" : d}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {s.l3Options.length > 1 && (
+                  <select
+                    value={s.l3Dept}
+                    onChange={(e) => s.setL3Dept(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none"
+                  >
+                    {s.l3Options.map((d) => (
+                      <option key={d} value={d}>
+                        {d === "全部" ? "三级部门" : d}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </>
             )}
             <input
               type="text"
-              placeholder="搜索关键词…"
-              value={s.keywordFilter}
-              onChange={(e) => s.setKeywordFilter(e.target.value)}
+              placeholder={s.subjectType === "user" ? "搜索姓名…" : s.subjectType === "position" ? "搜索岗位…" : "搜索部门…"}
+              value={s.nameSearch}
+              onChange={(e) => s.setNameSearch(e.target.value)}
               className="min-w-[160px] rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-emerald-400 focus:outline-none"
             />
           </FilterBar>
@@ -124,19 +152,24 @@ function ResourceTree({
 }) {
   return (
     <div className={`space-y-1 ${isChild ? "pl-2" : ""}`}>
-      {resources.map((r) => (
-        <button
-          key={r.key}
-          onClick={() => onSelect(r.key)}
-          className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
-            selectedResource === r.key
-              ? "bg-emerald-50 text-emerald-700 font-medium"
-              : "text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          {r.name}
-        </button>
-      ))}
+      {resources.map((r) => {
+        const isSelected =
+          selectedResource === r.key ||
+          (!isChild && selectedResource?.startsWith(r.key + "."));
+        return (
+          <button
+            key={r.key}
+            onClick={() => onSelect(r.key)}
+            className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              isSelected
+                ? "bg-emerald-50 text-emerald-700 font-medium"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            {r.name}
+          </button>
+        );
+      })}
     </div>
   );
 }
