@@ -1,5 +1,28 @@
 # RBAC 权限模型
 
+## 角色语义（v2025-05-28）
+
+| 角色 | 含义 | HTTP 方法映射 |
+|------|------|--------------|
+| `access` | 访问/查看 | GET |
+| `write` | 新增/编辑 | POST / PUT / PATCH |
+| `delete` | 删除 | DELETE |
+| `admin` | 管理该资源及子资源的权限授权 | 后台权限矩阵操作 |
+
+重要区分：
+- **`resource.admin`**（如 `people.admin`、`finance.admin`）= 模块管理员
+  - 可管理该模块及子资源的权限分配
+  - **不能**创建账号、重置密码、管理 API Key
+  - **不能**授予 `system.admin`
+  - **不能**管理其他模块
+- **`system.admin`** = 超级管理员
+  - 可管理全部资源、账号、系统配置
+  - 唯一可授予 `system.admin` 的身份
+
+普通 `people.access` / `people.write` / `people.delete` 持有者**不能**进入后台授权页面。
+
+---
+
 ## 当前等级：RBAC0（基础）
 
 ```
@@ -20,8 +43,8 @@ model Resource {
 
 model Role {
   id          Int     @id @default(autoincrement())
-  key         String  @unique   // "access" | "admin" | "write" | "read" | "member" | "viewer"
-  name        String            // "可进入" | "管理" | "编辑" | "只读" | "参与" | "查看"
+  key         String  @unique   // "access" | "write" | "delete" | "admin"
+  name        String            // "可进入" | "编辑" | "可删除" | "管理"
   description String?
   sortOrder   Int     @default(0)
 }
