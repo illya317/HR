@@ -166,14 +166,9 @@ export async function GET(request: Request) {
   const subjectType = (searchParams.get("subjectType") || "user") as SubjectType;
   const resourceKey = searchParams.get("resourceKey") || undefined;
 
-  // Non-system-admin must provide a resourceKey and it must be manageable
-  if (!isSysAdmin) {
-    if (!resourceKey) {
-      return NextResponse.json({ error: "需要指定 resourceKey" }, { status: 400 });
-    }
-    if (!manageableKeys.has(resourceKey)) {
-      return NextResponse.json({ error: "无权限管理该资源" }, { status: 403 });
-    }
+  // Non-system-admin can only manage grants for resources they have admin on
+  if (!isSysAdmin && resourceKey && !manageableKeys.has(resourceKey)) {
+    return NextResponse.json({ error: "无权限管理该资源" }, { status: 403 });
   }
 
   let subjects: SubjectInfo[] = [];
