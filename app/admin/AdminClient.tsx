@@ -8,24 +8,19 @@ import UserMenu from "@/app/components/UserMenu";
 import Toast from "@/app/components/Toast";
 import { useToast } from "@/app/hooks/useToast";
 import AdminUsersTab from "./tabs/AdminUsersTab";
-import ByUserTab from "./tabs/ByUserTab";
-import ByPositionTab from "./tabs/ByPositionTab";
-import ByDepartmentTab from "./tabs/ByDepartmentTab";
-import ByPermissionTab from "./tabs/ByPermissionTab";
+import PermissionsTab from "./tabs/PermissionsTab";
 
-import type { ResourceItem, DeptItem } from "./types";
+import type { ResourceItem } from "./types";
 import { flattenTree } from "./lib";
 import { SessionUser } from "@/lib/types";
 
 export default function AdminClient({ user }: { user: SessionUser }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"users" | "by-user" | "by-position" | "by-department" | "by-permission">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "permissions">("users");
 
   const [resources, setResources] = useState<ResourceItem[]>([]);
-  const [roles, setRoles] = useState<Array<{ id: number; key: string; name: string; description: string | null }>>([]);
   const [conflictStrategy, setConflictStrategy] = useState("union");
-  const [allDepts, setAllDepts] = useState<DeptItem[]>([]);
 
   const { toast, showToast, closeToast } = useToast();
 
@@ -33,18 +28,11 @@ export default function AdminClient({ user }: { user: SessionUser }) {
     let cancelled = false;
     async function loadInitial() {
       try {
-        const [resRes, deptRes] = await Promise.all([
-          fetch("/api/admin/permissions"),
-          fetch("/api/admin/departments"),
-        ]);
+        const resRes = await fetch("/api/admin/permissions");
         if (!cancelled) {
           if (!resRes.ok) showToast("加载权限资源失败: " + resRes.status, "error");
-          if (!deptRes.ok) showToast("加载部门列表失败: " + deptRes.status, "error");
           const resData = await resRes.json();
-          const deptData = await deptRes.json();
           setResources(flattenTree(resData.resources || []));
-          setRoles(resData.roles || []);
-          setAllDepts(deptData.departments || []);
           try {
             const cfgRes = await fetch("/api/admin/system-config");
             if (cfgRes.ok) {
@@ -87,10 +75,7 @@ export default function AdminClient({ user }: { user: SessionUser }) {
 
   const tabs = [
     { key: "users" as const, label: "用户账号" },
-    { key: "by-user" as const, label: "按员工" },
-    { key: "by-position" as const, label: "按岗位" },
-    { key: "by-department" as const, label: "按部门" },
-    { key: "by-permission" as const, label: "按权限" },
+    { key: "permissions" as const, label: "权限管理" },
   ];
 
   return (
@@ -125,11 +110,7 @@ export default function AdminClient({ user }: { user: SessionUser }) {
 
         <div className="space-y-4">
           {activeTab === "users" && <AdminUsersTab showToast={showToast} />}
-          {activeTab === "by-user" && <ByUserTab user={user!} resources={resources} roles={roles} allDepts={allDepts} showToast={showToast} />}
-          {activeTab === "by-position" && <ByPositionTab user={user!} resources={resources} showToast={showToast} />}
-          {activeTab === "by-department" && <ByDepartmentTab resources={resources} allDepts={allDepts} showToast={showToast} />}
-          {activeTab === "by-permission" && <ByPermissionTab user={user!} resources={resources} showToast={showToast} />}
-
+          {activeTab === "permissions" && <PermissionsTab resources={resources} showToast={showToast} />}
         </div>
 
         {/* System Config */}

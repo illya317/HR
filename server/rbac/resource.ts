@@ -28,3 +28,24 @@ export async function getResourceDescendants(resourceId: number): Promise<number
   dfs(resourceId);
   return result;
 }
+
+export async function getResourceAncestors(resourceId: number): Promise<number[]> {
+  if (!resourceCache) {
+    resourceCache = await prisma.resource.findMany({
+      select: { id: true, parentId: true },
+    });
+  }
+
+  const byId = new Map<number, number | null>();
+  for (const r of resourceCache) byId.set(r.id, r.parentId);
+
+  const result: number[] = [];
+  let current = resourceId;
+  while (true) {
+    result.push(current);
+    const parent = byId.get(current);
+    if (parent == null) break;
+    current = parent;
+  }
+  return result;
+}

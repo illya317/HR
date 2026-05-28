@@ -1,7 +1,15 @@
 import { prisma } from "@/lib/prisma";
+import { normalizeRoleKey } from "@/lib/permissions";
 import { getUserPositionIds, getUserDepartmentIds } from "./helpers";
-import { getResourceDescendants } from "./resource";
+import { getResourceAncestors } from "./resource";
 import type { PermissionContext } from "./context";
+
+function resolveRoleKeys(roleKey: string): string[] {
+  const normalized = normalizeRoleKey(roleKey);
+  if (normalized === "admin") return ["admin"];
+  // admin 视为包含同资源下的 access/write/delete/admin
+  return [normalized, "admin"];
+}
 
 export async function checkPermission(
   userId: number,
@@ -9,7 +17,7 @@ export async function checkPermission(
   roleKey: string,
 ): Promise<boolean> {
   // 0. system.admin bypass (skip if already checking system.admin itself)
-  if (!(resourceKey === "system" && roleKey === "admin")) {
+  if (!(resourceKey === "system" && normalizeRoleKey(roleKey) === "admin")) {
     const isSysAdmin = await checkPermission(userId, "system", "admin");
     if (isSysAdmin) return true;
   }
@@ -21,14 +29,15 @@ export async function checkPermission(
   });
   if (!resource) return false;
 
-  // 2. Check this resource AND all its descendants (子权限推断父权限)
-  const resourceIds = await getResourceDescendants(resource.id);
+  // 2. Check this resource AND all its ancestors (父资源覆盖子资源)
+  const resourceIds = await getResourceAncestors(resource.id);
+  const roleKeys = resolveRoleKeys(roleKey);
 
   const userGrant = await prisma.userResourceRole.findFirst({
     where: {
       userId,
       resourceId: { in: resourceIds },
-      role: { key: roleKey },
+      role: { key: { in: roleKeys } },
     },
   });
   if (userGrant) return true;
@@ -39,7 +48,7 @@ export async function checkPermission(
       where: {
         positionId: { in: posIds },
         resourceId: { in: resourceIds },
-        role: { key: roleKey },
+        role: { key: { in: roleKeys } },
       },
     });
     if (positionGrant) return true;
@@ -51,7 +60,7 @@ export async function checkPermission(
       where: {
         departmentId: { in: deptIds },
         resourceId: { in: resourceIds },
-        role: { key: roleKey },
+        role: { key: { in: roleKeys } },
       },
     });
     if (deptGrant) return true;
@@ -65,7 +74,7 @@ export async function checkPermissionWithContext(
   resourceKey: string,
   roleKey: string,
 ): Promise<boolean> {
-  if (ctx.isAdmin && !(resourceKey === "system" && roleKey === "admin")) return true;
+  if (ctx.isAdmin && !(resourceKey === "system" && normalizeRoleKey(roleKey) === "admin")) return true;
 
   const resource = await prisma.resource.findUnique({
     where: { key: resourceKey },
@@ -73,13 +82,14 @@ export async function checkPermissionWithContext(
   });
   if (!resource) return false;
 
-  const resourceIds = await getResourceDescendants(resource.id);
+  const resourceIds = await getResourceAncestors(resource.id);
+  const roleKeys = resolveRoleKeys(roleKey);
 
   const userGrant = await prisma.userResourceRole.findFirst({
     where: {
       userId: ctx.userId,
       resourceId: { in: resourceIds },
-      role: { key: roleKey },
+      role: { key: { in: roleKeys } },
     },
   });
   if (userGrant) return true;
@@ -89,7 +99,7 @@ export async function checkPermissionWithContext(
       where: {
         positionId: { in: ctx.positionIds },
         resourceId: { in: resourceIds },
-        role: { key: roleKey },
+        role: { key: { in: roleKeys } },
       },
     });
     if (positionGrant) return true;
@@ -100,7 +110,7 @@ export async function checkPermissionWithContext(
       where: {
         departmentId: { in: ctx.departmentIds },
         resourceId: { in: resourceIds },
-        role: { key: roleKey },
+        role: { key: { in: roleKeys } },
       },
     });
     if (deptGrant) return true;

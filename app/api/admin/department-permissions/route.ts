@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { authenticate, checkPermission, getResourceDescendants } from "@/lib/auth";
+import { authenticate, checkPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { setGrant, getGrants } from "@/server/rbac/grants";
 
 // GET - get all department-level permission grants
 export async function GET(request: Request) {
@@ -16,19 +17,33 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "无权限" }, { status: 403 });
   }
 
-  const grants = await prisma.departmentResourceRole.findMany({
-    include: {
-      resource: { select: { id: true, key: true, name: true } },
-      role: { select: { id: true, key: true, name: true } },
-      department: { select: { id: true, name: true, code: true } },
-    },
-    orderBy: [
-      { department: { code: "asc" } },
-      { department: { name: "asc" } },
-    ],
-  });
+  const grants = await getGrants("department");
 
-  return NextResponse.json({ grants });
+  const resourceIds = [...new Set(grants.map((g) => g.resourceId))];
+  const departmentIds = [...new Set(grants.map((g) => g.subjectId))];
+
+  const [resources, departments] = await Promise.all([
+    prisma.resource.findMany({
+      where: { id: { in: resourceIds } },
+      select: { id: true, key: true, name: true },
+    }),
+    prisma.department.findMany({
+      where: { id: { in: departmentIds } },
+      select: { id: true, code: true, name: true },
+    }),
+  ]);
+
+  const resMap = new Map(resources.map((r) => [r.id, r]));
+  const deptMap = new Map(departments.map((d) => [d.id, d]));
+
+  const enriched = grants.map((g) => ({
+    ...g,
+    resource: resMap.get(g.resourceId),
+    department: deptMap.get(g.subjectId),
+    role: { key: g.roleKey },
+  }));
+
+  return NextResponse.json({ grants: enriched });
 }
 
 // PUT - toggle a department-level permission grant
@@ -54,46 +69,9 @@ export async function PUT(request: Request) {
       );
     }
 
-    const resource = await prisma.resource.findUnique({ where: { key: resourceKey } });
-    const role = await prisma.role.findUnique({ where: { key: roleKey } });
-
-    if (!resource || !role) {
-      return NextResponse.json({ error: "无效的resourceKey或roleKey" }, { status: 400 });
-    }
-
-    if (value) {
-      // Grant: create for this resource + all descendants
-      const descendantIds = await getResourceDescendants(resource.id);
-      for (const rid of descendantIds) {
-        const existing = await prisma.departmentResourceRole.findFirst({
-          where: {
-            departmentId: Number(departmentId),
-            resourceId: rid,
-            roleId: role.id,
-            scopeId: null,
-          },
-        });
-        if (!existing) {
-          await prisma.departmentResourceRole.create({
-            data: {
-              departmentId: Number(departmentId),
-              resourceId: rid,
-              roleId: role.id,
-            },
-          });
-        }
-      }
-    } else {
-      // Revoke: delete this resource + all descendants
-      const descendantIds = await getResourceDescendants(resource.id);
-      await prisma.departmentResourceRole.deleteMany({
-        where: {
-          departmentId: Number(departmentId),
-          resourceId: { in: descendantIds },
-          roleId: role.id,
-        },
-      });
-    }
+    await setGrant("department", Number(departmentId), resourceKey, roleKey, value, {
+      actorUserId: payload.userId,
+    });
 
     return NextResponse.json({ success: true });
   } catch (e: unknown) {

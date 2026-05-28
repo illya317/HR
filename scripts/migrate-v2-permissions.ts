@@ -56,11 +56,9 @@ async function main() {
   console.log("\n2. Seeding Roles...");
   const roleDefs = [
     { key: "access", name: "可进入", sortOrder: 0 },
-    { key: "read", name: "只读", sortOrder: 1 },
-    { key: "write", name: "编辑", sortOrder: 2 },
-    { key: "delete", name: "删除", sortOrder: 3 },
-    { key: "admin", name: "管理", sortOrder: 4 },
-    { key: "read", name: "只读", sortOrder: 5 },
+    { key: "write", name: "编辑", sortOrder: 1 },
+    { key: "delete", name: "删除", sortOrder: 2 },
+    { key: "admin", name: "管理", sortOrder: 3 },
   ];
   const roleMap = new Map<string, number>();
   for (const r of roleDefs) {

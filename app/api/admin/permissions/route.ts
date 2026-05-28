@@ -83,5 +83,8 @@ export async function GET(request: Request) {
     orderBy: { sortOrder: "asc" },
   });
 
-  return NextResponse.json({ resources, roles });
+  // 后台不再展示 read 角色
+  const visibleRoles = roles.filter((r) => r.key !== "read");
+
+  return NextResponse.json({ resources, roles: visibleRoles });
 }

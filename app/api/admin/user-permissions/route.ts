@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { authenticate, checkPermission, getResourceDescendants } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { authenticate, checkPermission } from "@/lib/auth";
+import { setGrant } from "@/server/rbac/grants";
 
 export async function PUT(request: Request) {
   const payload = await authenticate(request);
@@ -22,59 +22,13 @@ export async function PUT(request: Request) {
     );
   }
 
-  const resource = await prisma.resource.findUnique({
-    where: { key: resourceKey },
-  });
-  const role = await prisma.role.findUnique({
-    where: { key: roleKey },
-  });
-
-  if (!resource || !role) {
-    return NextResponse.json(
-      { error: `无效的 resourceKey(${resourceKey}) 或 roleKey(${roleKey})` },
-      { status: 400 }
-    );
-  }
-
-  if (value) {
-    // Grant: create UserResourceRole for this resource + all descendants
-    const descendantIds = await getResourceDescendants(resource.id);
-    for (const rid of descendantIds) {
-      const existing = await prisma.userResourceRole.findFirst({
-        where: {
-          userId,
-          resourceId: rid,
-          roleId: role.id,
-          scopeId: null,
-        },
-      });
-      if (!existing) {
-        await prisma.userResourceRole.create({
-          data: {
-            userId,
-            resourceId: rid,
-            roleId: role.id,
-            scopeId: null,
-          },
-        });
-      }
-    }
-  } else {
-    // 禁止取消自己的系统管理员权限
-    if (resourceKey === "system" && roleKey === "admin" && userId === payload.userId) {
-      return NextResponse.json({ error: "不能取消自己的系统管理员权限" }, { status: 403 });
-    }
-    // Revoke: delete this resource + all descendants
-    const descendantIds = await getResourceDescendants(resource.id);
-    await prisma.userResourceRole.deleteMany({
-      where: {
-        userId,
-        resourceId: { in: descendantIds },
-        roleId: role.id,
-        scopeId: null,
-      },
+  try {
+    await setGrant("user", userId, resourceKey, roleKey, value, {
+      actorUserId: payload.userId,
     });
+    return NextResponse.json({ success: true });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "操作失败";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
-
-  return NextResponse.json({ success: true });
 }

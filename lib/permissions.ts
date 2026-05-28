@@ -53,6 +53,19 @@ export const ROLE = {
   admin: "admin",
 } as const;
 
+// 统一动作常量（后台不再使用 read）
+export const ACTION = {
+  access: "access",
+  write: "write",
+  delete: "delete",
+  admin: "admin",
+} as const;
+
+// 入参兼容：所有 read 统一转成 access
+export function normalizeRoleKey(roleKey: string): string {
+  return roleKey === "read" ? "access" : roleKey;
+}
+
 // ─── Backward compat aliases ──────────────────────────────
 // Old code using perm.system.admin strings still works at runtime,
 // but new code should use checkPermission() with separate args.

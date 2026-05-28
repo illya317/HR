@@ -32,7 +32,7 @@ async function main() {
     { key: "access", name: "可进入", description: "系统/模块级别开关" },
     { key: "admin", name: "管理", description: "编辑数据 + 分配该资源权限给他人" },
     { key: "write", name: "编辑", description: "可修改数据" },
-    { key: "read", name: "只读", description: "可查看数据" },
+    { key: "delete", name: "删除", description: "可删除数据" },
     { key: "write_any_week", name: "补填任意周报", description: "可填写/补填任意周的周报" },
   ];
   const roleMap = new Map<string, number>();
@@ -109,7 +109,7 @@ async function main() {
     "module.works": "access",
     "report.admin": "admin",
     "report.write": "write",
-    "report.read": "read",
+    "report.read": "access",
     "dept.admin": "admin",
   })) {
     backupPermKeyToRole.set(old, role);
