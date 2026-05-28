@@ -28,7 +28,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | 数据库 | `prisma/` | Prisma schema、migration、seed |
 | 共享前端 | `app/components/`, `app/hooks/` | 全站复用 UI 和 hooks |
 | 共享工具 | `lib/` | 跨端类型、常量、Prisma client、历史工具 |
-| 文档治理 | `README.md`, `docs/`, `app/*/ARCHITECTURE.md` | 项目地图和模块边界 |
+| 文档治理 | `docs/`, `app/*/ARCHITECTURE.md` | 项目地图和模块边界 |
 
 新增业务模块必须按同一套目录契约落位。例如绩效模块应使用 `app/performance/`、`app/api/performance/`、`server/services/performance/`，采购模块应使用 `app/procurement/`、`app/api/procurement/`、`server/services/procurement/`。禁止把新模块塞进 HR、Finance 或通用 `lib/` 里借壳生长。
 

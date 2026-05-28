@@ -7,7 +7,6 @@ const { execSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "..", "..");
 
 const REQUIRED_FILES = [
-  "README.md",
   "CLAUDE.md",
   "docs/architecture-governance.md",
 ];
