@@ -89,10 +89,9 @@ export async function POST(request: Request) {
     },
   });
 
-  const isProduction = process.env.NODE_ENV === "production";
   response.cookies.set("token", token, {
     httpOnly: true,
-    secure: isProduction,
+    secure: false,
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
@@ -103,10 +102,9 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const response = NextResponse.json({ success: true });
-  const isProduction = process.env.NODE_ENV === "production";
   response.cookies.set("token", "", {
     httpOnly: true,
-    secure: isProduction,
+    secure: false,
     sameSite: "lax",
     expires: new Date(0),
     path: "/",
