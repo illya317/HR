@@ -102,7 +102,7 @@ for (let i = 0; i < lines.length; i++) {
   const trimmed = line.trim();
 
   // Capture model-level /// comments
-  if (trimmed.startsWith("///")) {
+  if (line.trim().startsWith("///")) {
     const text = trimmed.replace(/^\/+\s*/, "").trim();
     if (text) {
       pendingDescription = pendingDescription ? pendingDescription + " " + text : text;
@@ -130,7 +130,6 @@ for (let i = 0; i < lines.length; i++) {
   }
   if (!currentModel) continue;
 
-  const trimmed = line.trim();
   if (!trimmed || trimmed.startsWith("//")) continue;
 
   // Table-level constraints
