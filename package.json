@@ -7,7 +7,7 @@
     "build": "prisma generate --schema=./prisma && next build",
     "start": "next start",
     "lint": "eslint",
-    "ci": "npm run arch:check && npm run env:check && npm run api:check && npm run db:validate && npm run schema:check && npm run lint -- --max-warnings=0 && npx tsc --noEmit && npm run build",
+    "ci": "npm run arch:check && npm run env:check && npm run api:check && npm run docs:check && npm run db:validate && npm run schema:check && npm run lint -- --max-warnings=0 && npx tsc --noEmit && npm run build",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
