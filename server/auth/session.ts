@@ -145,6 +145,14 @@ export async function requireContractAccess(): Promise<SessionUser> {
   return user;
 }
 
+export async function requireFinanceCostAccess(): Promise<SessionUser> {
+  const user = await requireCurrentUser();
+  if (!user.canAccessFinanceCost) {
+    throw new Error("FORBIDDEN");
+  }
+  return user;
+}
+
 export async function requireInventoryAccess(): Promise<SessionUser> {
   const user = await requireCurrentUser();
   if (!user.canAccessInventory) {

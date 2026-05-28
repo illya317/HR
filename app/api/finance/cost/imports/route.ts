@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { withFinanceAccess, withFinanceWrite } from "@/lib/with-auth";
+import { withFinanceCostAccess, withFinanceCostWrite } from "@/lib/with-auth";
 import { listImports } from "@/server/services/finance-cost";
 
 export async function GET(request: Request) {
-  return withFinanceAccess(async (req) => {
+  return withFinanceCostAccess(async (req) => {
     const { searchParams } = new URL(req.url);
     const params = {
       page: searchParams.has("page") ? parseInt(searchParams.get("page")!) : undefined,
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  return withFinanceWrite(async (_req) => {
+  return withFinanceCostWrite(async (_req) => {
     // The actual import is handled by the standalone script.
     // This endpoint can trigger a background import or accept a manual payload.
     // For now, return a guide message.

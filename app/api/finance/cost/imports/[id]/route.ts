@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { withFinanceAccess, withFinanceDelete } from "@/lib/with-auth";
+import { withFinanceCostAccess, withFinanceCostDelete } from "@/lib/with-auth";
 import { deleteImportById, getImportById } from "@/server/services/finance-cost";
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  return withFinanceDelete(async () => {
+  return withFinanceCostDelete(async () => {
     const { id } = await params;
     const numericId = parseInt(id);
     if (Number.isNaN(numericId)) {
@@ -27,7 +27,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  return withFinanceAccess(async () => {
+  return withFinanceCostAccess(async () => {
     const { id } = await params;
     const numericId = parseInt(id);
     if (Number.isNaN(numericId)) {

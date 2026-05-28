@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { withFinanceAccess } from "@/lib/with-auth";
+import { withFinanceCostAccess } from "@/lib/with-auth";
 import { listSalesSalaries, getSalesSalarySummary } from "@/server/services/finance-cost";
 
 export async function GET(request: Request) {
-  return withFinanceAccess(async (req) => {
+  return withFinanceCostAccess(async (req) => {
     const { searchParams } = new URL(req.url);
     const params = {
       year: searchParams.has("year") ? parseInt(searchParams.get("year")!) : undefined,
