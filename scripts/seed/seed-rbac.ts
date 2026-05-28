@@ -64,7 +64,7 @@ async function main() {
 
   // ─── Step 4: UserPermission → UserResourceRole ──────────
   console.log("\n5. Migrating User booleans → UserResourceRole (scopeId=null)...");
-  const backupPath = require("path").join(__dirname, ".rbac-migration-backup.json");
+  const backupPath = require("path").join(__dirname, "..", ".rbac-migration-backup.json");
   let backup: any;
   try {
     backup = JSON.parse(require("fs").readFileSync(backupPath, "utf-8"));

@@ -13,7 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(__dirname, "..", "..");
 const ENV_EXAMPLE = path.join(ROOT, ".env.example");
 const ENV_FILE = path.join(ROOT, ".env");
 

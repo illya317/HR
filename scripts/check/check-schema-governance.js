@@ -15,7 +15,7 @@ function ok(msg) {
 }
 
 // ─── 规则 1: schema.prisma 中不得出现 model ─────────────────────
-const schemaPath = path.join(__dirname, "..", "prisma", "schema.prisma");
+const schemaPath = path.join(__dirname, "..", "..", "prisma", "schema.prisma");
 const schemaContent = fs.readFileSync(schemaPath, "utf-8");
 if (/^model\s+/m.test(schemaContent)) {
   fail("prisma/schema.prisma 中包含 model 定义，只允许放 generator 和 datasource");
@@ -24,7 +24,7 @@ if (/^model\s+/m.test(schemaContent)) {
 }
 
 // ─── 规则 2 & 3: model 文件检查 ──────────────────────────────────
-const modelsDir = path.join(__dirname, "..", "prisma", "models");
+const modelsDir = path.join(__dirname, "..", "..", "prisma", "models");
 const modelFiles = fs.readdirSync(modelsDir).filter((f) => f.endsWith(".prisma"));
 
 for (const file of modelFiles) {
@@ -107,7 +107,7 @@ if (fs.existsSync(financeCostPath)) {
 // ─── 规则 6 & 7: staged files 检查 ──────────────────────────────
 let stagedFiles = [];
 try {
-  const output = execSync("git diff --cached --name-only", { encoding: "utf-8", cwd: path.join(__dirname, "..") });
+  const output = execSync("git diff --cached --name-only", { encoding: "utf-8", cwd: path.join(__dirname, "..", "..") });
   stagedFiles = output.trim().split("\n").filter(Boolean);
 } catch {
   // 不在 git repo 中或无 staged files
@@ -123,7 +123,7 @@ if (stagedFiles.length > 0) {
         try {
           execSync("git ls-files --error-unmatch app/finance/cost/ARCHITECTURE.md", {
             encoding: "utf-8",
-            cwd: path.join(__dirname, ".."),
+            cwd: path.join(__dirname, "..", ".."),
             stdio: "pipe",
           });
           return true;
@@ -138,7 +138,7 @@ if (stagedFiles.length > 0) {
 
   const hasAnyModelFile = stagedFiles.some((f) => f.startsWith("prisma/models/") && f.endsWith(".prisma"));
   if (hasAnyModelFile) {
-    const archExists = fs.existsSync(path.join(__dirname, "..", "docs", "schema-governance.md"));
+    const archExists = fs.existsSync(path.join(__dirname, "..", "..", "docs", "schema-governance.md"));
     if (!archExists) {
       fail("修改 prisma model 文件时，docs/schema-governance.md 必须存在");
     } else {

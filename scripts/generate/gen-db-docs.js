@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const schemaPath = path.join(__dirname, "..", "prisma", "schema.prisma");
-const outPath = path.join(__dirname, "..", "docs", "database.md");
+const schemaPath = path.join(__dirname, "..", "..", "prisma", "schema.prisma");
+const outPath = path.join(__dirname, "..", "..", "docs", "database.md");
 
 const content = fs.readFileSync(schemaPath, "utf8");
 

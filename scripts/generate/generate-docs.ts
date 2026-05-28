@@ -506,7 +506,7 @@ function extractAuth(content: string): string {
 }
 
 function parseApiRoutes(): ApiEndpoint[] {
-  const apiDir = path.resolve(__dirname, "../app/api");
+  const apiDir = path.resolve(__dirname, "../../app/api");
   const routes: ApiEndpoint[] = [];
 
   function walk(dir: string, prefix: string) {
@@ -787,16 +787,16 @@ function generateApiMD(endpoints: ApiEndpoint[]): string {
 //  MAIN
 // ═══════════════════════════════════════════════════════════
 
-const schemaPath = path.resolve(__dirname, "../prisma/schema.prisma");
+const schemaPath = path.resolve(__dirname, "../../prisma/schema.prisma");
 const { models } = parseSchema(schemaPath);
 
-fs.writeFileSync(path.resolve(__dirname, "../docs/tables.html"), generateTablesHTML(models), "utf-8");
-fs.writeFileSync(path.resolve(__dirname, "../docs/tables.md"), generateTablesMD(models), "utf-8");
+fs.writeFileSync(path.resolve(__dirname, "../../docs/tables.html"), generateTablesHTML(models), "utf-8");
+fs.writeFileSync(path.resolve(__dirname, "../../docs/tables.md"), generateTablesMD(models), "utf-8");
 console.log(`✓ docs/tables.html  (${models.length} models)`);
 console.log(`✓ docs/tables.md`);
 
 const apiEndpoints = parseApiRoutes();
-fs.writeFileSync(path.resolve(__dirname, "../docs/api.html"), generateApiHTML(apiEndpoints), "utf-8");
-fs.writeFileSync(path.resolve(__dirname, "../docs/api.md"), generateApiMD(apiEndpoints), "utf-8");
+fs.writeFileSync(path.resolve(__dirname, "../../docs/api.html"), generateApiHTML(apiEndpoints), "utf-8");
+fs.writeFileSync(path.resolve(__dirname, "../../docs/api.md"), generateApiMD(apiEndpoints), "utf-8");
 console.log(`✓ docs/api.html  (${apiEndpoints.length} endpoints)`);
 console.log(`✓ docs/api.md`);

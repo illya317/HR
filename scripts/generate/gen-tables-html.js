@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const SCHEMA_PATH = path.join(__dirname, "..", "prisma", "schema.prisma");
-const OUTPUT_PATH = path.join(__dirname, "..", "docs", "tables.html");
+const SCHEMA_PATH = path.join(__dirname, "..", "..", "prisma", "schema.prisma");
+const OUTPUT_PATH = path.join(__dirname, "..", "..", "docs", "tables.html");
 
 const GROUPS = [
   { title: "1. System", models: ["User", "SystemConfig", "LoginAttempt"] },

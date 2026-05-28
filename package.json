@@ -11,13 +11,13 @@
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "arch:check": "node scripts/check-architecture-governance.js",
-    "db:check": "node scripts/check-db.js",
-    "db:docs": "node scripts/gen-db-docs.js",
+    "arch:check": "node scripts/check/check-architecture-governance.js",
+    "db:check": "node scripts/check/check-db.js",
+    "db:docs": "node scripts/generate/gen-db-docs.js",
     "db:validate": "prisma validate --schema=./prisma",
     "db:format": "prisma format --schema=./prisma",
-    "env:check": "node scripts/check-env.js",
-    "schema:check": "node scripts/check-schema-governance.js"
+    "env:check": "node scripts/check/check-env.js",
+    "schema:check": "node scripts/check/check-schema-governance.js"
   },
   "prisma": {
     "schema": "./prisma"

@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const prisma = new PrismaClient();
-const SEED_DIR = path.join(__dirname, '..', 'prisma', 'seed');
-const WEB_DIR = path.join(__dirname, '..', 'web');
+const SEED_DIR = path.join(__dirname, '..', '..', 'prisma', 'seed');
+const WEB_DIR = path.join(__dirname, '..', '..', 'web');
 
 function loadJSON(filename) {
   return JSON.parse(fs.readFileSync(path.join(SEED_DIR, filename), 'utf8'));
