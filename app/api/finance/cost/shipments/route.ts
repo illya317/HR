@@ -10,7 +10,6 @@ export async function GET(request: Request) {
       month: searchParams.has("month") ? parseInt(searchParams.get("month")!) : undefined,
       productName: searchParams.get("productName") ?? undefined,
       customerName: searchParams.get("customerName") ?? undefined,
-      salesperson: searchParams.get("salesperson") ?? undefined,
       sourceFile: searchParams.get("sourceFile") ?? undefined,
       page: searchParams.has("page") ? parseInt(searchParams.get("page")!) : undefined,
       pageSize: searchParams.has("pageSize") ? parseInt(searchParams.get("pageSize")!) : undefined,

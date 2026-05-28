@@ -14,7 +14,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const NORMALIZED_DIR = "/Users/koito/Desktop/.财务数据库/成本分析飞书实验版/json/normalized";
+const NORMALIZED_DIR = "/Users/koito/Desktop/.财务数据库/data/normalized";
 const DRY_RUN = process.argv.includes("--dry-run");
 
 // Load Prisma Client dynamically (ESM compatible)
@@ -66,9 +66,44 @@ function isTotalRow(obj) {
   return name.includes("合计") || name.includes("总计") || name.includes("小计");
 }
 
+// ─── Name / Position mapping ──────────────────────────────
+
+function normalizeName(name) {
+  if (!name) return "";
+  return String(name).trim().replace(/\s+/g, "");
+}
+
+function normalizePosition(pos) {
+  if (!pos) return "";
+  const cleaned = String(pos).trim().replace(/\s+/g, "");
+  if (!cleaned) return "";
+  // Add "岗" suffix if not present (e.g. "制粒" → "制粒岗")
+  return cleaned.endsWith("岗") ? cleaned : cleaned + "岗";
+}
+
+async function buildEmployeeMap() {
+  const employees = await prisma.employee.findMany({ select: { id: true, name: true } });
+  const map = new Map();
+  for (const e of employees) {
+    const key = normalizeName(e.name);
+    if (key) map.set(key, e.id);
+  }
+  return map;
+}
+
+async function buildPositionMap() {
+  const positions = await prisma.position.findMany({ select: { id: true, name: true } });
+  const map = new Map();
+  for (const p of positions) {
+    const key = normalizeName(p.name);
+    if (key) map.set(key, p.id);
+  }
+  return map;
+}
+
 // ─── Profile parsers ──────────────────────────────────────
 
-function parseShipments(json, sourceFile, sourcePath) {
+function parseShipments(json, sourceFile, sourcePath, employeeMap) {
   const rows = Array.isArray(json) ? json : json.standardRows ?? json.records ?? [];
   const facts = [];
   let warnings = 0;
@@ -83,12 +118,14 @@ function parseShipments(json, sourceFile, sourcePath) {
       ? dateRaw
       : null;
 
+    const salespersonName = normalizeName(row.salesperson);
+    const employeeId = salespersonName ? (employeeMap.get(salespersonName) ?? null) : null;
+
     facts.push({
       year: safeInt(row.year) ?? 0,
       month: safeInt(row.month),
       date: dateStr,
       customerName: safeString(row.customer) ?? safeString(row.customerName),
-      salesperson: safeString(row.salesperson),
       productName: safeString(row.productName),
       spec: safeString(row.spec),
       batchNo: safeString(row.batchNo),
@@ -96,6 +133,7 @@ function parseShipments(json, sourceFile, sourcePath) {
       unitPrice: safeFloat(row.unitPrice),
       amount: safeFloat(row.shipmentTaxAmountBase) ?? safeFloat(row.invoiceAmount),
       receivedAmount: safeFloat(row.receivedAmount),
+      employeeId,
       sourceFile: safeString(sourceFile) ?? "",
       sourceSheet: safeString(row.source?.sheet),
       sourceRow: safeInt(row.source?.row),
@@ -105,7 +143,7 @@ function parseShipments(json, sourceFile, sourcePath) {
   return { facts, warnings };
 }
 
-function parseSalesSalary(json, sourceFile, sourcePath) {
+function parseSalesSalary(json, sourceFile, sourcePath, employeeMap) {
   const rows = Array.isArray(json) ? json : [];
   const facts = [];
   let warnings = 0;
@@ -114,14 +152,17 @@ function parseSalesSalary(json, sourceFile, sourcePath) {
     if (!row || typeof row !== "object") continue;
     if (row.recordType === "total" || isTotalRow(row)) continue;
 
+    const name = normalizeName(row.name);
+    const employeeId = name ? (employeeMap.get(name) ?? null) : null;
+
     facts.push({
       year: safeInt(row.year) ?? 0,
       month: safeInt(row.month),
-      salesperson: safeString(row.name) ?? "",
       baseSalary: safeFloat(row.salaryStandard),
       bonus: safeFloat(row.salary),
       deduction: null,
       actualSalary: safeFloat(row.salary),
+      employeeId,
       sourceFile: safeString(sourceFile) ?? "",
       sourceSheet: safeString(row.source?.sheet),
       sourceRow: safeInt(row.source?.row),
@@ -226,7 +267,7 @@ function parseCostAnalysis(json, sourceFile, sourcePath) {
   return { facts, warnings };
 }
 
-function parseWorkshopReports(json, sourceFile, sourcePath) {
+function parseWorkshopReports(json, sourceFile, sourcePath, employeeMap, positionMap) {
   const reports = Array.isArray(json) ? json : [];
   const facts = [];
   let warnings = 0;
@@ -252,15 +293,20 @@ function parseWorkshopReports(json, sourceFile, sourcePath) {
             const quantityStr = safeString(batch.quantity) ?? "";
             const quantityNum = safeFloat(quantityStr.replace(/[^0-9.]/g, ""));
 
+            const personName = normalizeName(person.name);
+            const workType = normalizePosition(person.position);
+            const employeeId = personName ? (employeeMap.get(personName) ?? null) : null;
+            const positionId = workType ? (positionMap.get(workType) ?? null) : null;
+
             facts.push({
               year,
               month,
               productName,
               batchNo,
-              personName: safeString(person.name),
-              workType: safeString(person.position),
               workPoint: safeFloat(person.total),
               quantity: quantityNum,
+              employeeId,
+              positionId,
               sourceFile: safeString(sourceFile) ?? safeString(report.source?.file) ?? "",
               sourceSheet: safeString(person.source?.sheet) ?? safeString(batch.source?.sheet),
               sourceRow: safeInt(person.source?.row) ?? safeInt(batch.source?.row),
@@ -292,6 +338,11 @@ async function main() {
     process.exit(1);
   }
 
+  log("Building name/position maps...");
+  const employeeMap = await buildEmployeeMap();
+  const positionMap = await buildPositionMap();
+  log(`  -> ${employeeMap.size} employees, ${positionMap.size} positions mapped`);
+
   const profiles = fs.readdirSync(NORMALIZED_DIR).filter((d) => {
     const full = path.join(NORMALIZED_DIR, d);
     return fs.statSync(full).isDirectory();
@@ -320,7 +371,7 @@ async function main() {
         continue;
       }
 
-      const { facts, warnings } = parser(json, sourceFile, filePath);
+      const { facts, warnings } = parser(json, sourceFile, filePath, employeeMap, positionMap);
       totalWarnings += warnings;
 
       log(`  -> ${facts.length} fact rows, ${warnings} warnings`);

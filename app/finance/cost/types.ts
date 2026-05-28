@@ -3,7 +3,6 @@ export interface CostFiltersState {
   month: number | undefined;
   productName: string;
   customerName: string;
-  salesperson: string;
 }
 
 export interface SourceTraceInfo {

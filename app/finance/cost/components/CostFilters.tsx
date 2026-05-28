@@ -71,16 +71,6 @@ export default function CostFilters({ filters, onChange }: Props) {
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">业务员</label>
-        <input
-          type="text"
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
-          placeholder="业务员"
-          value={filters.salesperson}
-          onChange={(e) => update("salesperson", e.target.value)}
-        />
-      </div>
     </div>
   );
 }

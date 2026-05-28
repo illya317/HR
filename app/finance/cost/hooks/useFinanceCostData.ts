@@ -40,7 +40,6 @@ export function useCostData<T = Record<string, unknown>>({
       if (filters.month !== undefined) params.set("month", String(filters.month));
       if (filters.productName) params.set("productName", filters.productName);
       if (filters.customerName) params.set("customerName", filters.customerName);
-      if (filters.salesperson) params.set("salesperson", filters.salesperson);
       params.set("page", String(page));
       params.set("pageSize", String(pageSize));
 
@@ -83,7 +82,6 @@ export function useCostSummary(filters: CostFiltersState) {
       if (filters.month !== undefined) params.set("month", String(filters.month));
       if (filters.productName) params.set("productName", filters.productName);
       if (filters.customerName) params.set("customerName", filters.customerName);
-      if (filters.salesperson) params.set("salesperson", filters.salesperson);
 
       const res = await fetch(`/api/finance/cost/summary?${params.toString()}`);
       const json = await res.json();

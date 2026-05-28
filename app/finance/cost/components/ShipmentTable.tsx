@@ -64,7 +64,7 @@ export default function ShipmentTable({ filters }: Props) {
               <tr key={String(row.id)} className="hover:bg-gray-50">
                 <td className="px-3 py-2 whitespace-nowrap">{String(row.date ?? "—")}</td>
                 <td className="px-3 py-2">{String(row.customerName ?? "—")}</td>
-                <td className="px-3 py-2">{String(row.salesperson ?? "—")}</td>
+                <td className="px-3 py-2">{String(row.employeeName ?? "厂家直销")}</td>
                 <td className="px-3 py-2">{String(row.productName ?? "—")}</td>
                 <td className="px-3 py-2">{String(row.spec ?? "—")}</td>
                 <td className="px-3 py-2 text-right">{fmt(row.quantity as number)}</td>

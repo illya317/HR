@@ -19,10 +19,13 @@ model Employee {
   workStartDate String?
   userId        Int?
   user          User?             @relation("EmployeeUser", fields: [userId], references: [id])
-  employments   Employment[]
-  positions     EDP[]
-  projects      EmployeeProject[]
-  editedBy      Int?
+  employments          Employment[]
+  positions            EDP[]
+  projects             EmployeeProject[]
+  financeShipments     FinanceShipment[]
+  financeSalesSalaries FinanceSalesSalary[]
+  financeWorkshopReports FinanceWorkshopReport[]
+  editedBy             Int?
   editedAt      DateTime?
   version       Int               @default(1)
   createdAt     DateTime          @default(now())
@@ -122,9 +125,10 @@ model Position {
   department            Department?            @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   positionDescriptionId Int?
   positionDescription   PositionDescription?   @relation(fields: [positionDescriptionId], references: [id], onDelete: SetNull)
-  edps                  EDP[]
-  resourceRoles         PositionResourceRole[]
-  endDate               DateTime?
+  edps                   EDP[]
+  resourceRoles          PositionResourceRole[]
+  financeWorkshopReports FinanceWorkshopReport[]
+  endDate                DateTime?
   editedBy              Int?
   editedAt              DateTime?
   version               Int                    @default(1)

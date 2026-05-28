@@ -8,7 +8,7 @@ export interface ShipmentDTO {
   month: number | null;
   date: string | null;
   customerName: string | null;
-  salesperson: string | null;
+  employeeName: string | null;
   productName: string | null;
   spec: string | null;
   batchNo: string | null;
@@ -28,7 +28,7 @@ function toDTO(row: {
   month: number | null;
   date: string | null;
   customerName: string | null;
-  salesperson: string | null;
+  employee: { name: string } | null;
   productName: string | null;
   spec: string | null;
   batchNo: string | null;
@@ -43,8 +43,23 @@ function toDTO(row: {
   const amount = row.amount ?? 0;
   const received = row.receivedAmount ?? 0;
   return {
-    ...row,
+    id: row.id,
+    year: row.year,
+    month: row.month,
+    date: row.date,
+    customerName: row.customerName,
+    employeeName: row.employee?.name ?? null,
+    productName: row.productName,
+    spec: row.spec,
+    batchNo: row.batchNo,
+    quantity: row.quantity,
+    unitPrice: row.unitPrice,
+    amount: row.amount,
+    receivedAmount: row.receivedAmount,
     unreceivedAmount: amount - received,
+    sourceFile: row.sourceFile,
+    sourceSheet: row.sourceSheet,
+    sourceRow: row.sourceRow,
   };
 }
 
@@ -57,6 +72,7 @@ export async function listShipments(
   const [data, total] = await Promise.all([
     prisma.financeShipment.findMany({
       where,
+      include: { employee: { select: { name: true } } },
       orderBy: [{ year: "desc" }, { month: "desc" }, { date: "desc" }],
       skip,
       take,
@@ -80,19 +96,21 @@ export async function getShipmentSummary(params: CostQueryParams) {
 
   const rows = await prisma.financeShipment.findMany({
     where,
+    include: { employee: { select: { name: true } } },
     select: {
       amount: true,
       receivedAmount: true,
       customerName: true,
-      salesperson: true,
+      employeeId: true,
       productName: true,
+      employee: { select: { name: true } },
     },
   });
 
   let totalAmount = 0;
   let totalReceived = 0;
   const customerMap = new Map<string, number>();
-  const salespersonMap = new Map<string, number>();
+  const employeeMap = new Map<string, number>();
   const productMap = new Map<string, number>();
 
   for (const row of rows) {
@@ -104,9 +122,8 @@ export async function getShipmentSummary(params: CostQueryParams) {
     if (row.customerName) {
       customerMap.set(row.customerName, (customerMap.get(row.customerName) ?? 0) + amt);
     }
-    if (row.salesperson) {
-      salespersonMap.set(row.salesperson, (salespersonMap.get(row.salesperson) ?? 0) + amt);
-    }
+    const employeeName = row.employee?.name ?? "厂家直销";
+    employeeMap.set(employeeName, (employeeMap.get(employeeName) ?? 0) + amt);
     if (row.productName) {
       productMap.set(row.productName, (productMap.get(row.productName) ?? 0) + amt);
     }
@@ -124,7 +141,7 @@ export async function getShipmentSummary(params: CostQueryParams) {
     totalUnreceived: totalAmount - totalReceived,
     collectionRate: totalAmount > 0 ? totalReceived / totalAmount : 0,
     topCustomers: sortMap(customerMap),
-    topSalespeople: sortMap(salespersonMap),
+    topEmployees: sortMap(employeeMap),
     topProducts: sortMap(productMap),
   };
 }

@@ -8,7 +8,6 @@ export async function GET(request: Request) {
     const params = {
       year: searchParams.has("year") ? parseInt(searchParams.get("year")!) : undefined,
       month: searchParams.has("month") ? parseInt(searchParams.get("month")!) : undefined,
-      salesperson: searchParams.get("salesperson") ?? undefined,
       sourceFile: searchParams.get("sourceFile") ?? undefined,
       page: searchParams.has("page") ? parseInt(searchParams.get("page")!) : undefined,
       pageSize: searchParams.has("pageSize") ? parseInt(searchParams.get("pageSize")!) : undefined,

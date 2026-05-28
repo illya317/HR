@@ -33,7 +33,6 @@ export default function FinanceCostClient({ user }: { user: SessionUser }) {
     month: undefined,
     productName: "",
     customerName: "",
-    salesperson: "",
   });
 
   return (

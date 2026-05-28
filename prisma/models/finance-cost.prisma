@@ -1,4 +1,4 @@
-/// 财务成本原始数据导入批次（事实：一次导入的元数据）
+/// 财务成本数据导入批次。每次从 Excel/JSON 导入时生成一条记录，作为该批次所有明细行的事实来源追溯。
 model FinanceDataImport {
   id                 Int      @id @default(autoincrement())
   profile            String
@@ -26,7 +26,7 @@ model FinanceDataImport {
   @@index([sourceFile])
 }
 
-/// 发货/销售明细（事实：每笔销售的数量、单价、金额、回款）
+/// 发货/销售明细。记录每笔销售的日期、客户、产品、数量、单价、金额、回款情况。employeeId 关联到业务员，为空表示厂家直销（厂部）。
 model FinanceShipment {
   id       Int               @id @default(autoincrement())
   importId Int
@@ -36,7 +36,6 @@ model FinanceShipment {
   month        Int?
   date         String?
   customerName String?
-  salesperson  String?
   productName  String?
   spec         String?
   batchNo      String?
@@ -45,6 +44,9 @@ model FinanceShipment {
   unitPrice      Float?
   amount         Float?
   receivedAmount Float?
+
+  employeeId Int?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
 
   sourceFile  String
   sourceSheet String?
@@ -55,11 +57,11 @@ model FinanceShipment {
 
   @@index([year, month])
   @@index([customerName])
-  @@index([salesperson])
   @@index([productName])
+  @@index([employeeId])
 }
 
-/// 销售工资（事实：底薪、提成、扣款、实发）
+/// 销售工资。记录业务员每月底薪、提成、实发工资。employeeId 关联到具体员工，为空表示厂销（厂家直销归集行）。
 model FinanceSalesSalary {
   id       Int               @id @default(autoincrement())
   importId Int
@@ -67,11 +69,13 @@ model FinanceSalesSalary {
 
   year         Int
   month        Int?
-  salesperson  String
   baseSalary   Float?
   bonus        Float?
   deduction    Float?
   actualSalary Float?
+
+  employeeId Int?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
 
   sourceFile  String
   sourceSheet String?
@@ -81,10 +85,10 @@ model FinanceSalesSalary {
   updatedAt DateTime @updatedAt
 
   @@index([year, month])
-  @@index([salesperson])
+  @@index([employeeId])
 }
 
-/// 成本结构明细（事实：产品成本项金额、数量、单位）
+/// 成本结构明细。按产品归集原材料、包材、直接人工、辅助人工、制造费用等各项成本金额。用于计算产品单位成本。
 model FinanceCostStructureRow {
   id       Int               @id @default(autoincrement())
   importId Int
@@ -111,7 +115,7 @@ model FinanceCostStructureRow {
   @@index([category])
 }
 
-/// 成本分析指标（事实：分析表行标签、指标键、数值/文本值）
+/// 成本分析指标。从成本分析 Excel 的多张工作表解析而来，每张表按行标签+指标键存储数值或文本。用于生成成本分析报表。
 model FinanceCostAnalysisRow {
   id       Int               @id @default(autoincrement())
   importId Int
@@ -138,7 +142,7 @@ model FinanceCostAnalysisRow {
   @@index([metricKey])
 }
 
-/// 车间日报（事实：人员、工序、工分、数量）
+/// 车间日报。记录生产车间每日各批次产品的人员投入、工序、工分和完成数量。employeeId/positionId 关联到员工和岗位，用于人工成本归集和计件工资计算。
 model FinanceWorkshopReport {
   id       Int               @id @default(autoincrement())
   importId Int
@@ -148,10 +152,13 @@ model FinanceWorkshopReport {
   month       Int
   productName String?
   batchNo     String?
-  personName  String?
-  workType    String?
   workPoint   Float?
   quantity    Float?
+
+  employeeId Int?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+  positionId Int?
+  position   Position? @relation(fields: [positionId], references: [id])
 
   sourceFile  String
   sourceSheet String?
@@ -163,5 +170,6 @@ model FinanceWorkshopReport {
   @@index([year, month])
   @@index([productName])
   @@index([batchNo])
-  @@index([personName])
+  @@index([employeeId])
+  @@index([positionId])
 }

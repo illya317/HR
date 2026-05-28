@@ -61,8 +61,8 @@ export default function WorkshopReportTable({ filters }: Props) {
                 </td>
                 <td className="px-3 py-2">{String(row.productName ?? "—")}</td>
                 <td className="px-3 py-2">{String(row.batchNo ?? "—")}</td>
-                <td className="px-3 py-2">{String(row.personName ?? "—")}</td>
-                <td className="px-3 py-2">{String(row.workType ?? "—")}</td>
+                <td className="px-3 py-2">{String(row.employeeName ?? "—")}</td>
+                <td className="px-3 py-2">{String(row.positionName ?? "—")}</td>
                 <td className="px-3 py-2 text-right">{fmt(row.workPoint as number)}</td>
                 <td className="px-3 py-2 text-right">{fmt(row.quantity as number)}</td>
                 <td className="px-3 py-2">

@@ -6,7 +6,7 @@ export interface SalesSalaryDTO {
   id: number;
   year: number;
   month: number | null;
-  salesperson: string;
+  employeeName: string | null;
   baseSalary: number | null;
   bonus: number | null;
   deduction: number | null;
@@ -20,7 +20,7 @@ function toDTO(row: {
   id: number;
   year: number;
   month: number | null;
-  salesperson: string;
+  employee: { name: string } | null;
   baseSalary: number | null;
   bonus: number | null;
   deduction: number | null;
@@ -29,7 +29,19 @@ function toDTO(row: {
   sourceSheet: string | null;
   sourceRow: number | null;
 }): SalesSalaryDTO {
-  return { ...row };
+  return {
+    id: row.id,
+    year: row.year,
+    month: row.month,
+    employeeName: row.employee?.name ?? "厂销",
+    baseSalary: row.baseSalary,
+    bonus: row.bonus,
+    deduction: row.deduction,
+    actualSalary: row.actualSalary,
+    sourceFile: row.sourceFile,
+    sourceSheet: row.sourceSheet,
+    sourceRow: row.sourceRow,
+  };
 }
 
 export async function listSalesSalaries(
@@ -41,7 +53,8 @@ export async function listSalesSalaries(
   const [data, total] = await Promise.all([
     prisma.financeSalesSalary.findMany({
       where,
-      orderBy: [{ year: "desc" }, { month: "desc" }, { salesperson: "asc" }],
+      include: { employee: { select: { name: true } } },
+      orderBy: [{ year: "desc" }, { month: "desc" }],
       skip,
       take,
     }),

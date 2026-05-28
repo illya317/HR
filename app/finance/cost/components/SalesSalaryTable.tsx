@@ -58,7 +58,7 @@ export default function SalesSalaryTable({ filters }: Props) {
                 <td className="px-3 py-2 whitespace-nowrap">
                   {String(row.year)}-{row.month != null ? String(row.month) : "—"}
                 </td>
-                <td className="px-3 py-2">{String(row.salesperson ?? "—")}</td>
+                <td className="px-3 py-2">{String(row.employeeName ?? "厂销")}</td>
                 <td className="px-3 py-2 text-right">{fmt(row.baseSalary as number)}</td>
                 <td className="px-3 py-2 text-right">{fmt(row.bonus as number)}</td>
                 <td className="px-3 py-2 text-right">{fmt(row.actualSalary as number)}</td>

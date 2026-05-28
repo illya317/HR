@@ -3,7 +3,6 @@ export interface CostQueryParams {
   month?: number;
   productName?: string;
   customerName?: string;
-  salesperson?: string;
   sourceFile?: string;
   page?: number;
   pageSize?: number;
@@ -21,7 +20,6 @@ export function buildYearMonthWhere(params: CostQueryParams): Record<string, unk
   if (params.month !== undefined) where.month = params.month;
   if (params.productName) where.productName = { contains: params.productName };
   if (params.customerName) where.customerName = { contains: params.customerName };
-  if (params.salesperson) where.salesperson = { contains: params.salesperson };
   if (params.sourceFile) where.sourceFile = { contains: params.sourceFile };
   return where;
 }
