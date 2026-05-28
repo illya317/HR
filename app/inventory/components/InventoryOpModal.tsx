@@ -1,0 +1,67 @@
+"use client";
+
+interface OpTypeOption {
+  value: string;
+  label: string;
+}
+
+interface InventoryOpModalProps {
+  open: boolean;
+  opTypes: OpTypeOption[];
+  opForm: { opType: string; quantity: string; reason: string };
+  onFieldChange: (key: "opType" | "quantity" | "reason", value: string) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export default function InventoryOpModal({
+  open, opTypes, opForm, onFieldChange, onConfirm, onCancel,
+}: InventoryOpModalProps) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+        <h3 className="mb-4 text-sm font-semibold">库存操作</h3>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-600">操作类型</label>
+            <select
+              value={opForm.opType}
+              onChange={(e) => onFieldChange("opType", e.target.value)}
+              className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+            >
+              {opTypes.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-600">数量</label>
+            <input
+              type="number"
+              value={opForm.quantity}
+              onChange={(e) => onFieldChange("quantity", e.target.value)}
+              className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-600">原因/备注</label>
+            <input
+              value={opForm.reason}
+              onChange={(e) => onFieldChange("reason", e.target.value)}
+              className="w-full rounded border border-gray-300 px-2 py-1 text-xs"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <button onClick={onConfirm} className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700">
+            确认
+          </button>
+          <button onClick={onCancel} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
