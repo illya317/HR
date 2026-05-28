@@ -1,7 +1,7 @@
 /// 财务成本数据导入批次。每次从 Excel/JSON 导入时生成一条记录，作为该批次所有明细行的事实来源追溯。
 model FinanceDataImport {
   id                 Int      @id @default(autoincrement()) // 导入批次ID
-  profile            String                                 // 数据类型：shipments/sales-salary/cost-structure/cost-analysis/workshop-reports
+  profile            String                                 // 数据来源分类：shipments/sales-salary/cost-structure/cost-analysis/workshop-reports，对应 normalized 子目录
   year               Int?                                   // 数据所属年份
   sourceFile         String                                 // 原始文件名
   sourcePath         String?                                // 原始文件路径
