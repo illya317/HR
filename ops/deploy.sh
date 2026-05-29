@@ -6,7 +6,6 @@ cd "$(dirname "$0")/.."
 
 source ops/server.env.sh
 
-PUSH_DB=false
 LOCKFILE=".deploying"
 
 # 锁文件：防止多 Agent 同时部署
@@ -32,16 +31,6 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-# 解析参数
-for arg in "$@"; do
-  case $arg in
-    --push-db)
-      PUSH_DB=true
-      shift
-      ;;
-  esac
-done
-
 echo "==> 运行 lint (max-warnings=0)..."
 npm run lint -- --max-warnings=0
 
@@ -59,11 +48,8 @@ REMOTE_CMD="cd $REMOTE_DIR"
 # 数据库路径迁移：如果旧路径有数据但新路径没有，自动移动
 REMOTE_CMD="$REMOTE_CMD && if [ -f prisma/dev.db ] && [ ! -f data/dev.db ]; then mkdir -p data && mv prisma/dev.db data/dev.db; fi"
 
-if [ "$PUSH_DB" = true ]; then
-  REMOTE_CMD="$REMOTE_CMD && echo '==> 同步数据库 schema...' && DATABASE_URL=file:$REMOTE_DIR/data/dev.db npx prisma db push --accept-data-loss"
-fi
-
 REMOTE_CMD="$REMOTE_CMD && echo '==> 拉取最新代码...' && git fetch origin main && git reset --hard origin/main"
+REMOTE_CMD="$REMOTE_CMD && echo '==> 同步数据库 schema...' && DATABASE_URL=file:$REMOTE_DIR/data/dev.db npx prisma db push --accept-data-loss"
 REMOTE_CMD="$REMOTE_CMD && echo '==> 安装依赖...' && npm install"
 REMOTE_CMD="$REMOTE_CMD && echo '==> 构建...' && DATABASE_URL=file:$REMOTE_DIR/data/dev.db npm run build"
 REMOTE_CMD="$REMOTE_CMD && echo '==> 复制静态资源到 standalone...' && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/"
